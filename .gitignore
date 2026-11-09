@@ -1,0 +1,108 @@
+
+# =========================
+# OS generated files
+# =========================
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# =========================
+# IDEs and editors
+# =========================
+.vscode/
+.idea/
+*.swp
+*.swo
+*.swn
+*.sublime-workspace
+
+# =========================
+# Logs
+# =========================
+*.log
+logs/
+npm-debug.log*
+yarn-debug.log*
+pnpm-debug.log*
+
+# =========================
+# Environment variables
+# =========================
+.env
+.env.*
+!.env.example
+
+# =========================
+# Dependencies
+# =========================
+node_modules/
+vendor/
+
+# =========================
+# Build outputs
+# =========================
+dist/
+build/
+out/
+target/
+coverage/
+
+# =========================
+# Cache
+# =========================
+.cache/
+.parcel-cache/
+.next/
+.nuxt/
+.turbo/
+.tmp/
+temp/
+
+# =========================
+# Python
+# =========================
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.venv/
+venv/
+ENV/
+
+# =========================
+# Java
+# =========================
+*.class
+*.jar
+*.war
+.gradle/
+
+# =========================
+# Temporary files
+# =========================
+*.tmp
+*.bak
+*.old
+*.orig
+
+# =========================
+# Secrets and credentials
+# =========================
+*.pem
+*.key
+secrets/
+credentials.json
+
+# =========================
+# Database files
+# =========================
+*.sqlite
+*.sqlite3
+*.db
+
+# =========================
+# Test artifacts
+# =========================
+test-results/
+playwright-report/
