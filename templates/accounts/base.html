@@ -6,11 +6,11 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>{% block title %}The Spotlight{% endblock %}</title>
   <!-- Favicon -->
-  <link rel="icon" href="{% static 'img/favicon.png' %}" type="image/png" rel="shortcut icon">
+  <link rel="icon" href="{% static 'img/favicon.png' %}" type="image/x-icon">
+  <!-- Font Awesome -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
   <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
-  <!-- Lucide Icons -->
-  <script src="https://unpkg.com/lucide@latest"></script>
   <!-- Google Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -91,19 +91,18 @@
         <img 
           src="{% static 'img/the-spotlight-banner-removebg.png' %}" 
           alt="The Spotlight Banner" 
-          class="h-18 w-auto object-contain"
+          class="h-14 w-auto object-contain"
         />
       </div>
 
       <!-- Navigation Page Tabs -->
       <div class="flex items-center space-x-2 bg-spotlight-bg p-1 rounded-xl border border-spotlight-border">
         <a id="tab-home" href="{% url 'marketplace:home' %}" class="flex items-center space-x-2 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all text-slate-400 hover:text-white">
-          <i data-lucide="layout-dashboard" class="w-3.5 h-3.5"></i>
+          <i class="fa-solid fa-table-cells-large text-xs"></i>
           <span>Browse</span>
         </a>
         <a id="tab-login" href="{% url 'accounts:login' %}" class="flex items-center space-x-2 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all bg-spotlight-cyan text-spotlight-bg shadow-md">
-   
-          <i data-lucide="lock" class="w-3.5 h-3.5"></i>
+          <i class="fa-solid fa-lock text-xs"></i>
           <span>Account</span>
         </a>
       </div>
