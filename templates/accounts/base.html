@@ -1,9 +1,12 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>{% block title %}The Spotlight{% endblock %}</title>
+  <!-- Favicon -->
+  <link rel="icon" href="{% static 'img/favicon.png' %}" type="image/png" rel="shortcut icon">
   <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
   <!-- Lucide Icons -->
@@ -85,34 +88,18 @@
       
       <!-- Brand & Page Switcher Info -->
       <div class="flex items-center space-x-3">
-        <!-- Embedded SVG Brand Logo Icon (Favicon/Logo Mark) -->
-        <div class="relative w-8 h-8 flex items-center justify-center">
-          <svg class="w-8 h-8" viewBox="0 0 100 100" fill="none">
-            <circle cx="50" cy="50" r="44" stroke="url(#navLogoGrad)" stroke-width="8" />
-            <path d="M 50 12 A 38 38 0 0 1 88 50" stroke="#00C4EE" stroke-width="8" stroke-linecap="round" />
-            <path d="M 88 50 A 38 38 0 0 1 50 88" stroke="#38B000" stroke-width="8" stroke-linecap="round" />
-            <path d="M 50 88 A 38 38 0 0 1 12 50" stroke="#7B2CBF" stroke-width="8" stroke-linecap="round" />
-            <path d="M 12 50 A 38 38 0 0 1 50 12" stroke="#E62B75" stroke-width="8" stroke-linecap="round" />
-            <defs>
-              <linearGradient id="navLogoGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-                <stop offset="0%" stop-color="#FFA600" />
-                <stop offset="100%" stop-color="#EF7D18" />
-              </linearGradient>
-            </defs>
-          </svg>
-          <i data-lucide="sparkles" class="w-3.5 h-3.5 text-spotlight-star fill-spotlight-star absolute"></i>
-        </div>
-        <div>
-          <span class="text-xs font-bold tracking-widest text-spotlight-cyan uppercase">THE SPOTLIGHT</span>
-          <span class="text-[10px] text-slate-400 block font-medium">Multi-Page Prototype</span>
-        </div>
+        <img 
+          src="{% static 'img/the-spotlight-banner-removebg.png' %}" 
+          alt="The Spotlight Banner" 
+          class="h-18 w-auto object-contain"
+        />
       </div>
 
       <!-- Navigation Page Tabs -->
       <div class="flex items-center space-x-2 bg-spotlight-bg p-1 rounded-xl border border-spotlight-border">
         <a id="tab-home" href="{% url 'marketplace:home' %}" class="flex items-center space-x-2 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all text-slate-400 hover:text-white">
           <i data-lucide="layout-dashboard" class="w-3.5 h-3.5"></i>
-          <span>Categories</span>
+          <span>Browse</span>
         </a>
         <a id="tab-login" href="{% url 'accounts:login' %}" class="flex items-center space-x-2 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all bg-spotlight-cyan text-spotlight-bg shadow-md">
    
