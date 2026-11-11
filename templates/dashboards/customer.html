@@ -1,0 +1,46 @@
+{% extends "dashboards/base.html" %}
+
+{% block title %}Customer Dashboard | The Spotlight{% endblock %}
+
+{% block content %}
+<div class="p-4 p-md-5 mb-4 rounded text-body-emphasis bg-white border shadow-sm">
+  <div class="col-lg-8">
+    <h1 class="display-6 fw-bold text-primary">Welcome, {{ request.user.get_short_name }}!</h1>
+    <p class="lead my-3">Discover products and campus services from verified providers.</p>
+    <a href="{% url 'marketplace:home' %}" class="btn btn-primary btn-lg">Browse Listings</a>
+  </div>
+</div>
+
+<div class="row g-4">
+  <div class="col-md-4">
+    <div class="card h-100 shadow-sm border-0">
+      <div class="card-body">
+        <div class="fs-2 text-primary mb-2"><i class="bi bi-bag-check"></i></div>
+        <h5 class="card-title">My Orders</h5>
+        <p class="card-text text-muted">View past and active orders across campus vendors.</p>
+        <a href="#" class="btn btn-outline-primary btn-sm">View Orders &rarr;</a>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-4">
+    <div class="card h-100 shadow-sm border-0">
+      <div class="card-body">
+        <div class="fs-2 text-primary mb-2"><i class="bi bi-calendar-event"></i></div>
+        <h5 class="card-title">Bookings</h5>
+        <p class="card-text text-muted">Manage scheduled service appointments.</p>
+        <a href="#" class="btn btn-outline-primary btn-sm">View Bookings &rarr;</a>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-4">
+    <div class="card h-100 shadow-sm border-0">
+      <div class="card-body">
+        <div class="fs-2 text-primary mb-2"><i class="bi bi-shop"></i></div>
+        <h5 class="card-title">Become a Vendor</h5>
+        <p class="card-text text-muted">Submit an application to start selling your products or services.</p>
+        <a href="#" class="btn btn-outline-primary btn-sm">Apply Now &rarr;</a>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

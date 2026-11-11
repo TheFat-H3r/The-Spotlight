@@ -1,0 +1,89 @@
+{% extends "accounts/base.html" %}
+
+{% block title %}Complete Your Profile | The Spotlight{% endblock %}
+
+{% block content %}
+<div class="text-center mb-4">
+  <h1 class="h4 fw-bold">Welcome, {{ request.user.get_full_name }}!</h1>
+  <p class="text-muted small">Choose your role and fill in your details to get started.</p>
+</div>
+
+<form method="post" action="{% url 'accounts:google_onboarding' %}">
+  {% csrf_token %}
+  
+  <div class="mb-3">
+    <label class="form-label fw-semibold small">Select Account Role</label>
+    <div class="d-flex gap-4">
+      {% for radio in form.role %}
+        <div class="form-check">
+          {{ radio.tag }}
+          <label class="form-check-label small" for="{{ radio.id_for_label }}">{{ radio.choice_label }}</label>
+        </div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <div class="mb-3">
+    <label for="id_phone" class="form-label small fw-semibold">Phone Number</label>
+    {{ form.phone }}
+  </div>
+
+  <div id="customer-fields">
+    <hr class="my-3">
+    <h6 class="fw-bold text-primary small">Customer Details</h6>
+    <div class="mb-3">
+      <label class="form-label small">Department</label>
+      {{ form.department }}
+    </div>
+    <div class="mb-3">
+      <label class="form-label small">Year of Study</label>
+      {{ form.year_of_study }}
+    </div>
+    <div class="mb-3">
+      <label class="form-label small">Campus Location / Hostel</label>
+      {{ form.campus_location }}
+    </div>
+  </div>
+
+  <div id="vendor-fields" style="display: none;">
+    <hr class="my-3">
+    <h6 class="fw-bold text-success small">Vendor Application Details</h6>
+    <div class="mb-3">
+      <label class="form-label small">Business Name</label>
+      {{ form.business_name }}
+    </div>
+    <div class="mb-3">
+      <label class="form-label small">Business Type</label>
+      {{ form.business_type }}
+    </div>
+    <div class="mb-3">
+      <label class="form-label small">Description / What do you offer?</label>
+      {{ form.description }}
+    </div>
+  </div>
+
+  <button type="submit" class="btn btn-primary w-100 py-2 fw-semibold shadow-sm mt-3">Complete Setup</button>
+</form>
+
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    const roleRadios = document.querySelectorAll("input[name='role']");
+    const customerFields = document.getElementById("customer-fields");
+    const vendorFields = document.getElementById("vendor-fields");
+
+    function updateFields() {
+      const selectedRole = document.querySelector("input[name='role']:checked");
+      if (selectedRole && selectedRole.value === "vendor") {
+        customerFields.style.display = "none";
+        vendorFields.style.display = "block";
+      } else {
+        customerFields.style.display = "block";
+        vendorFields.style.display = "none";
+      }
+    }
+
+    roleRadios.forEach(radio => radio.addEventListener("change", updateFields));
+    updateFields();
+  });
+</script>
+{% endblock %}

@@ -1,0 +1,43 @@
+{% extends "dashboards/base.html" %}
+
+{% block title %}Vendor Portal | The Spotlight{% endblock %}
+
+{% block content %}
+<div class="row g-3 mb-4">
+  <div class="col-md-4">
+    <div class="card border-0 shadow-sm bg-success text-white">
+      <div class="card-body">
+        <div class="text-uppercase small fw-bold">Store Rating</div>
+        <div class="display-6 fw-bold">{{ request.user.vendor_profile.rating_average|default:"5.0" }} ★</div>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-4">
+    <div class="card border-0 shadow-sm bg-dark text-white">
+      <div class="card-body">
+        <div class="text-uppercase small fw-bold">Total Reviews</div>
+        <div class="display-6 fw-bold">{{ request.user.vendor_profile.rating_count|default:"0" }}</div>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-4">
+    <div class="card border-0 shadow-sm bg-white border">
+      <div class="card-body">
+        <div class="text-uppercase small text-muted fw-bold">Account Status</div>
+        <div class="display-6 fw-bold text-success text-capitalize">{{ request.user.vendor_profile.status|default:"Active" }}</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="card shadow-sm border-0">
+  <div class="card-header bg-white d-flex justify-content-between align-items-center py-3">
+    <h5 class="mb-0 fw-bold">Vendor Listings</h5>
+    <button class="btn btn-success btn-sm"><i class="bi bi-plus-lg"></i> Add New Listing</button>
+  </div>
+  <div class="card-body text-center py-5 text-muted">
+    <i class="bi bi-inbox display-4"></i>
+    <p class="mt-2">No active products or services listed yet.</p>
+  </div>
+</div>
+{% endblock %}

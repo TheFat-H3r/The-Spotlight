@@ -1,0 +1,35 @@
+{% extends "dashboards/base.html" %}
+
+{% block title %}Admin Panel | The Spotlight{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <h2 class="h3 fw-bold text-danger mb-0"><i class="bi bi-shield-lock"></i> Platform Control Center</h2>
+  <a href="/admin/" class="btn btn-dark btn-sm"><i class="bi bi-gear"></i> Open Django Admin</a>
+</div>
+
+<div class="row g-4">
+  <div class="col-md-6">
+    <div class="card border-0 shadow-sm h-100">
+      <div class="card-header bg-white fw-bold py-3">
+        Vendor Applications
+      </div>
+      <div class="card-body">
+        <p class="text-muted">Review and approve customer requests to open vendor storefronts.</p>
+        <a href="#" class="btn btn-danger btn-sm">Review Applications</a>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-6">
+    <div class="card border-0 shadow-sm h-100">
+      <div class="card-header bg-white fw-bold py-3">
+        User Moderation
+      </div>
+      <div class="card-body">
+        <p class="text-muted">Manage user roles, ban policy violations, and monitor vendor trust.</p>
+        <a href="#" class="btn btn-outline-danger btn-sm">Manage Accounts</a>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
