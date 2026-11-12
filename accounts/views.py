@@ -7,7 +7,7 @@ from django.contrib.auth.decorators import login_required
 from django.views import View
 from .forms import GoogleOnboardingForm
 from .models import User, CustomerProfile, VendorApplication
-from .utils import redirect_by_role, send_verification_email
+from .utils import redirect_by_role, send_password_reset_email, send_verification_email
 
 
 class RegisterView(View):
@@ -250,9 +250,106 @@ def google_onboarding_view(request):
 
     return render(request, "accounts/google_onboarding.html", {"form": form})
 
-def password_reset_view(request):
-    # Placeholder for password reset logic
-    return render(request, "accounts/password_reset.html")
+class PasswordResetRequestView(View):
+    """Handles 'Forgot Password' email submission."""
+    template_name = 'accounts/password_reset.html'
+
+    def get(self, request):
+        if request.user.is_authenticated:
+            return redirect('marketplace:home')
+        return render(request, self.template_name)
+
+    def post(self, request):
+        email = (request.POST.get('email') or '').strip().lower()
+        context = {'email': email}
+
+        if not email:
+            messages.error(request, "Please enter your email address.")
+            return render(request, self.template_name, context)
+
+        # 1. Check if an account with this email exists
+        user = User.objects.filter(email__iexact=email).first()
+
+        if user is None:
+            messages.error(request, "No account found with this email address.")
+            return render(request, self.template_name, context)
+
+        # 2. Check if the account is active
+        if not user.is_active:
+            messages.error(request, "This account has been deactivated.")
+            return render(request, self.template_name, context)
+
+        # 3. Check if the account uses Email/Password authentication (not Google OAuth)
+        if getattr(user, 'auth_provider', None) != User.AuthProvider.EMAIL:
+            messages.error(request, "This account uses Google Sign-In. Please sign in with Google instead.")
+            return render(request, self.template_name, context)
+
+        # 4. Generate token and dispatch email via Brevo
+        token = user.generate_password_reset_token()
+        reset_path = reverse('accounts:password_reset_confirm', kwargs={'token': token})
+        reset_url = request.build_absolute_uri(reset_path)
+
+        try:
+            send_password_reset_email(
+                user_email=user.email,
+                user_name=getattr(user, 'full_name', user.email),
+                reset_url=reset_url
+            )
+        except Exception as e:
+            print(f"Failed to dispatch password reset email: {e}")
+            messages.error(request, "Unable to send reset email right now. Please try again shortly.")
+            return render(request, self.template_name, context)
+
+        messages.success(request, "A password reset link has been sent to your email address.")
+        return redirect('accounts:login')
+
+class PasswordResetConfirmView(View):
+    """Handles setting the new password when user clicks the reset link."""
+    template_name = 'accounts/password_reset_confirm.html'
+
+    def get(self, request, token):
+        user = User.verify_password_reset_token(token, max_age=900)  # 15 minutes
+        if user is None:
+            messages.error(request, "The password reset link is invalid or has expired.")
+            return redirect('accounts:password_reset')
+
+        return render(request, self.template_name, {'token': token})
+
+    def post(self, request, token):
+        user = User.verify_password_reset_token(token, max_age=900)
+        if user is None:
+            messages.error(request, "The password reset link is invalid or has expired.")
+            return redirect('accounts:password_reset')
+
+        password = request.POST.get('password', '')
+        confirm_password = request.POST.get('confirm_password', '')
+        context = {'token': token}
+
+        if not password or not confirm_password:
+            messages.error(request, "Both password fields are required.")
+            return render(request, self.template_name, context)
+
+        if len(password) < 8:
+            messages.error(request, "Password must be at least 8 characters long.")
+            return render(request, self.template_name, context)
+
+        if (
+            not any(char.isdigit() for char in password)
+            or not any(char.isalpha() for char in password)
+            or not any(char in "!@#$%^&*()-_=+[]{}|;:'\",.<>?/`~" for char in password)
+        ):
+            messages.error(request, "Password must include a number, letter & symbol.")
+            return render(request, self.template_name, context)
+
+        if password != confirm_password:
+            messages.error(request, "Passwords do not match.")
+            return render(request, self.template_name, context)
+
+        user.set_password(password)
+        user.save(update_fields=['password'])
+
+        messages.success(request, "Your password has been reset! You can now sign in with your new password.")
+        return redirect('accounts:login')
 
 def logout_view(request):
     logout(request)

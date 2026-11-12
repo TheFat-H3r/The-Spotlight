@@ -142,6 +142,30 @@ class User(AbstractBaseUser, PermissionsMixin):
         except (BadSignature, SignatureExpired, User.DoesNotExist):
             return None
 
+    def generate_password_reset_token(self) -> str:
+        """Generates a signed token containing user PK and a password hash fragment."""
+        signer = TimestampSigner(salt="password-reset")
+        # Including password[-10:] invalidates the token immediately once password changes
+        payload = f"{self.pk}:{self.password[-10:]}"
+        return signer.sign(payload)
+
+    @staticmethod
+    def verify_password_reset_token(token: str, max_age: int = 600):
+        """
+        Verifies password reset token within max_age (default: 600s / 10 minutes).
+        Returns User instance if valid and password hasn't changed since issuance.
+        """
+        signer = TimestampSigner(salt="password-reset")
+        try:
+            unsigned_data = signer.unsign(token, max_age=max_age)
+            user_id, pwd_fragment = unsigned_data.split(":", 1)
+            user = User.objects.get(pk=user_id)
+            if user.password[-10:] == pwd_fragment:
+                return user
+            return None
+        except (BadSignature, SignatureExpired, ValueError, User.DoesNotExist):
+            return None
+
 
 # ---------------------------------------------------------------------------
 # Customer profile (every user gets one automatically, see signals.py)
