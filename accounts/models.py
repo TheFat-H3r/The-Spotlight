@@ -171,17 +171,51 @@ class User(AbstractBaseUser, PermissionsMixin):
 # Customer profile (every user gets one automatically, see signals.py)
 # ---------------------------------------------------------------------------
 class CustomerProfile(models.Model):
+    class Residence(models.TextChoices):
+        MAPS = "Maps", "Maps"
+        SONGHAI = "Songhai", "Songhai"
+        KONGO = "Kongo", "Kongo"
+        AKSUM = "Aksum", "Aksum"
+
+    class Course(models.TextChoices):
+        CS = "CS", "CS"
+        SE = "SE", "SE"
+        EL = "EL", "EL"
+        IBT = "IBT", "IBT"
+
     user = models.OneToOneField(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
         related_name="customer_profile",
     )
-    department = models.CharField(max_length=100, blank=True)
-    year_of_study = models.PositiveSmallIntegerField(null=True, blank=True)
-    campus_location = models.CharField(
-        max_length=120,
+    course = models.CharField(max_length=4, choices=Course.choices, blank=True, help_text="Your course of study.")
+    cohort = models.CharField(
+        max_length=4,
         blank=True,
-        help_text="Hostel, block or usual meet-up point on campus.",
+        validators=[
+            RegexValidator(
+                regex=r"^[A-Z]'\d{2}$",
+                message="Cohort must strictly match the format F'25 (uppercase letter, apostrophe, and 2 digits).",
+            )
+        ],
+        help_text="Format: F'25",
+    )
+    residence = models.CharField(
+        max_length=20,
+        choices=Residence.choices,
+        blank=True,
+        help_text="Campus residence hall.",
+    )
+    room_number = models.CharField(
+        max_length=4,
+        blank=True,
+        validators=[
+            RegexValidator(
+                regex=r"^[A-Z]\d{3}$",
+                message="Room number must strictly match the format S101 (1 uppercase letter followed by 3 digits).",
+            )
+        ],
+        help_text="Format: S101",
     )
     bio = models.TextField(max_length=300, blank=True)
 
