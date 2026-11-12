@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}{{ product.name }} | The Spotlight{% endblock %}
+
+{% block content %}
+<section class="container py-5">
+    <a href="{% url 'marketplace:home' %}" class="text-cyan">
+        ← Back to Marketplace
+    </a>
+
+    <div class="row g-5 mt-3">
+        <div class="col-md-6">
+            {% if product.image %}
+                <img src="{{ product.image.url }}"
+                     class="img-fluid rounded-4"
+                     alt="{{ product.name }}">
+            {% else %}
+                <div class="image-placeholder">Product image</div>
+            {% endif %}
+        </div>
+
+        <div class="col-md-6">
+            <span class="section-label">PRODUCT DETAILS</span>
+            <h1 class="fw-bold">{{ product.name }}</h1>
+
+            <p class="text-muted">{{ product.description }}</p>
+
+            <h3 class="text-cyan fw-bold">
+                MUR {{ product.price }}
+            </h3>
+
+            <p>
+                <strong>Vendor:</strong>
+                <a href="{% url 'marketplace:store_detail' product.store.slug %}">
+                    {{ product.store.name }}
+                </a>
+            </p>
+
+            {% if product.rating_average %}
+                <p>★ {{ product.rating_average }}</p>
+            {% endif %}
+
+            <!-- Connect this button to the real cart implementation -->
+            <button class="btn btn-spotlight" type="button" disabled>
+                Add to Cart (Cart integration pending)
+            </button>
+        </div>
+    </div>
+</section>
+{% endblock %}

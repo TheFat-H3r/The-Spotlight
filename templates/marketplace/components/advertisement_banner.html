@@ -1,0 +1,51 @@
+{% if active_ads %}
+<section class="advertisement-section">
+    <div id="advertisementCarousel"
+         class="carousel slide"
+         data-bs-ride="carousel"
+         data-bs-interval="5000">
+
+        <div class="carousel-inner">
+            {% for ad in active_ads %}
+                <div class="carousel-item {% if forloop.first %}active{% endif %}">
+                    <div class="advertisement-banner">
+
+                        {% if ad.image %}
+                            <img src="{{ ad.image.url }}"
+                                 class="advertisement-image"
+                                 alt="{{ ad.title }}">
+                        {% endif %}
+
+                        <div class="advertisement-content">
+                            <span class="sponsored-label">SPONSORED</span>
+                            <h2>{{ ad.title }}</h2>
+                            <p>{{ ad.description }}</p>
+
+                            <a href="{{ ad.target_url }}"
+                               class="btn btn-spotlight">
+                                {{ ad.button_text|default:"Explore Offer" }}
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+
+        {% if active_ads|length > 1 %}
+            <button class="carousel-control-prev" type="button"
+                    data-bs-target="#advertisementCarousel"
+                    data-bs-slide="prev"
+                    aria-label="Previous advertisement">
+                <span class="carousel-control-prev-icon"></span>
+            </button>
+
+            <button class="carousel-control-next" type="button"
+                    data-bs-target="#advertisementCarousel"
+                    data-bs-slide="next"
+                    aria-label="Next advertisement">
+                <span class="carousel-control-next-icon"></span>
+            </button>
+        {% endif %}
+    </div>
+</section>
+{% endif %}

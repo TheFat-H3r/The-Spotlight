@@ -1,0 +1,28 @@
+<article class="portfolio-card mb-3">
+
+    {% if portfolio.thumbnail %}
+        <img src="{{ portfolio.thumbnail.url }}"
+             class="portfolio-image"
+             alt="{{ portfolio.title }}">
+    {% endif %}
+
+    <div class="p-3">
+        <h6 class="fw-bold">{{ portfolio.title }}</h6>
+
+        <p class="small text-muted">
+            {{ portfolio.description|truncatewords:15 }}
+        </p>
+
+        {% if portfolio.store %}
+            <small class="text-muted">
+                By {{ portfolio.store.name }}
+            </small>
+        {% endif %}
+
+        <!-- Replace with the actual portfolio detail URL -->
+        <a href="#" class="text-cyan small fw-bold">
+            Explore Portfolio →
+        </a>
+    </div>
+
+</article>

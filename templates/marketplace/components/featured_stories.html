@@ -1,0 +1,62 @@
+<div class="vendor-carousel-wrapper">
+
+    <button class="carousel-arrow" id="vendorPrev"
+            type="button" aria-label="Previous stores">
+        ‹
+    </button>
+
+    <div class="vendor-carousel" id="vendorCarousel">
+
+        {% for store in featured_stores %}
+            <article class="vendor-card">
+
+                <a href="{% url 'marketplace:store_detail' store.slug %}"
+                   class="text-decoration-none">
+
+                    <div class="vendor-logo">
+                        {% if store.logo %}
+                            <img src="{{ store.logo.url }}"
+                                 alt="{{ store.name }}">
+                        {% else %}
+                            <span>{{ store.name|first|upper }}</span>
+                        {% endif %}
+                    </div>
+
+                    <h5>{{ store.name }}</h5>
+                    <p class="text-muted small">
+                        {{ store.tagline|default:store.description|truncatewords:12 }}
+                    </p>
+
+                    {% if store.business_type %}
+                        <span class="vendor-type">
+                            {{ store.business_type }}
+                        </span>
+                    {% endif %}
+
+                    {% if store.rating_average %}
+                        <p class="rating mt-2">
+                            ★ {{ store.rating_average }}
+                            ({{ store.rating_count|default:0 }})
+                        </p>
+                    {% endif %}
+
+                    <span class="text-cyan small fw-bold">
+                        Visit Store →
+                    </span>
+                </a>
+            </article>
+
+        {% empty %}
+            <p class="text-muted">
+                Featured stores will appear here when available.
+            </p>
+        {% endfor %}
+
+    </div>
+
+    <button class="carousel-arrow" id="vendorNext"
+            type="button" aria-label="Next stores">
+        ›
+    </button>
+
+</div>

@@ -1,0 +1,74 @@
+<div class="filter-panel">
+
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h5 class="fw-bold mb-0">Filters</h5>
+        <a href="{% url 'marketplace:home' %}"
+           class="small text-cyan">
+            Clear all
+        </a>
+    </div>
+
+    <form method="get" action="{% url 'marketplace:home' %}">
+
+        <div class="filter-group mb-4">
+            <label for="vendorType" class="fw-bold mb-2">
+                Vendor Type
+            </label>
+
+            <select name="vendor_type" id="vendorType" class="form-select">
+                <option value="">All vendors</option>
+
+                {% for type in business_types %}
+                    <option value="{{ type.slug }}"
+                        {% if request.GET.vendor_type == type.slug %}selected{% endif %}>
+                        {{ type.name }}
+                    </option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div class="filter-group mb-4">
+            <label for="category" class="fw-bold mb-2">
+                Category
+            </label>
+
+            <select name="category" id="category" class="form-select">
+                <option value="">All categories</option>
+
+                {% for category in featured_categories %}
+                    <option value="{{ category.slug }}"
+                        {% if request.GET.category == category.slug %}selected{% endif %}>
+                        {{ category.name }}
+                    </option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div class="filter-group mb-4">
+            <label for="maxPrice" class="fw-bold mb-2">
+                Maximum Price (MUR)
+            </label>
+
+            <input type="number" id="maxPrice" name="max_price"
+                   class="form-control" min="0"
+                   value="{{ request.GET.max_price }}"
+                   placeholder="Enter maximum price">
+        </div>
+
+        <div class="filter-group mb-4">
+            <label for="location" class="fw-bold mb-2">
+                Location
+            </label>
+
+            <input type="text" id="location" name="location"
+                   class="form-control"
+                   value="{{ request.GET.location }}"
+                   placeholder="Enter location">
+        </div>
+
+        <button type="submit" class="btn btn-spotlight w-100">
+            Apply Filters
+        </button>
+
+    </form>
+</div>

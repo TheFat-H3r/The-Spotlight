@@ -1,0 +1,1188 @@
+
+/* =========================================================
+   THE SPOTLIGHT - PUBLIC MARKETPLACE
+   Main Stylesheet
+   ========================================================= */
+
+
+/* =========================================================
+   1. BRAND VARIABLES
+   ========================================================= */
+
+:root {
+    --spotlight-navy: #0B132B;
+    --spotlight-midnight: #0C1836;
+    --spotlight-cyan: #18C7DA;
+    --spotlight-amber: #EF7D18;
+
+    --spotlight-white: #FFFFFF;
+    --spotlight-off-white: #F8FAFC;
+
+    --spotlight-background: #F3F6FA;
+    --spotlight-card: #FFFFFF;
+
+    --spotlight-text: #172033;
+    --spotlight-muted: #64748B;
+
+    --spotlight-border: #E2E8F0;
+    --spotlight-dark-border: #1E293B;
+
+    --spotlight-success: #16A34A;
+    --spotlight-danger: #DC2626;
+
+    --radius-small: 8px;
+    --radius-medium: 14px;
+    --radius-large: 20px;
+
+    --transition-fast: 180ms ease;
+    --transition-normal: 300ms ease;
+    --transition-slow: 500ms ease;
+
+    --shadow-small: 0 2px 8px rgba(11, 19, 43, 0.06);
+    --shadow-medium: 0 8px 24px rgba(11, 19, 43, 0.09);
+    --shadow-large: 0 16px 40px rgba(11, 19, 43, 0.14);
+
+    --container-width: 1440px;
+}
+
+
+/* =========================================================
+   2. GLOBAL STYLES
+   ========================================================= */
+
+* {
+    box-sizing: border-box;
+}
+
+html {
+    scroll-behavior: smooth;
+    scroll-padding-top: 100px;
+}
+
+body {
+    margin: 0;
+    background-color: var(--spotlight-background);
+    color: var(--spotlight-text);
+    font-family: "Inter", "Segoe UI", Arial, sans-serif;
+    font-size: 15px;
+    line-height: 1.6;
+    overflow-x: hidden;
+}
+
+a {
+    color: var(--spotlight-cyan);
+    text-decoration: none;
+    transition: color var(--transition-fast);
+}
+
+a:hover {
+    color: var(--spotlight-amber);
+}
+
+img {
+    max-width: 100%;
+}
+
+button,
+input,
+select,
+textarea {
+    font: inherit;
+}
+
+section {
+    position: relative;
+}
+
+.container {
+    max-width: var(--container-width);
+}
+
+
+/* =========================================================
+   3. TYPOGRAPHY
+   ========================================================= */
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+    color: var(--spotlight-navy);
+    font-weight: 700;
+    line-height: 1.3;
+}
+
+h1 {
+    letter-spacing: -1.5px;
+}
+
+h2 {
+    letter-spacing: -0.7px;
+}
+
+p {
+    color: var(--spotlight-text);
+}
+
+.text-muted {
+    color: var(--spotlight-muted) !important;
+}
+
+.text-cyan {
+    color: var(--spotlight-cyan) !important;
+}
+
+.text-amber {
+    color: var(--spotlight-amber) !important;
+}
+
+.fw-bold {
+    font-weight: 700 !important;
+}
+
+.section-label {
+    display: inline-block;
+    margin-bottom: 8px;
+    color: var(--spotlight-cyan);
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 1.5px;
+}
+
+
+/* =========================================================
+   4. BUTTONS
+   ========================================================= */
+
+.btn {
+    border-radius: var(--radius-small);
+    font-weight: 600;
+    transition:
+        background-color var(--transition-fast),
+        color var(--transition-fast),
+        transform var(--transition-fast),
+        box-shadow var(--transition-fast);
+}
+
+.btn-spotlight {
+    background: var(--spotlight-cyan);
+    border: 1px solid var(--spotlight-cyan);
+    color: var(--spotlight-navy);
+    padding: 10px 20px;
+}
+
+.btn-spotlight:hover {
+    background: #0FAFC1;
+    border-color: #0FAFC1;
+    color: var(--spotlight-white);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 15px rgba(24, 199, 218, 0.25);
+}
+
+.btn-outline-spotlight {
+    background: transparent;
+    border: 1px solid var(--spotlight-cyan);
+    color: var(--spotlight-navy);
+    padding: 9px 18px;
+}
+
+.btn-outline-spotlight:hover {
+    background: var(--spotlight-cyan);
+    color: var(--spotlight-navy);
+    transform: translateY(-2px);
+}
+
+.btn:focus-visible,
+a:focus-visible,
+button:focus-visible {
+    outline: 3px solid var(--spotlight-amber);
+    outline-offset: 3px;
+}
+
+
+/* =========================================================
+   5. MARKETPLACE HERO
+   ========================================================= */
+
+.marketplace-hero {
+    background:
+        radial-gradient(
+            circle at 85% 20%,
+            rgba(24, 199, 218, 0.16),
+            transparent 35%
+        ),
+        linear-gradient(
+            120deg,
+            var(--spotlight-navy),
+            var(--spotlight-midnight)
+        );
+
+    color: var(--spotlight-white);
+    overflow: hidden;
+}
+
+.marketplace-hero h1 {
+    color: var(--spotlight-white);
+}
+
+.marketplace-hero p {
+    color: #CBD5E1 !important;
+}
+
+.hero-label {
+    color: var(--spotlight-cyan);
+    letter-spacing: 2px;
+}
+
+.marketplace-search {
+    max-width: 650px;
+    background: var(--spotlight-white);
+    border-radius: var(--radius-medium);
+    padding: 6px;
+    box-shadow: var(--shadow-large);
+}
+
+.marketplace-search .form-control {
+    border: none;
+    box-shadow: none;
+    padding: 12px;
+}
+
+.marketplace-search .btn {
+    min-width: 110px;
+}
+
+
+/* =========================================================
+   6. ADVERTISEMENT BANNER
+   ========================================================= */
+
+.advertisement-section {
+    width: 100%;
+    overflow: hidden;
+    background: var(--spotlight-navy);
+}
+
+.advertisement-banner {
+    position: relative;
+    display: flex;
+    align-items: center;
+    min-height: 250px;
+    padding: 45px 10%;
+    overflow: hidden;
+
+    background:
+        linear-gradient(
+            90deg,
+            rgba(11, 19, 43, 0.96),
+            rgba(12, 24, 54, 0.75)
+        ),
+        linear-gradient(
+            135deg,
+            var(--spotlight-navy),
+            var(--spotlight-midnight)
+        );
+}
+
+.advertisement-image {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    z-index: 0;
+    opacity: 0.35;
+}
+
+.advertisement-content {
+    position: relative;
+    z-index: 2;
+    max-width: 650px;
+    animation: fadeInUp 700ms ease both;
+}
+
+.advertisement-content h2 {
+    color: var(--spotlight-white);
+    font-size: clamp(24px, 4vw, 38px);
+    margin: 15px 0;
+}
+
+.advertisement-content p {
+    color: #CBD5E1;
+}
+
+.sponsored-label {
+    display: inline-block;
+    background: var(--spotlight-amber);
+    color: var(--spotlight-white);
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: 1.2px;
+    padding: 6px 12px;
+    border-radius: 4px;
+}
+
+.advertisement-section .carousel-control-prev,
+.advertisement-section .carousel-control-next {
+    width: 8%;
+}
+
+
+/* =========================================================
+   7. SECTION HEADINGS
+   ========================================================= */
+
+.section-heading {
+    position: relative;
+}
+
+.section-heading h2 {
+    margin-bottom: 8px;
+}
+
+.section-heading p {
+    margin-bottom: 0;
+}
+
+
+/* =========================================================
+   8. FEATURED VENDOR CAROUSEL
+   ========================================================= */
+
+.vendor-carousel-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    position: relative;
+}
+
+.vendor-carousel {
+    display: flex;
+    gap: 20px;
+    overflow-x: auto;
+    scroll-behavior: smooth;
+    scrollbar-width: none;
+    padding: 15px 4px 25px;
+    flex: 1;
+}
+
+.vendor-carousel::-webkit-scrollbar {
+    display: none;
+}
+
+.vendor-card {
+    flex: 0 0 220px;
+    background: var(--spotlight-card);
+    border: 1px solid var(--spotlight-border);
+    border-radius: var(--radius-medium);
+    padding: 22px 18px;
+    text-align: center;
+    box-shadow: var(--shadow-small);
+
+    transition:
+        transform var(--transition-normal),
+        box-shadow var(--transition-normal),
+        border-color var(--transition-normal);
+}
+
+.vendor-card:hover {
+    transform: translateY(-7px);
+    box-shadow: var(--shadow-medium);
+    border-color: var(--spotlight-cyan);
+}
+
+.vendor-logo {
+    width: 75px;
+    height: 75px;
+    margin: 0 auto 15px;
+    border-radius: 50%;
+    overflow: hidden;
+    background: #E0F7FA;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--spotlight-navy);
+    font-size: 28px;
+    font-weight: 800;
+}
+
+.vendor-logo img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.vendor-card h5 {
+    font-size: 16px;
+    margin-bottom: 8px;
+}
+
+.vendor-card p {
+    font-size: 13px;
+}
+
+.vendor-type {
+    display: inline-block;
+    background: #E0F7FA;
+    color: #087F8C;
+    padding: 4px 10px;
+    font-size: 11px;
+    border-radius: 30px;
+    font-weight: 700;
+}
+
+.carousel-arrow {
+    flex: 0 0 38px;
+    height: 38px;
+    border-radius: 50%;
+    border: 1px solid var(--spotlight-border);
+    background: var(--spotlight-white);
+    color: var(--spotlight-navy);
+    font-size: 24px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+    transition: var(--transition-fast);
+}
+
+.carousel-arrow:hover {
+    background: var(--spotlight-cyan);
+    border-color: var(--spotlight-cyan);
+}
+
+
+/* =========================================================
+   9. MARKETPLACE THREE-COLUMN LAYOUT
+   ========================================================= */
+
+.marketplace-container {
+    max-width: 1600px;
+    margin: auto;
+}
+
+.marketplace-container > .row {
+    align-items: start;
+}
+
+
+/* =========================================================
+   10. FILTER SIDEBAR
+   ========================================================= */
+
+.filter-panel {
+    background: var(--spotlight-card);
+    border: 1px solid var(--spotlight-border);
+    border-radius: var(--radius-medium);
+    padding: 22px;
+    box-shadow: var(--shadow-small);
+    position: sticky;
+    top: 100px;
+}
+
+.filter-panel h5 {
+    font-size: 17px;
+}
+
+.filter-group {
+    border-bottom: 1px solid var(--spotlight-border);
+    padding-bottom: 18px;
+}
+
+.filter-group:last-child {
+    border-bottom: none;
+    padding-bottom: 0;
+}
+
+.filter-group label {
+    display: block;
+    font-size: 13px;
+    color: var(--spotlight-navy);
+}
+
+.filter-panel .form-control,
+.filter-panel .form-select {
+    border: 1px solid var(--spotlight-border);
+    border-radius: var(--radius-small);
+    font-size: 13px;
+    padding: 10px;
+}
+
+.filter-panel .form-control:focus,
+.filter-panel .form-select:focus {
+    border-color: var(--spotlight-cyan);
+    box-shadow: 0 0 0 3px rgba(24, 199, 218, 0.12);
+}
+
+
+/* =========================================================
+   11. PRODUCT AND SERVICE CARDS
+   ========================================================= */
+
+.market-card {
+    height: 100%;
+    background: var(--spotlight-card);
+    border: 1px solid var(--spotlight-border);
+    border-radius: var(--radius-medium);
+    overflow: hidden;
+    box-shadow: var(--shadow-small);
+
+    transition:
+        transform var(--transition-normal),
+        box-shadow var(--transition-normal),
+        border-color var(--transition-normal);
+}
+
+.market-card:hover {
+    transform: translateY(-6px);
+    box-shadow: var(--shadow-medium);
+    border-color: rgba(24, 199, 218, 0.65);
+}
+
+.product-card,
+.service-card {
+    position: relative;
+}
+
+.product-image-wrapper {
+    position: relative;
+    overflow: hidden;
+    height: 210px;
+}
+
+.card-image {
+    display: block;
+    width: 100%;
+    height: 210px;
+    object-fit: cover;
+    transition: transform var(--transition-slow);
+}
+
+.market-card:hover .card-image {
+    transform: scale(1.06);
+}
+
+.featured-badge {
+    position: absolute;
+    top: 12px;
+    left: 12px;
+    background: linear-gradient(
+        135deg,
+        #FFD000,
+        var(--spotlight-amber)
+    );
+    color: var(--spotlight-navy);
+    padding: 5px 10px;
+    font-size: 10px;
+    font-weight: 800;
+    border-radius: 5px;
+    z-index: 2;
+}
+
+.market-card .card-body {
+    display: flex;
+    flex-direction: column;
+}
+
+.market-card .card-body > .d-flex:last-of-type {
+    margin-top: auto;
+}
+
+.market-card h5 {
+    font-size: 16px;
+}
+
+.market-card p {
+    font-size: 13px;
+}
+
+.image-placeholder {
+    min-height: 190px;
+    background: #E8EEF5;
+    color: var(--spotlight-muted);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+}
+
+.rating {
+    color: #D97706;
+    font-size: 13px;
+    font-weight: 700;
+}
+
+.pricing-tier {
+    display: inline-block;
+    padding: 5px 10px;
+    background: #F1F5F9;
+    color: var(--spotlight-navy);
+    border-radius: 5px;
+    font-size: 11px;
+    font-weight: 700;
+}
+
+
+/* =========================================================
+   12. RIGHT SIDEBAR
+   ========================================================= */
+
+.sidebar-panel {
+    background: var(--spotlight-card);
+    border: 1px solid var(--spotlight-border);
+    border-radius: var(--radius-medium);
+    padding: 20px;
+    box-shadow: var(--shadow-small);
+}
+
+.sidebar-panel h5 {
+    font-size: 16px;
+}
+
+.support-panel {
+    background: linear-gradient(
+        145deg,
+        var(--spotlight-navy),
+        var(--spotlight-midnight)
+    );
+    border-color: var(--spotlight-midnight);
+}
+
+.support-panel h5 {
+    color: var(--spotlight-white);
+}
+
+.support-panel p {
+    color: #CBD5E1 !important;
+}
+
+.portfolio-card {
+    background: var(--spotlight-off-white);
+    border: 1px solid var(--spotlight-border);
+    border-radius: var(--radius-small);
+    overflow: hidden;
+    transition: var(--transition-normal);
+}
+
+.portfolio-card:hover {
+    transform: translateY(-3px);
+    box-shadow: var(--shadow-small);
+}
+
+.portfolio-image {
+    display: block;
+    width: 100%;
+    height: 130px;
+    object-fit: cover;
+}
+
+.portfolio-card h6 {
+    font-size: 14px;
+}
+
+.announcement-card {
+    border-left: 3px solid var(--spotlight-amber);
+    padding: 12px;
+    background: #FFFBF5;
+    border-radius: 0 var(--radius-small) var(--radius-small) 0;
+}
+
+.announcement-label {
+    font-size: 9px;
+    font-weight: 800;
+    letter-spacing: 1px;
+    color: var(--spotlight-amber);
+}
+
+
+/* =========================================================
+   13. CUSTOMER REVIEWS
+   ========================================================= */
+
+.review-card {
+    height: 100%;
+    background: var(--spotlight-card);
+    border: 1px solid var(--spotlight-border);
+    border-radius: var(--radius-medium);
+    padding: 22px;
+    box-shadow: var(--shadow-small);
+
+    transition:
+        transform var(--transition-normal),
+        box-shadow var(--transition-normal);
+}
+
+.review-card:hover {
+    transform: translateY(-5px);
+    box-shadow: var(--shadow-medium);
+}
+
+.review-avatar,
+.review-avatar-placeholder {
+    width: 46px;
+    height: 46px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+.review-avatar {
+    object-fit: cover;
+}
+
+.review-avatar-placeholder {
+    background: var(--spotlight-navy);
+    color: var(--spotlight-white);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 800;
+    font-size: 18px;
+}
+
+.review-stars {
+    color: #F59E0B;
+    font-size: 18px;
+    letter-spacing: 2px;
+}
+
+.review-text {
+    color: var(--spotlight-muted);
+    font-size: 14px;
+    line-height: 1.7;
+}
+
+
+/* =========================================================
+   14. STORE DETAIL PAGE
+   ========================================================= */
+
+.store-hero {
+    background: linear-gradient(
+        120deg,
+        var(--spotlight-navy),
+        var(--spotlight-midnight)
+    );
+    color: var(--spotlight-white);
+}
+
+.store-hero h1 {
+    color: var(--spotlight-white);
+}
+
+.store-hero p {
+    color: #CBD5E1;
+}
+
+.store-profile {
+    display: flex;
+    align-items: center;
+    gap: 25px;
+}
+
+.store-logo {
+    width: 115px;
+    height: 115px;
+    border-radius: var(--radius-large);
+    background: var(--spotlight-white);
+    padding: 8px;
+    overflow: hidden;
+    flex-shrink: 0;
+}
+
+.store-logo img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+}
+
+.store-placeholder {
+    width: 100%;
+    height: 100%;
+    background: #E0F7FA;
+    color: var(--spotlight-navy);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 42px;
+    font-weight: 800;
+    border-radius: 14px;
+}
+
+
+/* =========================================================
+   15. EMPTY STATES
+   ========================================================= */
+
+.empty-state {
+    background: var(--spotlight-white);
+    border: 1px dashed #CBD5E1;
+    border-radius: var(--radius-medium);
+    padding: 45px 20px;
+    text-align: center;
+}
+
+.empty-state h5 {
+    margin-bottom: 10px;
+}
+
+
+/* =========================================================
+   16. QUICK VIEW MODAL
+   ========================================================= */
+
+.modal-content {
+    border: none;
+    border-radius: var(--radius-large);
+    overflow: hidden;
+    box-shadow: var(--shadow-large);
+}
+
+.modal-header {
+    background: var(--spotlight-navy);
+    color: var(--spotlight-white);
+    border: none;
+    padding: 20px;
+}
+
+.modal-header .modal-title {
+    color: var(--spotlight-white);
+}
+
+.modal-header .btn-close {
+    filter: invert(1);
+}
+
+.modal-body {
+    padding: 25px;
+}
+
+.modal-body img {
+    max-height: 300px;
+    width: 100%;
+    object-fit: contain;
+}
+
+
+/* =========================================================
+   17. BACK TO TOP BUTTON
+   ========================================================= */
+
+.back-to-top {
+    position: fixed;
+    right: 25px;
+    bottom: 25px;
+    width: 45px;
+    height: 45px;
+    border: none;
+    border-radius: 50%;
+    background: var(--spotlight-cyan);
+    color: var(--spotlight-navy);
+    font-size: 22px;
+    font-weight: 800;
+    cursor: pointer;
+    z-index: 1000;
+
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(15px);
+
+    transition: var(--transition-normal);
+    box-shadow: var(--shadow-medium);
+}
+
+.back-to-top.visible {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+}
+
+.back-to-top:hover {
+    background: var(--spotlight-amber);
+    transform: translateY(-4px);
+}
+
+
+/* =========================================================
+   18. SCROLL REVEAL ANIMATIONS
+   JavaScript adds .is-visible when elements enter viewport.
+   ========================================================= */
+
+.reveal-section {
+    opacity: 0;
+    transform: translateY(25px);
+    transition:
+        opacity 700ms ease,
+        transform 700ms ease;
+}
+
+.reveal-section.is-visible {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.reveal-item {
+    opacity: 0;
+    transform: translateY(20px);
+    transition:
+        opacity 500ms ease,
+        transform 500ms ease;
+}
+
+.reveal-section.is-visible .reveal-item {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.reveal-section.is-visible .reveal-item:nth-child(2) {
+    transition-delay: 100ms;
+}
+
+.reveal-section.is-visible .reveal-item:nth-child(3) {
+    transition-delay: 200ms;
+}
+
+.reveal-section.is-visible .reveal-item:nth-child(4) {
+    transition-delay: 300ms;
+}
+
+
+/* =========================================================
+   19. LOADING SKELETONS
+   ========================================================= */
+
+.skeleton {
+    background: linear-gradient(
+        90deg,
+        #E8EDF3 25%,
+        #F8FAFC 50%,
+        #E8EDF3 75%
+    );
+    background-size: 200% 100%;
+    animation: skeletonLoading 1.5s infinite linear;
+    border-radius: var(--radius-small);
+}
+
+.skeleton-image {
+    width: 100%;
+    height: 190px;
+}
+
+.skeleton-text {
+    width: 85%;
+    height: 13px;
+    margin: 12px 0;
+}
+
+.skeleton-title {
+    width: 60%;
+    height: 19px;
+    margin: 15px 0;
+}
+
+
+/* =========================================================
+   20. ANIMATION KEYFRAMES
+   ========================================================= */
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(25px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes skeletonLoading {
+    from {
+        background-position: 200% 0;
+    }
+
+    to {
+        background-position: -200% 0;
+    }
+}
+
+
+/* =========================================================
+   21. STICKY HEADER SUPPORT
+   Shared header should have class .site-header.
+   ========================================================= */
+
+.site-header {
+    position: sticky;
+    top: 0;
+    z-index: 1030;
+    transition:
+        box-shadow var(--transition-normal),
+        background-color var(--transition-normal);
+}
+
+.site-header.scrolled {
+    box-shadow: 0 5px 20px rgba(11, 19, 43, 0.15);
+}
+
+
+/* =========================================================
+   22. RESPONSIVE DESIGN: TABLETS
+   ========================================================= */
+
+@media (max-width: 991.98px) {
+
+    .marketplace-container {
+        padding-left: 20px;
+        padding-right: 20px;
+    }
+
+    .filter-panel {
+        position: static;
+        margin-bottom: 20px;
+    }
+
+    .advertisement-banner {
+        padding: 35px 8%;
+        min-height: 220px;
+    }
+
+    .vendor-card {
+        flex-basis: 200px;
+    }
+
+    .sidebar-panel {
+        margin-top: 15px;
+    }
+
+}
+
+
+/* =========================================================
+   23. RESPONSIVE DESIGN: MOBILE
+   ========================================================= */
+
+@media (max-width: 767.98px) {
+
+    body {
+        font-size: 14px;
+    }
+
+    .marketplace-hero {
+        padding: 25px 0;
+    }
+
+    .marketplace-hero h1 {
+        font-size: 35px;
+    }
+
+    .marketplace-search {
+        flex-direction: column;
+        gap: 5px;
+    }
+
+    .marketplace-search .btn {
+        width: 100%;
+    }
+
+    .advertisement-banner {
+        min-height: 260px;
+        padding: 30px 12%;
+    }
+
+    .advertisement-content h2 {
+        font-size: 25px;
+    }
+
+    .section-heading h2 {
+        font-size: 23px;
+    }
+
+    .vendor-carousel-wrapper {
+        gap: 5px;
+    }
+
+    .vendor-card {
+        flex-basis: 180px;
+    }
+
+    .carousel-arrow {
+        flex-basis: 32px;
+        height: 32px;
+        font-size: 20px;
+    }
+
+    .store-profile {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+
+    .store-logo {
+        width: 90px;
+        height: 90px;
+    }
+
+    .review-card {
+        padding: 18px;
+    }
+
+    .marketplace-container {
+        padding-left: 12px;
+        padding-right: 12px;
+    }
+
+}
+
+
+/* =========================================================
+   24. SMALL MOBILE SCREENS
+   ========================================================= */
+
+@media (max-width: 400px) {
+
+    .marketplace-hero h1 {
+        font-size: 29px;
+    }
+
+    .vendor-card {
+        flex-basis: 160px;
+    }
+
+    .advertisement-content h2 {
+        font-size: 22px;
+    }
+
+    .back-to-top {
+        right: 15px;
+        bottom: 15px;
+        width: 40px;
+        height: 40px;
+    }
+
+}
+
+
+/* =========================================================
+   25. ACCESSIBILITY: REDUCED MOTION
+   ========================================================= */
+
+@media (prefers-reduced-motion: reduce) {
+
+    *,
+    *::before,
+    *::after {
+        scroll-behavior: auto !important;
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
+
+    .reveal-section,
+    .reveal-item {
+        opacity: 1;
+        transform: none;
+    }
+
+}

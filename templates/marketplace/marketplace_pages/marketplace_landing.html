@@ -1,0 +1,227 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Marketplace | The Spotlight{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'marketplace/css/marketplace.css' %}">
+{% endblock %}
+
+{% block content %}
+
+<!-- 1. Promotional advertisements -->
+{% include "marketplace/components/advertisement_banner.html" %}
+
+<!-- 2. Marketplace introduction -->
+<section class="marketplace-hero py-5">
+    <div class="container">
+        <div class="row align-items-center">
+            <div class="col-lg-8">
+                <span class="text-uppercase fw-bold small hero-label">
+                    Welcome to The Spotlight
+                </span>
+                <h1 class="display-4 fw-bold mt-3">
+                    Discover. Connect. <span class="text-cyan">Grow.</span>
+                </h1>
+                <p class="lead text-muted">
+                    Discover products, services and trusted businesses
+                    in one marketplace.
+                </p>
+
+                <form method="get" action="{% url 'marketplace:home' %}"
+                      class="marketplace-search d-flex mt-4">
+                    <input type="search" name="q"
+                           value="{{ request.GET.q|default:'' }}"
+                           class="form-control"
+                           placeholder="Search products, services or vendors..."
+                           aria-label="Search marketplace">
+                    <button type="submit" class="btn btn-spotlight">
+                        Search
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- 3. Featured stores -->
+<section class="container py-5 reveal-section">
+    <div class="section-heading d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <span class="section-label">MEET OUR VENDORS</span>
+            <h2 class="fw-bold">Featured Stores</h2>
+        </div>
+        <a href="#products-section" class="btn btn-outline-spotlight">
+            Explore marketplace
+        </a>
+    </div>
+
+    {% include "marketplace/components/featured_stores.html" %}
+</section>
+
+<!-- 4. Main marketplace layout -->
+<section class="container-fluid marketplace-container py-4">
+    <div class="row g-4">
+
+        <!-- LEFT SIDEBAR: FILTERS -->
+        <aside class="col-lg-2">
+            <button class="btn btn-spotlight d-lg-none w-100 mb-3"
+                    type="button"
+                    data-bs-toggle="collapse"
+                    data-bs-target="#marketplaceFilters">
+                Show / Hide Filters
+            </button>
+
+            <div class="collapse d-lg-block" id="marketplaceFilters">
+                {% include "marketplace/components/filters.html" %}
+            </div>
+        </aside>
+
+        <!-- CENTRE: PRODUCTS AND SERVICES -->
+        <main class="col-lg-7">
+
+            <section id="products-section" class="mb-5 reveal-section">
+                <div class="section-heading mb-4">
+                    <span class="section-label">SHOP FROM OUR VENDORS</span>
+                    <h2 class="fw-bold">Featured Products</h2>
+                    <p class="text-muted">
+                        Explore products offered by businesses on The Spotlight.
+                    </p>
+                </div>
+
+                {% include "marketplace/components/products.html" %}
+            </section>
+
+            <section id="services-section" class="mb-5 reveal-section">
+                <div class="section-heading mb-4">
+                    <span class="section-label">DISCOVER WHAT YOU CAN BOOK</span>
+                    <h2 class="fw-bold">Featured Services</h2>
+                    <p class="text-muted">
+                        Find professionals offering services that meet your needs.
+                    </p>
+                </div>
+
+                {% include "marketplace/components/services.html" %}
+            </section>
+
+        </main>
+
+        <!-- RIGHT SIDEBAR: PORTFOLIOS, SUPPORT AND ANNOUNCEMENTS -->
+        <aside class="col-lg-3">
+
+            <section class="sidebar-panel mb-4">
+                <h5 class="fw-bold mb-3">Vendor Portfolios</h5>
+
+                {% for portfolio in featured_portfolios %}
+                    {% include "marketplace/components/portfolio_card.html" with portfolio=portfolio %}
+                {% empty %}
+                    <p class="text-muted small">
+                        Vendor portfolios will appear here.
+                    </p>
+                {% endfor %}
+            </section>
+
+            <section class="sidebar-panel support-panel mb-4">
+                <h5 class="fw-bold">Need Help?</h5>
+                <p class="small text-muted">
+                    Have a question about using The Spotlight?
+                    Contact our support team.
+                </p>
+                <!-- Replace with your actual support URL -->
+                <a href="#" class="btn btn-spotlight btn-sm w-100">
+                    Contact Support
+                </a>
+            </section>
+
+            <section class="sidebar-panel mb-4">
+                <h5 class="fw-bold mb-3">Announcements</h5>
+
+                {% for announcement in announcements %}
+                    {% include "marketplace/components/announcement_card.html" with announcement=announcement %}
+                {% empty %}
+                    <p class="text-muted small">
+                        There are no announcements at the moment.
+                    </p>
+                {% endfor %}
+            </section>
+
+        </aside>
+    </div>
+</section>
+
+<!-- 5. Customer reviews -->
+<section class="container py-5 reveal-section">
+    <div class="section-heading mb-4">
+        <span class="section-label">CUSTOMER EXPERIENCES</span>
+        <h2 class="fw-bold">What People Are Saying</h2>
+        <p class="text-muted">
+            Feedback from customers who have used businesses on our platform.
+        </p>
+    </div>
+
+    <div class="row g-4">
+        {% for review in featured_reviews %}
+            <div class="col-md-6 col-lg-4">
+                {% include "marketplace/components/review_card.html" with review=review %}
+            </div>
+        {% empty %}
+            <div class="col-12">
+                <div class="empty-state">
+                    <h5>No reviews yet</h5>
+                    <p class="text-muted">
+                        Customer reviews will appear here when they become available.
+                    </p>
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+</section>
+
+<!-- 6. Product Quick View Modal -->
+<div class="modal fade" id="quickViewModal" tabindex="-1"
+     aria-labelledby="quickViewTitle" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title fw-bold" id="quickViewTitle">
+                    Product Quick View
+                </h5>
+                <button type="button" class="btn-close"
+                        data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+
+            <div class="modal-body">
+                <div class="row g-4">
+                    <div class="col-md-5">
+                        <img id="quickViewImage" src=""
+                             class="img-fluid rounded"
+                             alt="Product preview">
+                    </div>
+                    <div class="col-md-7">
+                        <h4 id="quickViewName"></h4>
+                        <p id="quickViewDescription" class="text-muted"></p>
+                        <p id="quickViewPrice" class="fw-bold text-cyan"></p>
+                        <a id="quickViewLink" href="#"
+                           class="btn btn-spotlight">
+                            View Product Details
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<button id="backToTop" class="back-to-top"
+        type="button" aria-label="Back to top">
+    ↑
+</button>
+
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'marketplace/js/marketplace.js' %}"></script>
+<script src="{% static 'marketplace/js/carousel.js' %}"></script>
+<script src="{% static 'marketplace/js/filters.js' %}"></script>
+<script src="{% static 'marketplace/js/quick_view.js' %}"></script>
+{% endblock %}

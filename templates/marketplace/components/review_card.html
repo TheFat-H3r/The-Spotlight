@@ -1,0 +1,47 @@
+<article class="review-card h-100">
+
+    <div class="d-flex align-items-center gap-3 mb-3">
+
+        {% if review.customer.profile_picture %}
+            <img src="{{ review.customer.profile_picture.url }}"
+                 class="review-avatar"
+                 alt="Customer profile">
+        {% else %}
+            <div class="review-avatar-placeholder">
+                {{ review.customer|first|upper }}
+            </div>
+        {% endif %}
+
+        <div>
+            <h6 class="fw-bold mb-0">
+                {{ review.customer|default:"Customer" }}
+            </h6>
+
+            <small class="text-muted">
+                {{ review.created_at|date:"d M Y" }}
+            </small>
+        </div>
+
+    </div>
+
+    <div class="review-stars" aria-label="{{ review.rating }} out of 5 stars">
+        {% for star in "12345" %}
+            {% if forloop.counter <= review.rating %}
+                ★
+            {% else %}
+                ☆
+            {% endif %}
+        {% endfor %}
+    </div>
+
+    <p class="review-text mt-3">
+        {{ review.comment }}
+    </p>
+
+    {% if review.store %}
+        <small class="text-muted">
+            Reviewed: {{ review.store.name }}
+        </small>
+    {% endif %}
+
+</article>

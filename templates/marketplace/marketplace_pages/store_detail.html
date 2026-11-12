@@ -1,0 +1,137 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}{{ store.name }} | The Spotlight{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'marketplace/css/marketplace.css' %}">
+{% endblock %}
+
+{% block content %}
+
+<section class="store-hero">
+    <div class="container py-5">
+        <a href="{% url 'marketplace:home' %}"
+           class="text-decoration-none text-cyan">
+            ← Back to Marketplace
+        </a>
+
+        <div class="store-profile mt-4">
+            <div class="store-logo">
+                {% if store.logo %}
+                    <img src="{{ store.logo.url }}" alt="{{ store.name }}">
+                {% else %}
+                    <div class="store-placeholder">
+                        {{ store.name|first|upper }}
+                    </div>
+                {% endif %}
+            </div>
+
+            <div>
+                <h1 class="fw-bold">{{ store.name }}</h1>
+                <p class="mb-2">{{ store.tagline }}</p>
+                <p class="text-muted">{{ store.description }}</p>
+
+                {% if store.rating_average %}
+                    <span class="rating">
+                        ★ {{ store.rating_average }}
+                        ({{ store.rating_count|default:0 }} reviews)
+                    </span>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="container py-5">
+
+    <!-- Store information -->
+    <div class="row g-4 mb-5">
+        <div class="col-md-8">
+            <h2 class="fw-bold">About This Store</h2>
+            <p>{{ store.description|default:"Store information will be displayed here." }}</p>
+        </div>
+
+        <div class="col-md-4">
+            <div class="sidebar-panel">
+                <h5 class="fw-bold">Store Information</h5>
+                <p><strong>Business type:</strong> {{ store.business_type|default:"Not specified" }}</p>
+                <p><strong>Location:</strong> {{ store.location|default:"Not specified" }}</p>
+                <p><strong>Contact:</strong> {{ store.contact_email|default:"Not provided" }}</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Store products -->
+    <section class="mb-5">
+        <h2 class="fw-bold mb-4">Products</h2>
+
+        <div class="row g-4">
+            {% for product in store_products %}
+                <div class="col-md-6 col-lg-4">
+                    <div class="market-card">
+                        {% if product.image %}
+                            <img src="{{ product.image.url }}"
+                                 class="card-image"
+                                 alt="{{ product.name }}">
+                        {% endif %}
+                        <div class="p-3">
+                            <h5>{{ product.name }}</h5>
+                            <p class="text-cyan fw-bold">
+                                MUR {{ product.price }}
+                            </p>
+                            <a href="{{ product.get_absolute_url|default:'#' }}"
+                               class="btn btn-outline-spotlight btn-sm">
+                                View Product
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            {% empty %}
+                <p class="text-muted">This store has no published products yet.</p>
+            {% endfor %}
+        </div>
+    </section>
+
+    <!-- Store services -->
+    <section class="mb-5">
+        <h2 class="fw-bold mb-4">Services</h2>
+
+        <div class="row g-4">
+            {% for service in store_services %}
+                <div class="col-md-6 col-lg-4">
+                    <div class="market-card p-3">
+                        <h5>{{ service.name }}</h5>
+                        <p>{{ service.description }}</p>
+                        <p class="fw-bold text-cyan">
+                            Starting from MUR {{ service.starting_price }}
+                        </p>
+                        <a href="{{ service.get_absolute_url|default:'#' }}"
+                           class="btn btn-spotlight btn-sm">
+                            View Service
+                        </a>
+                    </div>
+                </div>
+            {% empty %}
+                <p class="text-muted">This store has no published services yet.</p>
+            {% endfor %}
+        </div>
+    </section>
+
+    <!-- Store reviews -->
+    <section>
+        <h2 class="fw-bold mb-4">Customer Reviews</h2>
+
+        <div class="row g-4">
+            {% for review in store_reviews %}
+                <div class="col-md-6 col-lg-4">
+                    {% include "marketplace/components/review_card.html" with review=review %}
+                </div>
+            {% empty %}
+                <p class="text-muted">No customer reviews are available yet.</p>
+            {% endfor %}
+        </div>
+    </section>
+
+</section>
+{% endblock %}
