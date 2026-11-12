@@ -1,10 +1,10 @@
-{% extends "base.html" %}
+{% extends "marketplace/base.html" %}
 {% load static %}
 
 {% block title %}Marketplace | The Spotlight{% endblock %}
 
 {% block extra_css %}
-<link rel="stylesheet" href="{% static 'marketplace/css/marketplace.css' %}">
+<link rel="stylesheet" href="{% static 'css/marketplace.css' %}">
 {% endblock %}
 
 {% block content %}
@@ -50,6 +50,7 @@
         <div>
             <span class="section-label">MEET OUR VENDORS</span>
             <h2 class="fw-bold">Featured Stores</h2>
+            
         </div>
         <a href="#products-section" class="btn btn-outline-spotlight">
             Explore marketplace

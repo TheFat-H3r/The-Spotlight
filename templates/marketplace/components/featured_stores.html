@@ -8,6 +8,7 @@
     <div class="vendor-carousel" id="vendorCarousel">
 
         {% for store in featured_stores %}
+        
             <article class="vendor-card">
 
                 <a href="{% url 'marketplace:store_detail' store.slug %}"

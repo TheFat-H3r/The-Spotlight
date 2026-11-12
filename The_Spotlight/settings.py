@@ -28,7 +28,7 @@ SECRET_KEY = 'django-insecure-+x^#4!(*^$j2gy*68+i*a=s)*h)xij2kwro8t-q+z$ryd^3muq
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ["*"]
 
 
 # Application definition
@@ -145,7 +145,7 @@ SOCIALACCOUNT_AUTO_SIGNUP = True
 SOCIALACCOUNT_STORE_TOKENS = False
 
 LOGIN_REDIRECT_URL = "/"
-LOGOUT_REDIRECT_URL = "/users/login/"
+LOGOUT_REDIRECT_URL = "/accounts/login/"
 
 ACCOUNT_ADAPTER = "accounts.adapters.CustomAccountAdapter"
 
@@ -173,11 +173,32 @@ USE_I18N = True
 
 USE_TZ = True
 
+# ==========================================
+# EMAIL & BREVO CONFIGURATION
+# ==========================================
+
+DEFAULT_FROM_EMAIL = os.environ.get('DEFAULT_FROM_EMAIL', 'The Spotlight <noreply@example.com>')
+
+# Brevo HTTP API Key
+BREVO_API_KEY = os.environ.get('BREVO_API_KEY', '')
+
+# Brevo SMTP Backend Configuration
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'smtp-relay.brevo.com'
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True
+EMAIL_HOST_USER = os.environ.get('BREVO_SMTP_LOGIN', '')
+EMAIL_HOST_PASSWORD = os.environ.get('BREVO_SMTP_KEY', '')
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.2/howto/static-files/
 
-STATIC_URL = 'static/'
+STATIC_URL = '/static/'
+
+STATICFILES_DIRS = [
+    BASE_DIR / 'static',
+]
+STATIC_ROOT = BASE_DIR / 'staticfiles'
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field

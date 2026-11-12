@@ -4,8 +4,8 @@ from .models import Store, Category, BusinessType
 
 def marketplace_home(request):
     """Public marketplace home page displaying featured stores and categories."""
-    featured_stores = Store.objects.public().filter(is_featured=True)[:6] # type: ignore
-    all_stores = Store.objects.public()[:12] # type: ignore
+    featured_stores = Store.objects.all().filter(is_featured=True) 
+    all_stores = Store.objects.all()[:12] # type: ignore
     business_types = BusinessType.objects.filter(is_active=True)
     featured_categories = Category.objects.filter(is_active=True, is_featured=True)[:8]
 
@@ -15,7 +15,7 @@ def marketplace_home(request):
         "business_types": business_types,
         "featured_categories": featured_categories,
     }
-    return render(request, "marketplace/home.html", context)
+    return render(request, "marketplace/marketplace_pages/index.html", context)
 
 
 def store_detail(request, slug):
