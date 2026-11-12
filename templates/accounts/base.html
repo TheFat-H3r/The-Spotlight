@@ -1,51 +1,151 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>{% block title %}The Spotlight{% endblock %}</title>
-  <!-- Bootstrap 5 CSS -->
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB" crossorigin="anonymous">
-  <!-- Bootstrap Icons -->
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+  <!-- Favicon -->
+  <link rel="icon" href="{% static 'img/favicon.png' %}" type="image/x-icon">
+  <!-- Font Awesome -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   {% block extra_css %}{% endblock %}
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+          },
+          colors: {
+            spotlight: {
+              bg: '#0B132B',
+              card: '#0C1836',
+              border: '#1E293B',
+              cyan: '#18C7DA',
+              amber: '#EF7D18',
+              star: '#FFD000',
+              food: '#FFA600',
+              beauty: '#E62B75',
+              delivery: '#00C4EE',
+              booking: '#7B2CBF',
+              retail: '#38B000',
+            }
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    body {
+      background-color: #0B132B;
+      color: #F8FAFC;
+      font-family: 'Plus Jakarta Sans', sans-serif;
+    }
+    
+    /* Custom Scrollbar */
+    ::-webkit-scrollbar {
+      width: 8px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #0B132B;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #1E293B;
+      border-radius: 4px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #18C7DA;
+    }
+
+    /* Glow Effects */
+    .glow-cyan {
+      box-shadow: 0 0 25px -5px rgba(24, 199, 218, 0.3);
+    }
+    .glow-amber {
+      box-shadow: 0 0 25px -5px rgba(239, 125, 24, 0.3);
+    }
+    .glow-food { box-shadow: 0 0 20px rgba(255, 166, 0, 0.25); }
+    .glow-beauty { box-shadow: 0 0 20px rgba(230, 43, 117, 0.25); }
+    .glow-delivery { box-shadow: 0 0 20px rgba(0, 196, 238, 0.25); }
+    .glow-booking { box-shadow: 0 0 20px rgba(123, 44, 191, 0.25); }
+    .glow-retail { box-shadow: 0 0 20px rgba(56, 176, 0, 0.25); }
+  </style>
 </head>
-<body class="bg-light d-flex align-items-center justify-content: center min-vh-100 py-4">
+<body class="min-h-screen flex flex-col justify-between selection:bg-spotlight-cyan selection:text-spotlight-bg relative overflow-x-hidden">
 
-  <main class="container">
-    <div class="row justify-content-center">
-      <div class="col-md-6 col-lg-5">
-        
-        <!-- Brand Header / Logo -->
-        <div class="text-center mb-4">
-          <a href="{% url 'users:home' %}" class="text-decoration-none h3 fw-bold text-dark">
-            <i class="bi bi-stars text-primary me-1"></i> The Spotlight
+  <!-- ================= TOP DEMO PAGE SWITCHER NAVBAR ================= -->
+  <div class="bg-spotlight-card border-b border-spotlight-border py-2 px-4 sticky top-0 z-50 backdrop-blur-md bg-opacity-90">
+    <div class="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-2">
+      
+      <!-- Brand & Page Switcher Info -->
+      <div class="flex items-center space-x-3">
+        <img 
+          src="{% static 'img/the-spotlight-banner-removebg.png' %}" 
+          alt="The Spotlight Banner" 
+          class="h-14 w-auto object-contain"
+        />
+      </div>
+
+      <!-- Navigation Page Tabs -->
+      <div class="flex items-center space-x-2 bg-spotlight-bg p-1 rounded-xl border border-spotlight-border">
+        <a id="tab-home" href="{% url 'marketplace:home' %}" class="flex items-center space-x-2 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all text-slate-400 hover:text-white">
+          <i class="fa-solid fa-table-cells-large text-xs"></i>
+          <span>Browse</span>
+        </a>
+        {% if user.is_authenticated %}
+          <a id="tab-profile" href="{% url 'accounts:profile' %}" class="flex items-center space-x-2 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all text-slate-400 hover:text-white">
+            <i class="fa-solid fa-user text-xs"></i>
+            <span>{{ user.full_name }}</span>
           </a>
-        </div>
-
-        <!-- Flash Messages -->
-        {% if messages %}
-          {% for message in messages %}
-            <div class="alert alert-{{ message.tags|default:'info' }} alert-dismissible fade show" role="alert">
-              {{ message }}
-              <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-            </div>
-          {% endfor %}
+        {% else %}
+          <a id="tab-login" href="{% url 'accounts:login' %}" class="flex items-center space-x-2 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all bg-spotlight-cyan text-spotlight-bg shadow-md">
+            <i class="fa-solid fa-lock text-xs"></i>
+            <span>Account</span>
+          </a>
         {% endif %}
+      </div>
 
-        <!-- Card Container -->
-        <div class="card shadow-sm border-0 rounded-4 p-4 p-md-5 bg-white">
-          {% block content %}{% endblock %}
-        </div>
+    </div>
+  </div>
 
+  <!-- Toast Notification Container -->
+  <div id="toast" class="hidden fixed top-16 right-6 z-50 bg-spotlight-card border border-spotlight-cyan text-white px-5 py-3.5 rounded-xl shadow-2xl flex items-center space-x-3 transition-all transform duration-300">
+    <div class="w-7 h-7 rounded-full bg-spotlight-cyan/20 flex items-center justify-center text-spotlight-cyan">
+      <i data-lucide="check" class="w-4 h-4"></i>
+    </div>
+    <span id="toast-text" class="text-xs font-medium">Notification message</span>
+  </div>
+
+  {% block content %}
+  {% endblock %}
+
+
+  <!-- ================= COMMON FOOTER ================= -->
+  <footer class="border-t border-spotlight-border bg-spotlight-card py-6 px-4 sm:px-8 text-xs text-slate-500 relative z-10">
+    <div class="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
+      <div class="flex items-center space-x-2">
+        <span class="font-bold text-slate-300">The Spotlight</span>
+        <span>•</span>
+        <span>By The Nova Group</span>
+      </div>
+      <div class="flex items-center space-x-6 text-[11px]">
+        <a href="#" onclick="showToast('Privacy Policy'); return false;" class="hover:text-slate-300">Privacy Policy</a>
+        <a href="#" onclick="showToast('Terms of Service'); return false;" class="hover:text-slate-300">Terms of Service</a>
+        <a href="#" onclick="showToast('Helpdesk'); return false;" class="hover:text-slate-300">Support</a>
       </div>
     </div>
-  </main>
+  </footer>
 
-  <!-- Bootstrap 5 JS Bundle -->
-  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js" integrity="sha384-FKyoEForCGlyvwx9Hj09JcYn3nv7wiPVlz7YYwJrWVcXK/BmnVDxM+D2scQbITxI" crossorigin="anonymous"></script>
-  <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.8/dist/umd/popper.min.js" integrity="sha384-I7E8VVD/ismYTF4hNIPjVp/Zjvgyol6VFvRkX/vR+Vc4jQkC+hVqc2pM8ODewa9r" crossorigin="anonymous"></script>
-  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.min.js" integrity="sha384-G/EV+4j2dNv+tEPo3++6LCgdCROaejBqfUeNjuKAiuXbjrxilcCdDz6ZAVfHWe1Y" crossorigin="anonymous"></script>
-  {% block extra_js %}{% endblock %}
+  {% block extra_js %}
+  {% endblock %}
 </body>
 </html>

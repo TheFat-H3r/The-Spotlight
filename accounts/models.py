@@ -8,6 +8,7 @@ from django.conf import settings
 from django.db import models, transaction
 from django.utils import timezone
 from django.utils.text import slugify
+from django.core.signing import TimestampSigner, BadSignature, SignatureExpired
 
 
 class UserManager(BaseUserManager):
@@ -123,22 +124,98 @@ class User(AbstractBaseUser, PermissionsMixin):
     def is_platform_admin(self):
         return self.role == self.Role.ADMIN
 
+    def generate_email_verification_token(self) -> str:
+        """Generates a cryptographically signed token containing user's PK."""
+        signer = TimestampSigner()
+        return signer.sign(self.pk)
+
+    @staticmethod
+    def verify_email_token(token: str, max_age: int = 600):
+        """
+        Verifies token within max_age (default: 600s / 10 minutes).
+        Returns User instance if valid, None if invalid or expired.
+        """
+        signer = TimestampSigner()
+        try:
+            user_id = signer.unsign(token, max_age=max_age)
+            return User.objects.get(pk=user_id)
+        except (BadSignature, SignatureExpired, User.DoesNotExist):
+            return None
+
+    def generate_password_reset_token(self) -> str:
+        """Generates a signed token containing user PK and a password hash fragment."""
+        signer = TimestampSigner(salt="password-reset")
+        # Including password[-10:] invalidates the token immediately once password changes
+        payload = f"{self.pk}:{self.password[-10:]}"
+        return signer.sign(payload)
+
+    @staticmethod
+    def verify_password_reset_token(token: str, max_age: int = 600):
+        """
+        Verifies password reset token within max_age (default: 600s / 10 minutes).
+        Returns User instance if valid and password hasn't changed since issuance.
+        """
+        signer = TimestampSigner(salt="password-reset")
+        try:
+            unsigned_data = signer.unsign(token, max_age=max_age)
+            user_id, pwd_fragment = unsigned_data.split(":", 1)
+            user = User.objects.get(pk=user_id)
+            if user.password[-10:] == pwd_fragment:
+                return user
+            return None
+        except (BadSignature, SignatureExpired, ValueError, User.DoesNotExist):
+            return None
+
 
 # ---------------------------------------------------------------------------
 # Customer profile (every user gets one automatically, see signals.py)
 # ---------------------------------------------------------------------------
 class CustomerProfile(models.Model):
+    class Residence(models.TextChoices):
+        MAPS = "Maps", "Maps"
+        SONGHAI = "Songhai", "Songhai"
+        KONGO = "Kongo", "Kongo"
+        AKSUM = "Aksum", "Aksum"
+
+    class Course(models.TextChoices):
+        CS = "CS", "CS"
+        SE = "SE", "SE"
+        EL = "EL", "EL"
+        IBT = "IBT", "IBT"
+
     user = models.OneToOneField(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
         related_name="customer_profile",
     )
-    department = models.CharField(max_length=100, blank=True)
-    year_of_study = models.PositiveSmallIntegerField(null=True, blank=True)
-    campus_location = models.CharField(
-        max_length=120,
+    course = models.CharField(max_length=4, choices=Course.choices, blank=True, help_text="Your course of study.")
+    cohort = models.CharField(
+        max_length=4,
         blank=True,
-        help_text="Hostel, block or usual meet-up point on campus.",
+        validators=[
+            RegexValidator(
+                regex=r"^[A-Z]'\d{2}$",
+                message="Cohort must strictly match the format F'25 (uppercase letter, apostrophe, and 2 digits).",
+            )
+        ],
+        help_text="Format: F'25",
+    )
+    residence = models.CharField(
+        max_length=20,
+        choices=Residence.choices,
+        blank=True,
+        help_text="Campus residence hall.",
+    )
+    room_number = models.CharField(
+        max_length=4,
+        blank=True,
+        validators=[
+            RegexValidator(
+                regex=r"^[A-Z]\d{3}$",
+                message="Room number must strictly match the format S101 (1 uppercase letter followed by 3 digits).",
+            )
+        ],
+        help_text="Format: S101",
     )
     bio = models.TextField(max_length=300, blank=True)
 
