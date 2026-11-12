@@ -1,5 +1,5 @@
 from django.shortcuts import redirect
-from .models import User
+from .models import User, VendorApplication
 import sib_api_v3_sdk
 from sib_api_v3_sdk.rest import ApiException
 from django.conf import settings
@@ -100,10 +100,19 @@ def send_password_reset_email(user_email: str, user_name: str, reset_url: str) -
 
     
 def redirect_by_role(user):
-    """Redirects the user to their respective dashboard route based on their role."""
-    if user.is_platform_admin or user.is_superuser:
-        return redirect("admin_dashboard")
-    elif user.is_vendor:
-        return redirect("vendor_dashboard")
-    else:
-        return redirect("customer_dashboard")
+    """Routes authenticated users based on role and onboarding completion."""
+    if user.role == User.Role.ADMIN or user.is_superuser:
+        return redirect('/admin/')
+
+    if user.role == User.Role.VENDOR:
+        has_profile = hasattr(user, 'vendor_profile')
+        has_application = VendorApplication.objects.filter(applicant=user).exists()
+
+        # Redirect to vendor application if not yet submitted
+        if not has_profile and not has_application:
+            return redirect('accounts:vendor_application')
+
+        return redirect('marketplace:home')
+
+    # Default: CUSTOMER
+    return redirect('marketplace:home')

@@ -8,7 +8,7 @@ from django.shortcuts import render, redirect
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
 from django.views import View
-from .forms import GoogleOnboardingForm
+from urllib3 import request
 from .models import User, CustomerProfile, VendorApplication, VendorProfile
 from .utils import redirect_by_role, send_password_reset_email, send_verification_email
 
@@ -85,8 +85,14 @@ class RegisterView(View):
                 verification_url=verification_url
             )
 
-            # Save unverified email to session so verify_email page knows which email to display
             request.session['unverified_email'] = user.email
+
+            # Redirect VENDOR straight to the vendor application form after signup
+            if user.role == User.Role.VENDOR:
+                request.session['pending_vendor_id'] = user.pk
+                messages.success(request, "Account created! Please complete your vendor application below. Don't forget to verify your email via the link sent to your inbox.")
+                return redirect('accounts:vendor_application')
+
             messages.success(request, "Registration successful! Check your email to activate your account.")
             return redirect('accounts:verify_email')
 
@@ -211,8 +217,10 @@ class LoginView(View):
             request.session.set_expiry(0)
 
         login(request, user, backend='django.contrib.auth.backends.ModelBackend')
-        next_url = request.GET.get('next', 'marketplace:home')
-        return redirect(next_url)
+        next_url = request.GET.get('next')
+        if next_url:
+            return redirect(next_url)
+        return redirect_by_role(user)
 
 class ProfileView(LoginRequiredMixin, View):
     template_name = 'accounts/profile.html'
@@ -361,47 +369,95 @@ class ProfileView(LoginRequiredMixin, View):
 
         messages.success(request, "Your profile has been updated successfully.")
         return redirect('accounts:profile')
+
+
+class VendorApplicationView(View):
+    template_name = 'accounts/vendor_application.html'
+
+    def _get_applicant(self, request):
+        """Returns the authenticated VENDOR user or the newly registered pending vendor from session."""
+        if request.user.is_authenticated:
+            return request.user if request.user.role == User.Role.VENDOR else None
+
+        pending_id = request.session.get('pending_vendor_id')
+        if pending_id:
+            return User.objects.filter(pk=pending_id, role=User.Role.VENDOR).first()
+
+        return None
+
+    def get(self, request):
+        applicant = self._get_applicant(request)
+
+        if applicant is None:
+            if request.user.is_authenticated:
+                messages.info(request, "Vendor applications are only for vendor accounts.")
+                return redirect('marketplace:home')
+            return redirect('accounts:login')
+
+        if hasattr(applicant, 'vendor_profile'):
+            return redirect('accounts:profile')
+
+        existing_app = VendorApplication.objects.filter(applicant=applicant).order_by('-id').first()
+        reapply = request.GET.get('reapply') == 'true'
+
+        context = {
+            'user_obj': applicant,
+            'existing_app': existing_app,
+            'show_form': existing_app is None or (existing_app.status == 'rejected' and reapply),
+        }
+        return render(request, self.template_name, context)
+
+    def post(self, request):
+        applicant = self._get_applicant(request)
+
+        if applicant is None:
+            return redirect('accounts:login')
+
+        existing_app = VendorApplication.objects.filter(applicant=applicant).order_by('-id').first()
+        if existing_app and existing_app.status in ['pending', 'approved']:
+            messages.info(request, "You already have an active or pending vendor application.")
+            return redirect('accounts:vendor_application')
+
+        business_name = request.POST.get('business_name', '').strip()
+        business_type = request.POST.get('business_type', '').strip()
+        contact_phone = request.POST.get('contact_phone', '').strip() or applicant.phone
+        description = request.POST.get('description', '').strip()
+
+        context = {
+            'user_obj': applicant,
+            'existing_app': existing_app,
+            'show_form': True,
+            'form_data': request.POST,
+        }
+
+        if not all([business_name, business_type, contact_phone, description]):
+            messages.error(request, "All fields are required to submit your vendor application.")
+            return render(request, self.template_name, context)
+
+        if len(description) < 20:
+            messages.error(request, "Please provide a brief description of at least 20 characters.")
+            return render(request, self.template_name, context)
+
+        VendorApplication.objects.create(
+            applicant=applicant,
+            business_name=business_name,
+            business_type=business_type,
+            contact_phone=contact_phone,
+            description=description,
+        )
+
+        # Clear temporary registration session key
+        request.session.pop('pending_vendor_id', None)
+
+        # If they just registered and haven't verified their email yet, send them to the verify notice page
+        if not request.user.is_authenticated and not getattr(applicant, 'is_email_verified', False):
+            messages.success(request, "Vendor application submitted! Now check your inbox to verify your email before signing in.")
+            return redirect('accounts:verify_email')
+
+        messages.success(request, "Your vendor application has been submitted for review!")
+        return redirect('accounts:vendor_application')
     
       
-@login_required
-def google_onboarding_view(request):
-    user = request.user
-    
-    # If user already completed onboarding or isn't a google user without profile, skip
-    if user.role == User.Role.CUSTOMER and hasattr(user, "customer_profile") and user.customer_profile.department:
-        return redirect_by_role(user)
-
-    if request.method == "POST":
-        form = GoogleOnboardingForm(request.POST)
-        if form.is_valid():
-            role = form.cleaned_data["role"]
-            user.phone = form.cleaned_data["phone"]
-            user.role = role
-            user.save()
-
-            if role == User.Role.CUSTOMER:
-                CustomerProfile.objects.update_or_create(
-                    user=user,
-                    defaults={
-                        "department": form.cleaned_data["department"],
-                        "year_of_study": form.cleaned_data["year_of_study"],
-                        "campus_location": form.cleaned_data["campus_location"],
-                    }
-                )
-            elif role == User.Role.VENDOR:
-                VendorApplication.objects.create(
-                    applicant=user,
-                    business_name=form.cleaned_data["business_name"],
-                    business_type=form.cleaned_data["business_type"],
-                    description=form.cleaned_data["description"],
-                    contact_phone=user.phone,
-                )
-            return redirect_by_role(user)
-    else:
-        form = GoogleOnboardingForm(initial={"phone": user.phone})
-
-    return render(request, "accounts/google_onboarding.html", {"form": form})
-
 class PasswordResetRequestView(View):
     """Handles 'Forgot Password' email submission."""
     template_name = 'accounts/password_reset.html'
