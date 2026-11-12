@@ -1,6 +1,6 @@
 from django.urls import path
 from django.contrib.auth.decorators import login_required
-from .views import RegisterView, LoginView, logout_view, google_onboarding_view, password_reset_view
+from .views import RegisterView, LoginView, ResendVerificationEmailView, VerifyEmailConfirmView, logout_view, google_onboarding_view, password_reset_view
 from .utils import redirect_by_role
 
 
@@ -14,6 +14,8 @@ app_name = "accounts"
 urlpatterns = [
     path("", home_redirect_view, name="home"),
     path("register/", RegisterView.as_view(), name="register"),
+    path('verify/<str:token>/', VerifyEmailConfirmView.as_view(), name='verify_email_confirm'),
+    path('resend-verification/', ResendVerificationEmailView.as_view(), name='resend_verification'),
     path("login/", LoginView.as_view(), name="login"),
     path("logout/", logout_view, name="logout"),
     path("google/onboarding/", google_onboarding_view, name="google_onboarding"),

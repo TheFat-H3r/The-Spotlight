@@ -1,11 +1,13 @@
+from django.conf import settings
 from django.contrib import messages
+from django.urls import reverse
 from django.shortcuts import render, redirect
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
 from django.views import View
 from .forms import GoogleOnboardingForm
 from .models import User, CustomerProfile, VendorApplication
-from .utils import redirect_by_role
+from .utils import redirect_by_role, send_verification_email
 
 
 class RegisterView(View):
@@ -13,7 +15,9 @@ class RegisterView(View):
 
     def get(self, request):
         if request.user.is_authenticated:
-            return redirect('marketplace:home')
+            if request.user.is_email_verified:
+                return redirect('marketplace:home')
+            return redirect('accounts:verify_email')
         return render(request, self.template_name)
 
     def post(self, request):
@@ -24,7 +28,6 @@ class RegisterView(View):
         password = request.POST.get('password', '')
         confirm_password = request.POST.get('confirm_password', '')
 
-        # Pass non-sensitive data back to template to preserve inputs on error
         context = {
             'full_name': full_name,
             'email': email,
@@ -32,17 +35,14 @@ class RegisterView(View):
             'role': role,
         }
 
-        # 1. Basic Required Fields Check
         if not all([full_name, email, phone, password, confirm_password]):
             messages.error(request, "All fields are required.")
             return render(request, self.template_name, context)
 
-        # 2. Role Restriction Validation
         if role == User.Role.ADMIN or role not in [User.Role.CUSTOMER, User.Role.VENDOR]:
             messages.error(request, "Administrator registration is restricted.")
             return render(request, self.template_name, context)
 
-        # 3. Password Validation Rules
         if len(password) < 8:
             messages.error(request, "Password must be at least 8 characters long.")
             return render(request, self.template_name, context)
@@ -55,31 +55,116 @@ class RegisterView(View):
             messages.error(request, "Passwords do not match.")
             return render(request, self.template_name, context)
 
-        # 4. Email Uniqueness Check
         if User.objects.filter(email__iexact=email).exists():
             messages.error(request, "An account with this email address already exists.")
             return render(request, self.template_name, context)
 
-        # 5. User Creation & Saving
         user = User(
             full_name=full_name,
             email=email.lower(),
             phone=phone,
             role=role,
             auth_provider=User.AuthProvider.EMAIL,
+            is_email_verified=False,
         )
         user.set_password(password)
         user.save()
 
-        # Log in user automatically after successful registration
-        authenticated_user = authenticate(request, email=email.lower(), password=password)
+        # Send Email Verification Link via Brevo API
+        if user.auth_provider == User.AuthProvider.EMAIL:
+            token = user.generate_email_verification_token()
+            verification_path = reverse('accounts:verify_email_confirm', kwargs={'token': token})
+            verification_url = request.build_absolute_uri(verification_path)
 
-        if authenticated_user is not None:
-            login(request, authenticated_user)
+            send_verification_email(
+                user_email=user.email,
+                user_name=user.full_name,
+                verification_url=verification_url
+            )
 
-        messages.success(request, "Account created successfully!")
+            # Save unverified email to session so verify_email page knows which email to display
+            request.session['unverified_email'] = user.email
+            messages.success(request, "Registration successful! Check your email to activate your account.")
+            return redirect('accounts:verify_email')
 
         return redirect('marketplace:home')
+
+
+class VerifyEmailNoticeView(View):
+    """Displays the static 'Check Your Inbox' card after registration or redirection."""
+    template_name = 'accounts/verify_email.html'
+
+    def get(self, request):
+        if request.user.is_authenticated and request.user.is_email_verified:
+            return redirect('marketplace:home')
+
+        # Obtain email from logged in user or temporary session key
+        email = request.user.email if request.user.is_authenticated else request.session.get('unverified_email', '')
+        return render(request, self.template_name, {'email': email})
+
+
+class VerifyEmailConfirmView(View):
+    """Handles verification token clicks from email."""
+    def get(self, request, token):
+        user = User.verify_email_token(token, max_age=600)  # type: ignore
+
+        if user is None:
+            messages.error(request, "The verification link is invalid or has expired.")
+            return redirect('accounts:resend_verification')
+
+        if not getattr(user, 'is_email_verified', False):
+            user.is_email_verified = True
+            user.save(update_fields=['is_email_verified'])
+            messages.success(request, "Your email has been verified! You can now sign in.")
+        else:
+            messages.info(request, "Your email is already verified.")
+
+        request.session.pop('unverified_email', None)
+        return redirect('accounts:login')
+
+
+class ResendVerificationEmailView(View):
+    """Dedicated form page for users to enter their email and request a new link."""
+    template_name = 'accounts/resend_verification.html'
+
+    def get(self, request):
+        if request.user.is_authenticated and request.user.is_email_verified:
+            return redirect('marketplace:home')
+
+        email = request.user.email if request.user.is_authenticated else request.session.get('unverified_email', '')
+        return render(request, self.template_name, {'email': email})
+
+    def post(self, request):
+        email = (request.POST.get('email') or '').strip().lower()
+        context = {'email': email}
+
+        if not email:
+            messages.error(request, "Please enter your email address.")
+            return render(request, self.template_name, context)
+
+        user = User.objects.filter(email__iexact=email).first()
+        success_message = "If an account associated with this email exists and requires verification, a new link has been sent."
+
+        if user is None:
+            messages.success(request, success_message)
+            return redirect('accounts:login')
+
+        is_email_provider = getattr(user, 'auth_provider', None) == getattr(User, 'AuthProvider', None).EMAIL  # type: ignore
+        is_unverified = not getattr(user, 'is_email_verified', False)
+
+        if is_email_provider and is_unverified:
+            token = user.generate_email_verification_token()  # type: ignore
+            verification_path = reverse('accounts:verify_email_confirm', kwargs={'token': token})
+            verification_url = request.build_absolute_uri(verification_path)
+
+            send_verification_email(
+                user_email=user.email,
+                user_name=getattr(user, 'full_name', user.email),
+                verification_url=verification_url
+            )
+
+        messages.success(request, success_message)
+        return redirect('accounts:login')
 
 
 class LoginView(View):
@@ -87,17 +172,16 @@ class LoginView(View):
 
     def get(self, request):
         if request.user.is_authenticated:
-            return redirect('marketplace:home')
+            if request.user.is_email_verified:
+                return redirect('marketplace:home')
+            return redirect('accounts:verify_email')
         return render(request, self.template_name)
 
     def post(self, request):
         email = (request.POST.get('email') or request.POST.get('username') or '').strip()
         password = request.POST.get('password', '')
 
-        # Build context with entered email to pass back to template
-        context = {
-            'email': email,
-        }
+        context = {'email': email}
 
         if not email or not password:
             messages.error(request, "Please enter both email and password.")
@@ -113,14 +197,19 @@ class LoginView(View):
             messages.error(request, "This account has been deactivated.")
             return render(request, self.template_name, context)
 
-        login(request, user)
+        # Unverified Check -> Lock login and send user to resend form page
+        if getattr(user, 'auth_provider', None) == getattr(User, 'AuthProvider', None).EMAIL:  # type: ignore
+            if not getattr(user, 'is_email_verified', False):
+                request.session['unverified_email'] = user.email # type: ignore
+                messages.warning(request, "Your email is not verified yet. Please request a new link below.")
+                return redirect('accounts:resend_verification')
 
         if not request.POST.get('remember_me'):
             request.session.set_expiry(0)
 
+        login(request, user, backend='django.contrib.auth.backends.ModelBackend')
         next_url = request.GET.get('next', 'marketplace:home')
         return redirect(next_url)
-    
     
 @login_required
 def google_onboarding_view(request):

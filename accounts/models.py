@@ -8,6 +8,7 @@ from django.conf import settings
 from django.db import models, transaction
 from django.utils import timezone
 from django.utils.text import slugify
+from django.core.signing import TimestampSigner, BadSignature, SignatureExpired
 
 
 class UserManager(BaseUserManager):
@@ -122,6 +123,24 @@ class User(AbstractBaseUser, PermissionsMixin):
     @property
     def is_platform_admin(self):
         return self.role == self.Role.ADMIN
+
+    def generate_email_verification_token(self) -> str:
+        """Generates a cryptographically signed token containing user's PK."""
+        signer = TimestampSigner()
+        return signer.sign(self.pk)
+
+    @staticmethod
+    def verify_email_token(token: str, max_age: int = 600):
+        """
+        Verifies token within max_age (default: 600s / 10 minutes).
+        Returns User instance if valid, None if invalid or expired.
+        """
+        signer = TimestampSigner()
+        try:
+            user_id = signer.unsign(token, max_age=max_age)
+            return User.objects.get(pk=user_id)
+        except (BadSignature, SignatureExpired, User.DoesNotExist):
+            return None
 
 
 # ---------------------------------------------------------------------------
