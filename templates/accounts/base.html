@@ -101,10 +101,17 @@
           <i class="fa-solid fa-table-cells-large text-xs"></i>
           <span>Browse</span>
         </a>
-        <a id="tab-login" href="{% url 'accounts:login' %}" class="flex items-center space-x-2 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all bg-spotlight-cyan text-spotlight-bg shadow-md">
-          <i class="fa-solid fa-lock text-xs"></i>
-          <span>Account</span>
-        </a>
+        {% if user.is_authenticated %}
+          <a id="tab-profile" href="{% url 'accounts:profile' %}" class="flex items-center space-x-2 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all text-slate-400 hover:text-white">
+            <i class="fa-solid fa-user text-xs"></i>
+            <span>{{ user.full_name }}</span>
+          </a>
+        {% else %}
+          <a id="tab-login" href="{% url 'accounts:login' %}" class="flex items-center space-x-2 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all bg-spotlight-cyan text-spotlight-bg shadow-md">
+            <i class="fa-solid fa-lock text-xs"></i>
+            <span>Account</span>
+          </a>
+        {% endif %}
       </div>
 
     </div>
