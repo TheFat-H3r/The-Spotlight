@@ -3,7 +3,6 @@
 
 {% block title %}Sign Up | The Spotlight{% endblock %}
 
-
 {% block content %}
 <main class="relative z-10 flex-1 flex items-center justify-center px-4 py-8 sm:px-6 lg:px-8">
   <div class="w-full max-w-md bg-spotlight-card/90 backdrop-blur-xl border border-spotlight-border rounded-3xl shadow-2xl p-8 sm:p-10">
@@ -13,6 +12,15 @@
       <h1 class="text-2xl font-bold text-white">Create an Account</h1>
       <p class="text-xs text-slate-400 mt-1">Join The Spotlight by Nova Group today</p>
     </div>
+
+    <!-- Django Messages Display -->
+    {% if messages %}
+      {% for message in messages %}
+        <div class="p-3 mb-4 text-xs rounded-xl bg-red-500/10 border border-red-500/30 text-red-400">
+          {{ message }}
+        </div>
+      {% endfor %}
+    {% endif %}
 
     <!-- Google OAuth Link -->
     <a href="{% provider_login_url 'google' process='login' %}" class="w-full bg-white hover:bg-slate-100 text-slate-900 font-semibold py-3 px-4 rounded-xl border border-slate-200 transition-all shadow-lg flex items-center justify-center space-x-3 text-center cursor-pointer">
@@ -35,58 +43,90 @@
       </span>
     </div>
 
-    <!-- Sign Up Form -->
+    <!-- Registration Form -->
     <form method="post" action="{% url 'accounts:register' %}" class="space-y-4">
       {% csrf_token %}
 
+      <!-- Full Name Field -->
       <div>
         <label class="block text-xs font-semibold text-slate-300 mb-1.5">Full Name</label>
-        <div class="relative">
-          <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-500">
+        <div class="relative flex items-center">
+          <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
             <i class="fa-regular fa-user text-sm text-slate-500"></i>
           </div>
-          <input type="text" name="full_name" required placeholder="e.g. Alex Morgan" class="w-full bg-spotlight-bg border border-spotlight-border rounded-xl pl-10 pr-4 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-spotlight-cyan transition-all" />
+          <input type="text" name="full_name" value="{{ full_name|default:'' }}" required placeholder="Jane Doe" class="w-full bg-spotlight-bg border border-spotlight-border rounded-xl pl-10 pr-4 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-spotlight-cyan transition-all" />
         </div>
       </div>
 
+      <!-- Email Field -->
       <div>
         <label class="block text-xs font-semibold text-slate-300 mb-1.5 flex justify-between">
           <span>Email Address</span>
-          <span class="text-slate-500 text-[11px]">Personal/Business Email Allowed</span>
+          <span class="text-slate-500 text-[11px]">Valid Email Required</span>
         </label>
-        <div class="relative">
-          <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-500">
+        <div class="relative flex items-center">
+          <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
             <i class="fa-regular fa-envelope text-sm text-slate-500"></i>
           </div>
-          <input type="email" name="email" required placeholder="user@nova-group.edu" class="w-full bg-spotlight-bg border border-spotlight-border rounded-xl pl-10 pr-4 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-spotlight-cyan transition-all" />
+          <input type="email" name="email" value="{{ email|default:'' }}" required placeholder="jane@example.com" class="w-full bg-spotlight-bg border border-spotlight-border rounded-xl pl-10 pr-4 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-spotlight-cyan transition-all" />
         </div>
       </div>
 
+      <!-- Phone Field -->
+      <div>
+        <label class="block text-xs font-semibold text-slate-300 mb-1.5">Phone Number</label>
+        <div class="relative flex items-center">
+          <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
+            <i class="fa-solid fa-phone text-sm text-slate-500"></i>
+          </div>
+          <input type="tel" name="phone" value="{{ phone|default:'' }}" required placeholder="+1234567890" class="w-full bg-spotlight-bg border border-spotlight-border rounded-xl pl-10 pr-4 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-spotlight-cyan transition-all" />
+        </div>
+      </div>
+
+      <!-- Account Role Selection -->
+      <div>
+        <label class="block text-xs font-semibold text-slate-300 mb-1.5">Register as a</label>
+        <div class="relative flex items-center">
+          <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
+            <i class="fa-solid fa-user-tag text-sm text-slate-500"></i>
+          </div>
+          <select name="role" class="w-full bg-spotlight-bg border border-spotlight-border rounded-xl pl-10 pr-4 py-2.5 text-sm text-white focus:outline-none focus:border-spotlight-cyan transition-all">
+            <option value="customer" {% if role == 'customer' or not role %}selected{% endif %}>Customer</option>
+            <option value="vendor" {% if role == 'vendor' %}selected{% endif %}>Vendor</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Password Field -->
       <div>
         <label class="block text-xs font-semibold text-slate-300 mb-1.5">Password</label>
-        <div class="relative">
-          <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-500">
+        <div class="relative flex items-center">
+          <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
             <i class="fa-solid fa-lock text-sm text-slate-500"></i>
           </div>
-          <input type="password" name="password" required placeholder="••••••••••••" class="w-full bg-spotlight-bg border border-spotlight-border rounded-xl pl-10 pr-10 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-spotlight-cyan transition-all" />
+          <input type="password" name="password" required minlength="8" placeholder="At least 8 characters" class="w-full bg-spotlight-bg border border-spotlight-border rounded-xl pl-10 pr-4 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-spotlight-cyan transition-all" />
         </div>
       </div>
+
+      <!-- Confirm Password Field -->
       <div>
         <label class="block text-xs font-semibold text-slate-300 mb-1.5">Confirm Password</label>
-        <div class="relative">
-          <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-500">
+        <div class="relative flex items-center">
+          <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
             <i class="fa-solid fa-lock text-sm text-slate-500"></i>
           </div>
-          <input type="password" name="confirm_password" required placeholder="••••••••••••" class="w-full bg-spotlight-bg border border-spotlight-border rounded-xl pl-10 pr-10 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-spotlight-cyan transition-all" />
+          <input type="password" name="confirm_password" required placeholder="Repeat your password" class="w-full bg-spotlight-bg border border-spotlight-border rounded-xl pl-10 pr-4 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-spotlight-cyan transition-all" />
         </div>
+      </div>
 
+      <!-- Submit Button -->
       <button type="submit" class="w-full mt-2 bg-gradient-to-r from-spotlight-cyan via-spotlight-delivery to-[#0077B6] hover:opacity-90 text-spotlight-bg font-bold py-3 px-4 rounded-xl transition-all shadow-lg flex items-center justify-center space-x-2">
         <span>Create Spotlight Account</span>
         <i class="fa-solid fa-arrow-right text-sm"></i>
       </button>
     </form>
 
-    <!-- Navigation Switcher -->
+    <!-- Switch to Login Navigation -->
     <div class="mt-6 pt-4 border-t border-spotlight-border text-center text-xs text-slate-400">
       <span>Already have an account?</span>
       <a href="{% url 'accounts:login' %}" class="text-spotlight-cyan font-semibold hover:underline ml-1">

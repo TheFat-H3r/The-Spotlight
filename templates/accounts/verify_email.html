@@ -18,6 +18,15 @@
       </div>
     </div>
 
+    <!-- Django Messages Display -->
+    {% if messages %}
+      {% for message in messages %}
+        <div class="p-3 mb-4 text-xs rounded-xl bg-green-500/10 border border-green-500/30 text-green-400">
+          {{ message }}
+        </div>
+      {% endfor %}
+    {% endif %}
+
     <!-- Header Section -->
     <div class="text-center space-y-2">
       <h2 class="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
@@ -49,11 +58,15 @@
 
     <!-- Actions Section -->
     <div class="mt-8 space-y-4">
-      <!-- Primary Resend Action Button -->
-      <a href="{% url 'accounts:resend_verification' %}" class="w-full bg-gradient-to-r from-spotlight-cyan via-spotlight-delivery to-[#0077B6] hover:opacity-90 text-spotlight-bg font-bold py-3 px-4 rounded-xl transition-all shadow-lg flex items-center justify-center space-x-2 text-xs sm:text-sm">
-        <i class="fa-solid fa-rotate-right text-sm"></i>
-        <span>Resend Verification Email</span>
-      </a>
+      <!-- Request new verification form (POST) -->
+      <form method="post" action="{% url 'accounts:resend_verification' %}">
+        {% csrf_token %}
+        <input type="hidden" name="email" value="{{ email|default:'' }}">
+        <button type="submit" class="w-full bg-gradient-to-r from-spotlight-cyan via-spotlight-delivery to-[#0077B6] hover:opacity-90 text-spotlight-bg font-bold py-3 px-4 rounded-xl transition-all shadow-lg flex items-center justify-center space-x-2 text-xs sm:text-sm cursor-pointer">
+          <i class="fa-solid fa-rotate-right text-sm"></i>
+          <span>Resend Verification Email</span>
+        </button>
+      </form>
 
       <!-- Secondary Navigation -->
       <div class="pt-4 border-t border-spotlight-border text-center text-xs text-slate-400 flex items-center justify-between">
