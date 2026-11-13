@@ -57,6 +57,7 @@ INSTALLED_APPS = [
     'reviews',
     'advertising',
     'portfolios',
+    'dashboards',
 ]
 
 AUTH_USER_MODEL = "accounts.User"
