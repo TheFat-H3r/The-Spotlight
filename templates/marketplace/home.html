@@ -1,104 +1,441 @@
+{% load static %}
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>The Spotlight | Campus Marketplace</title>
-  <!-- Bootstrap 5 CSS -->
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
-</head>
-<body class="bg-light d-flex flex-column min-vh-100">
+  <title>The Spotlight | By Nova Group</title>
+  <link rel="icon" href="{% static 'img/favicon.png' %}" type="image/png" rel="shortcut icon">
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+          },
+          colors: {
+            spotlight: {
+              bg: '#0B132B',
+              card: '#0C1836',
+              border: '#1E293B',
+              cyan: '#18C7DA',
+              amber: '#EF7D18',
+              star: '#FFD000',
+              food: '#FFA600',
+              beauty: '#E62B75',
+              delivery: '#00C4EE',
+              booking: '#7B2CBF',
+              retail: '#38B000',
+            }
+          }
+        }
+      }
+    }
+  </script>
 
-  <!-- Navbar -->
-  <nav class="navbar navbar-expand-lg navbar-dark bg-dark shadow-sm">
-    <div class="container">
-      <a class="navbar-brand fw-bold text-primary" href="{% url 'marketplace:home' %}">
-        <i class="bi bi-stars me-1"></i> The Spotlight
-      </a>
-      <div class="d-flex align-items-center gap-2">
-        {% if request.user.is_authenticated %}
-          <a href="{% url 'accounts:home' %}" class="btn btn-outline-light btn-sm">Dashboard</a>
-        {% else %}
-          <a href="{% url 'accounts:login' %}" class="btn btn-outline-primary btn-sm">Sign In</a>
-          <a href="{% url 'accounts:register' %}" class="btn btn-primary btn-sm">Sign Up</a>
-        {% endif %}
-      </div>
-    </div>
-  </nav>
-
-  <!-- Hero Section -->
-  <header class="bg-white border-bottom py-5 text-center">
-    <div class="container">
-      <h1 class="display-5 fw-bold mb-3">Campus Products & Services</h1>
-      <p class="lead text-muted mb-4">Find trusted student vendors, order meals, book appointments, and more.</p>
-      
-      <!-- Business Type Pills -->
-      <div class="d-flex flex-wrap justify-content-center gap-2">
-        {% for b_type in business_types %}
-          <a href="{% url 'marketplace:business_type_detail' b_type.slug %}" class="btn btn-outline-secondary rounded-pill px-3 py-2 small">
-            {{ b_type.icon }} {{ b_type.name }}
-          </a>
-        {% endfor %}
-      </div>
-    </div>
-  </header>
-
-  <!-- Main Content -->
-  <main class="container my-5 flex-grow-1">
+  <style>
+    body {
+      background-color: #0B132B;
+      color: #F8FAFC;
+      font-family: 'Plus Jakarta Sans', sans-serif;
+    }
     
-    {% if featured_stores %}
-      <section class="mb-5">
-        <h2 class="h4 fw-bold mb-4">Featured Stores</h2>
-        <div class="row g-4">
-          {% for store in featured_stores %}
-            <div class="col-md-4">
-              <div class="card h-100 shadow-sm border-0">
-                <div class="card-body">
-                  <h5 class="card-title fw-bold">{{ store.name }}</h5>
-                  <p class="card-text text-muted small text-truncate">{{ store.tagline|default:store.description }}</p>
-                  <div class="d-flex justify-content-between align-items-center mt-3">
-                    <span class="badge bg-primary text-capitalize">{{ store.store_type }}</span>
-                    <a href="{% url 'marketplace:store_detail' store.slug %}" class="btn btn-sm btn-outline-primary">Visit Store &rarr;</a>
-                  </div>
-                </div>
-              </div>
-            </div>
-          {% endfor %}
-        </div>
-      </section>
-    {% endif %}
+    /* Custom Scrollbar */
+    ::-webkit-scrollbar {
+      width: 8px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #0B132B;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #1E293B;
+      border-radius: 4px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #18C7DA;
+    }
 
-    <section>
-      <h2 class="h4 fw-bold mb-4">All Stores</h2>
-      <div class="row g-4">
-        {% for store in all_stores %}
-          <div class="col-md-4">
-            <div class="card h-100 shadow-sm border-0">
-              <div class="card-body">
-                <h5 class="card-title fw-bold">{{ store.name }}</h5>
-                <p class="card-text text-muted small text-truncate">{{ store.tagline|default:store.description }}</p>
-                <div class="d-flex justify-content-between align-items-center mt-3">
-                  <span class="small text-muted"><i class="bi bi-star-fill text-warning"></i> {{ store.rating_average }} ({{ store.rating_count }})</span>
-                  <a href="{% url 'marketplace:store_detail' store.slug %}" class="btn btn-sm btn-outline-dark">View &rarr;</a>
-                </div>
+    /* Glow Effects */
+    .glow-cyan {
+      box-shadow: 0 0 25px -5px rgba(24, 199, 218, 0.3);
+    }
+    .glow-amber {
+      box-shadow: 0 0 25px -5px rgba(239, 125, 24, 0.3);
+    }
+    .glow-food { box-shadow: 0 0 20px rgba(255, 166, 0, 0.25); }
+    .glow-beauty { box-shadow: 0 0 20px rgba(230, 43, 117, 0.25); }
+    .glow-delivery { box-shadow: 0 0 20px rgba(0, 196, 238, 0.25); }
+    .glow-booking { box-shadow: 0 0 20px rgba(123, 44, 191, 0.25); }
+    .glow-retail { box-shadow: 0 0 20px rgba(56, 176, 0, 0.25); }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col justify-between selection:bg-spotlight-cyan selection:text-spotlight-bg relative overflow-x-hidden">
+
+  <!-- ================= TOP DEMO PAGE SWITCHER NAVBAR ================= -->
+  <div class="bg-spotlight-card border-b border-spotlight-border py-2 px-4 sticky top-0 z-50 backdrop-blur-md bg-opacity-90">
+    <div class="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-2">
+      
+      <!-- Brand & Page Switcher Info -->
+      <div class="flex items-center space-x-3">
+        <!-- Brand & Page Switcher Info -->
+        <div class="flex items-center space-x-3">
+          <img 
+            src="{% static 'img/the-spotlight-banner-removebg.png' %}" 
+            alt="The Spotlight Banner" 
+            class="h-14 w-auto object-contain"
+          />
+        </div>
+        <div>
+          <span class="text-xs font-bold tracking-widest text-spotlight-cyan uppercase">THE SPOTLIGHT</span>
+          <span class="text-[10px] text-slate-400 block font-medium">Multi-Page Prototype</span>
+        </div>
+      </div>
+
+      <!-- Navigation Page Tabs -->
+      <div class="flex items-center space-x-2 bg-spotlight-bg p-1 rounded-xl border border-spotlight-border">
+        <a id="tab-home" href="{% url 'marketplace:home' %}" class="flex items-center space-x-2 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all text-slate-400 hover:text-white">
+          <i data-lucide="layout-dashboard" class="w-3.5 h-3.5"></i>
+          <span>Browse</span>
+        </a>
+        <a id="tab-login" href="{% url 'accounts:login' %}" class="flex items-center space-x-2 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all bg-spotlight-cyan text-spotlight-bg shadow-md">
+   
+          <i data-lucide="lock" class="w-3.5 h-3.5"></i>
+          <span>Account</span>
+        </a>
+        
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Toast Notification Container -->
+  <div id="toast" class="hidden fixed top-16 right-6 z-50 bg-spotlight-card border border-spotlight-cyan text-white px-5 py-3.5 rounded-xl shadow-2xl flex items-center space-x-3 transition-all transform duration-300">
+    <div class="w-7 h-7 rounded-full bg-spotlight-cyan/20 flex items-center justify-center text-spotlight-cyan">
+      <i data-lucide="check" class="w-4 h-4"></i>
+    </div>
+    <span id="toast-text" class="text-xs font-medium">Notification message</span>
+  </div>
+
+
+
+
+    
+    <!-- Hero Banner Section -->
+    <section class="relative border-b border-spotlight-border bg-gradient-to-r from-spotlight-card via-spotlight-bg to-spotlight-card py-12 px-4 sm:px-8">
+      <div class="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-12 gap-8 items-center">
+        
+        <div class="md:col-span-7 space-y-4">
+          <div class="inline-flex items-center space-x-2 bg-spotlight-amber/10 border border-spotlight-amber/30 px-3.5 py-1 rounded-full text-xs font-semibold text-spotlight-amber">
+            <i data-lucide="star" class="w-3.5 h-3.5 text-spotlight-star fill-spotlight-star"></i>
+            <span>Official Nova Campus Marketplace</span>
+          </div>
+          <h1 class="text-3xl sm:text-5xl font-extrabold text-white leading-tight">
+            Discover Campus <br />
+            <span class="text-transparent bg-clip-text bg-gradient-to-r from-spotlight-cyan via-spotlight-star to-spotlight-amber">
+              Ventures & Services
+            </span>
+          </h1>
+          <p class="text-slate-300 text-sm max-w-xl leading-relaxed">
+            Support student entrepreneurs, book salon appointments, order campus delivery, and reserve study pods—all in one place.
+          </p>
+
+          <!-- Search Bar -->
+          <div class="flex items-center space-x-2 max-w-lg pt-2">
+            <div class="relative flex-1">
+              <i data-lucide="search" class="w-4 h-4 absolute left-3.5 top-3.5 text-slate-400"></i>
+              <input type="text" placeholder="Search food, salons, express delivery..." class="w-full bg-spotlight-bg border border-spotlight-border rounded-xl pl-10 pr-4 py-2.5 text-sm text-white focus:outline-none focus:border-spotlight-cyan" />
+            </div>
+            <button onclick="showToast('Searching campus catalog...')" class="bg-spotlight-cyan text-spotlight-bg px-5 py-2.5 rounded-xl font-bold text-sm hover:bg-opacity-90 transition-all">
+              Search
+            </button>
+          </div>
+        </div>
+
+        <!-- Banner Graphic Card -->
+        <div class="md:col-span-5 flex justify-center">
+          <div class="w-full max-w-sm bg-spotlight-bg/80 border border-spotlight-border rounded-2xl p-6 shadow-2xl relative overflow-hidden group">
+            <div class="absolute -right-10 -bottom-10 w-40 h-40 bg-spotlight-cyan/20 rounded-full blur-2xl group-hover:bg-spotlight-amber/30 transition-all"></div>
+            
+            <div class="flex items-center justify-between mb-4">
+              <div class="flex items-center space-x-2">
+                <span class="w-3 h-3 rounded-full bg-spotlight-food"></span>
+                <span class="w-3 h-3 rounded-full bg-spotlight-beauty"></span>
+                <span class="w-3 h-3 rounded-full bg-spotlight-delivery"></span>
+                <span class="w-3 h-3 rounded-full bg-spotlight-booking"></span>
+                <span class="w-3 h-3 rounded-full bg-spotlight-retail"></span>
+              </div>
+              <span class="text-[10px] font-mono text-spotlight-cyan bg-spotlight-cyan/10 px-2 py-0.5 rounded">SPOTLIGHT HUB</span>
+            </div>
+
+            <div class="space-y-3">
+              <div class="text-xs text-slate-400 uppercase tracking-wider">Top Highlight</div>
+              <div class="text-lg font-bold text-white">Campus Express Delivery</div>
+              <p class="text-xs text-slate-400">Get meals and study materials delivered directly to your dorm within 20 mins.</p>
+              <div class="pt-2 flex items-center justify-between">
+                <span class="text-xs text-spotlight-star font-bold flex items-center">
+                  <i data-lucide="star" class="w-3 h-3 fill-spotlight-star inline mr-1"></i> 4.9 Rating
+                </span>
+                <button onclick="switchPage('login')" class="text-xs font-semibold text-spotlight-cyan flex items-center space-x-1 hover:underline">
+                  <span>Explore Now</span>
+                  <i data-lucide="chevron-right" class="w-3 h-3"></i>
+                </button>
               </div>
             </div>
           </div>
-        {% empty %}
-          <div class="text-center py-5 text-muted">
-            <p>No active stores available right now.</p>
-          </div>
-        {% endfor %}
+        </div>
+
       </div>
     </section>
 
-  </main>
+    <!-- Marketplace Content Area -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-8 py-10 flex-1 w-full space-y-8">
+      
+      <!-- Category Filter Pills Bar -->
+      <div>
+        <div class="flex items-center justify-between mb-4">
+          <h2 class="text-xl font-bold text-white">Explore Categories</h2>
+          <span class="text-xs text-slate-400">Showing 5 active verticals</span>
+        </div>
 
-  <footer class="bg-white border-top py-3 text-center text-muted small">
-    <div class="container">&copy; {% now "Y" %} The Spotlight Platform</div>
+        <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4">
+          
+          <!-- Category 1: Food -->
+          <button onclick="filterCategory('food')" class="p-4 rounded-2xl bg-spotlight-card border border-spotlight-food/40 hover:border-spotlight-food transition-all text-left group glow-[#FFA600]">
+            <div class="w-10 h-10 rounded-xl bg-spotlight-food/20 text-spotlight-food flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
+              <i data-lucide="utensils" class="w-5 h-5"></i>
+            </div>
+            <div class="text-sm font-bold text-white">Food & Dining</div>
+            <div class="text-[11px] text-slate-400">28 Spots</div>
+          </button>
+
+          <!-- Category 2: Beauty -->
+          <button onclick="filterCategory('beauty')" class="p-4 rounded-2xl bg-spotlight-card border border-spotlight-beauty/40 hover:border-spotlight-beauty transition-all text-left group glow-[#E62B75]">
+            <div class="w-10 h-10 rounded-xl bg-spotlight-beauty/20 text-spotlight-beauty flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
+              <i data-lucide="scissors" class="w-5 h-5"></i>
+            </div>
+            <div class="text-sm font-bold text-white">Salon & Beauty</div>
+            <div class="text-[11px] text-slate-400">14 Stylists</div>
+          </button>
+
+          <!-- Category 3: Delivery -->
+          <button onclick="filterCategory('delivery')" class="p-4 rounded-2xl bg-spotlight-card border border-spotlight-delivery/40 hover:border-spotlight-delivery transition-all text-left group glow-[#00C4EE]">
+            <div class="w-10 h-10 rounded-xl bg-spotlight-delivery/20 text-spotlight-delivery flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
+              <i data-lucide="truck" class="w-5 h-5"></i>
+            </div>
+            <div class="text-sm font-bold text-white">Express Delivery</div>
+            <div class="text-[11px] text-slate-400">Campus Delivery</div>
+          </button>
+
+          <!-- Category 4: Booking -->
+          <button onclick="filterCategory('booking')" class="p-4 rounded-2xl bg-spotlight-card border border-spotlight-booking/40 hover:border-spotlight-booking transition-all text-left group glow-[#7B2CBF]">
+            <div class="w-10 h-10 rounded-xl bg-spotlight-booking/20 text-spotlight-booking flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
+              <i data-lucide="calendar" class="w-5 h-5"></i>
+            </div>
+            <div class="text-sm font-bold text-white">Reservations</div>
+            <div class="text-[11px] text-slate-400">Study Pods</div>
+          </button>
+
+          <!-- Category 5: Retail -->
+          <button onclick="filterCategory('retail')" class="p-4 rounded-2xl bg-spotlight-card border border-spotlight-retail/40 hover:border-spotlight-retail transition-all text-left group glow-[#38B000]">
+            <div class="w-10 h-10 rounded-xl bg-spotlight-retail/20 text-spotlight-retail flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
+              <i data-lucide="shopping-bag" class="w-5 h-5"></i>
+            </div>
+            <div class="text-sm font-bold text-white">Shopping & Retail</div>
+            <div class="text-[11px] text-slate-400">19 Stores</div>
+          </button>
+
+        </div>
+      </div>
+
+      <!-- Featured Vendor Cards Grid -->
+      <div>
+        <div class="flex items-center justify-between mb-6">
+          <h2 class="text-xl font-bold text-white">Spotlighted Campus Businesses</h2>
+          <button onclick="showToast('Loading full catalog...')" class="text-xs text-spotlight-cyan hover:underline">View All</button>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          
+          <!-- Vendor Card 1: Food -->
+          <div class="bg-spotlight-card border border-spotlight-border rounded-2xl overflow-hidden hover:border-spotlight-food/60 transition-all flex flex-col justify-between">
+            <div class="p-5 space-y-3">
+              <div class="flex items-center justify-between">
+                <span class="px-2.5 py-1 rounded-md text-[10px] font-bold uppercase bg-spotlight-food/20 text-spotlight-food border border-spotlight-food/30">
+                  Food & Dining
+                </span>
+                <div class="flex items-center space-x-1 text-xs text-spotlight-star">
+                  <i data-lucide="star" class="w-3.5 h-3.5 fill-spotlight-star"></i>
+                  <span class="font-bold">4.8</span>
+                  <span class="text-slate-500">(120+)</span>
+                </div>
+              </div>
+              <h3 class="text-lg font-bold text-white">Gourmet Campus Bowl</h3>
+              <p class="text-xs text-slate-400">Fresh organic bowls, smoothies, and hot artisan coffee delivered to your hall.</p>
+            </div>
+            <div class="px-5 py-3 border-t border-spotlight-border bg-spotlight-bg/40 flex items-center justify-between">
+              <span class="text-xs text-slate-400">Avg. 15 mins</span>
+              <button onclick="showToast('Opening food menu...')" class="bg-spotlight-food text-spotlight-bg px-3.5 py-1.5 rounded-lg text-xs font-bold hover:opacity-90">
+                Order Now
+              </button>
+            </div>
+          </div>
+
+          <!-- Vendor Card 2: Beauty -->
+          <div class="bg-spotlight-card border border-spotlight-border rounded-2xl overflow-hidden hover:border-spotlight-beauty/60 transition-all flex flex-col justify-between">
+            <div class="p-5 space-y-3">
+              <div class="flex items-center justify-between">
+                <span class="px-2.5 py-1 rounded-md text-[10px] font-bold uppercase bg-spotlight-beauty/20 text-spotlight-beauty border border-spotlight-beauty/30">
+                  Salon & Beauty
+                </span>
+                <div class="flex items-center space-x-1 text-xs text-spotlight-star">
+                  <i data-lucide="star" class="w-3.5 h-3.5 fill-spotlight-star"></i>
+                  <span class="font-bold">4.9</span>
+                  <span class="text-slate-500">(84)</span>
+                </div>
+              </div>
+              <h3 class="text-lg font-bold text-white">The Grooming Hub</h3>
+              <p class="text-xs text-slate-400">Professional haircuts, styling, and nail art right at the Student Union.</p>
+            </div>
+            <div class="px-5 py-3 border-t border-spotlight-border bg-spotlight-bg/40 flex items-center justify-between">
+              <span class="text-xs text-slate-400">Slots Available</span>
+              <button onclick="showToast('Booking salon slot...')" class="bg-spotlight-beauty text-white px-3.5 py-1.5 rounded-lg text-xs font-bold hover:opacity-90">
+                Book Slot
+              </button>
+            </div>
+          </div>
+
+          <!-- Vendor Card 3: Delivery -->
+          <div class="bg-spotlight-card border border-spotlight-border rounded-2xl overflow-hidden hover:border-spotlight-delivery/60 transition-all flex flex-col justify-between">
+            <div class="p-5 space-y-3">
+              <div class="flex items-center justify-between">
+                <span class="px-2.5 py-1 rounded-md text-[10px] font-bold uppercase bg-spotlight-delivery/20 text-spotlight-delivery border border-spotlight-delivery/30">
+                  Express Delivery
+                </span>
+                <div class="flex items-center space-x-1 text-xs text-spotlight-star">
+                  <i data-lucide="star" class="w-3.5 h-3.5 fill-spotlight-star"></i>
+                  <span class="font-bold">5.0</span>
+                  <span class="text-slate-500">(310)</span>
+                </div>
+              </div>
+              <h3 class="text-lg font-bold text-white">Nova Runner Scooter Co.</h3>
+              <p class="text-xs text-slate-400">Fast courier service for documents, books, and laundry across all campus sectors.</p>
+            </div>
+            <div class="px-5 py-3 border-t border-spotlight-border bg-spotlight-bg/40 flex items-center justify-between">
+              <span class="text-xs text-slate-400">Flat $2 Delivery</span>
+              <button onclick="showToast('Requesting courier...')" class="bg-spotlight-delivery text-spotlight-bg px-3.5 py-1.5 rounded-lg text-xs font-bold hover:opacity-90">
+                Dispatch
+              </button>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+    </main>
+  </div>
+
+
+  <!-- ================= COMMON FOOTER ================= -->
+  <footer class="border-t border-spotlight-border bg-spotlight-card py-6 px-4 sm:px-8 text-xs text-slate-500 relative z-10">
+    <div class="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
+      <div class="flex items-center space-x-2">
+        <span class="font-bold text-slate-300">The Spotlight</span>
+        <span>•</span>
+        <span>By Nova Group</span>
+      </div>
+      <div class="flex items-center space-x-6 text-[11px]">
+        <a href="#" onclick="showToast('Privacy Policy'); return false;" class="hover:text-slate-300">Privacy Policy</a>
+        <a href="#" onclick="showToast('Terms of Service'); return false;" class="hover:text-slate-300">Terms of Service</a>
+        <a href="#" onclick="showToast('Helpdesk'); return false;" class="hover:text-slate-300">Support</a>
+      </div>
+    </div>
   </footer>
 
-  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <!-- Script for Page Switcher, Auth Mode & Icons -->
+  <script>
+    // Initialize Lucide Icons
+    lucide.createIcons();
+
+    let currentMode = 'signin';
+
+
+    function setAuthMode(mode) {
+      currentMode = mode;
+      const title = document.getElementById('auth-title');
+      const desc = document.getElementById('auth-desc');
+      const nameField = document.getElementById('field-fullname');
+      const btnSubmit = document.getElementById('btn-submit-text');
+      const btnSignIn = document.getElementById('btn-mode-signin');
+      const btnSignUp = document.getElementById('btn-mode-signup');
+      const footerPrompt = document.getElementById('footer-mode-prompt');
+      const btnFooterSwitch = document.getElementById('btn-footer-switch');
+
+      if (mode === 'signup') {
+        title.innerText = 'Create an Account';
+        desc.innerText = 'Join The Spotlight by Nova Group today';
+        nameField.classList.remove('hidden');
+        btnSubmit.innerText = 'Create Spotlight Account';
+        btnSignUp.className = 'px-3 py-1.5 rounded-lg text-xs font-semibold transition-all bg-spotlight-cyan text-spotlight-bg shadow-md';
+        btnSignIn.className = 'px-3 py-1.5 rounded-lg text-xs font-semibold transition-all text-slate-400 hover:text-white';
+        footerPrompt.innerText = 'Already have an account?';
+        btnFooterSwitch.innerText = 'Sign in instead';
+      } else {
+        title.innerText = 'Welcome Back';
+        desc.innerText = 'Sign in to access your Spotlight dashboard';
+        nameField.classList.add('hidden');
+        btnSubmit.innerText = 'Sign In to Spotlight';
+        btnSignIn.className = 'px-3 py-1.5 rounded-lg text-xs font-semibold transition-all bg-spotlight-cyan text-spotlight-bg shadow-md';
+        btnSignUp.className = 'px-3 py-1.5 rounded-lg text-xs font-semibold transition-all text-slate-400 hover:text-white';
+        footerPrompt.innerText = "Don't have an account?";
+        btnFooterSwitch.innerText = 'Sign up now';
+      }
+    }
+
+    function toggleAuthMode() {
+      setAuthMode(currentMode === 'signin' ? 'signup' : 'signin');
+    }
+
+    function handleGoogleLogin() {
+      showToast("Authenticating with Google Account...");
+      setTimeout(() => {
+        showToast("Success! Redirecting to Home Dashboard...");
+        setTimeout(() => switchPage('home'), 1000);
+      }, 1200);
+    }
+
+    function handleAuthSubmit(e) {
+      e.preventDefault();
+      showToast(currentMode === 'signin' ? "Signing in..." : "Creating account...");
+      setTimeout(() => {
+        showToast("Success! Redirecting to Home Dashboard...");
+        setTimeout(() => switchPage('home'), 1000);
+      }, 1000);
+    }
+
+    function filterCategory(cat) {
+      showToast("Filtered marketplace by category: " + cat.toUpperCase());
+    }
+
+    function showToast(msg) {
+      const toast = document.getElementById('toast');
+      const text = document.getElementById('toast-text');
+      text.innerText = msg;
+      toast.classList.remove('hidden');
+      setTimeout(() => {
+        toast.classList.add('hidden');
+      }, 3500);
+    }
+  </script>
 </body>
 </html>
