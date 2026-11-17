@@ -111,15 +111,15 @@
         <aside class="col-lg-3">
 
             <section class="sidebar-panel mb-4">
-                <h5 class="fw-bold mb-3">Vendor Portfolios</h5>
+                <h5 class="fw-bold mb-3">Vendor Achievements</h5>
 
-                {% for portfolio in featured_portfolios %}
+                {% for achievement in featured_achievements %}
                     {% include "marketplace/components/portfolio_card.html" with portfolio=portfolio %}
                 {% empty %}
                     <p class="text-muted small">
-                        Vendor portfolios will appear here.
+                        Vendor Achievements will appear here.
                     </p>
-                {% endfor %}
+                {% endfor %} 
             </section>
 
             <section class="sidebar-panel support-panel mb-4">

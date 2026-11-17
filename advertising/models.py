@@ -825,3 +825,28 @@ class CouponRedemption(models.Model):
 
     def __str__(self):
         return f"{self.coupon.code} on {self.order.order_number}"  # type: ignore
+
+
+class Ads(models.Model):
+    """Model representing an advertisement."""
+
+    title = models.CharField(max_length=255)
+    description = models.TextField(blank=True)
+    created_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="ads",
+    )
+    image = models.ImageField(upload_to="ads/")
+    link_url = models.URLField(max_length=500, blank=True)
+    contact_email = models.EmailField(blank=True)
+    contact_phone = models.CharField(max_length=20, blank=True)
+    is_active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+
+    def __str__(self):
+        return self.title

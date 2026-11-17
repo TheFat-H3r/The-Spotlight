@@ -9,8 +9,33 @@ from .models import (
     PromoBanner,
     PromoStatus,
     SponsoredListing,
+    Ads
 )
 
+
+@admin.register(Ads)
+class AdsAdmin(admin.ModelAdmin):
+    list_display = (
+        "title",
+        "description",
+        "created_by",
+        "contact_phone",
+        "contact_email",
+        "link_url",
+        "image",
+        "is_active",
+        "created_at",
+    )
+    list_editable = ("is_active",)
+    list_filter = ("is_active", "created_at")
+    search_fields = ("title", "link_url")
+    save_on_top = True
+    readonly_fields = ("created_at", "updated_at")
+    fieldsets = (
+        (None, {"fields": ("title", "description", "created_by", "link_url", "image", "contact_phone", "contact_email")}),
+        ("Display", {"fields": ("is_active",)}),
+        ("Audit", {"classes": ("collapse",), "fields": ("created_at", "updated_at")}),
+    )
 
 def _thumb(image, size=40):
     if image:

@@ -1,27 +1,27 @@
-<article class="portfolio-card mb-3">
+<article class="achievement-card mb-3">
 
-    {% if portfolio.thumbnail %}
-        <img src="{{ portfolio.thumbnail.url }}"
-             class="portfolio-image"
-             alt="{{ portfolio.title }}">
+    {% if achievement.badge_image %}
+        <img src="{{ achievement.badge_image.url }}"
+             class="achievement-image"
+             alt="{{ achievement.title }}">
     {% endif %}
 
     <div class="p-3">
-        <h6 class="fw-bold">{{ portfolio.title }}</h6>
+        <h6 class="fw-bold">{{ achievement.title }}</h6>
 
         <p class="small text-muted">
-            {{ portfolio.description|truncatewords:15 }}
+            {{ achievement.description|truncatewords:15 }}
         </p>
 
-        {% if portfolio.store %}
+        {% if achievement.store %}
             <small class="text-muted">
-                By {{ portfolio.store.name }}
-            </small>
+                By {{ achievement.store.name }}
+            </small> 
         {% endif %}
 
-        <!-- Replace with the actual portfolio detail URL -->
+        <!-- Replace with the actual achievement detail URL -->
         <a href="#" class="text-cyan small fw-bold">
-            Explore Portfolio →
+            Explore achievement →
         </a>
     </div>
 

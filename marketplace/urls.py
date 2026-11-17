@@ -4,12 +4,14 @@ from .views import (
     store_detail,
     category_detail,
     business_type_detail,
+    test_view,
 )
 
 app_name = "marketplace"
 
 urlpatterns = [
     path("", marketplace_home, name="home"),
+    path("test/", test_view, name="test_view"),
     path("store/<slug:slug>/", store_detail, name="store_detail"),
     path("category/<slug:slug>/", category_detail, name="category_detail"),
     path("type/<slug:slug>/", business_type_detail, name="business_type_detail"),

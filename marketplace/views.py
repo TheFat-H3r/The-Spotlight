@@ -1,5 +1,6 @@
 from django.shortcuts import get_object_or_404, render
 from .models import Store, Category, BusinessType
+from portfolios.models import Achievement
 
 
 def marketplace_home(request):
@@ -8,13 +9,17 @@ def marketplace_home(request):
     all_stores = Store.objects.all()[:12] # type: ignore
     business_types = BusinessType.objects.filter(is_active=True)
     featured_categories = Category.objects.filter(is_active=True, is_featured=True)[:8]
-
+    featured_achievements = Achievement.objects.all().filter(is_verified=True)
     context = {
         "featured_stores": featured_stores,
         "all_stores": all_stores,
         "business_types": business_types,
         "featured_categories": featured_categories,
+        "featured_achievements": featured_achievements,
     }
+    for p in featured_achievements:
+        print(p.badge_image.url)
+
     return render(request, "marketplace/marketplace_pages/index.html", context)
 
 
@@ -47,3 +52,7 @@ def business_type_detail(request, slug):
         "stores": stores,
     }
     return render(request, "marketplace/business_type_detail.html", context)
+
+def test_view(request):
+    name = "Gratien"
+    return render(request, "marketplace/test.html", {"names": name})
