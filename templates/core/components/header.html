@@ -31,13 +31,13 @@
             {% if request.user.is_authenticated %}
               <li><span class="dropdown-item-text">{{ request.user.get_short_name|default:request.user.email }}</span></li>
               <li><hr class="dropdown-divider"></li>
-              <li><a class="dropdown-item" href="{% url 'users:home' %}">
+              <li><a class="dropdown-item" href="{% url 'core:home' %}">
                 <i class="bi bi-person me-2" aria-hidden="true"></i>My account
               </a></li>
               <li><a class="dropdown-item" href="#">
                 <i class="bi bi-gear me-2" aria-hidden="true"></i>Settings
               </a></li>
-              <li><a class="dropdown-item" href="{% url 'users:logout' %}">
+              <li><a class="dropdown-item" href="{% url 'accounts:logout' %}">
                 <i class="bi bi-box-arrow-right me-2" aria-hidden="true"></i>Sign out
               </a></li>
             {% else %}
