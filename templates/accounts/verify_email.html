@@ -1,1 +1,90 @@
+<<<<<<< HEAD
 <h2>Verify Email</h2>
+=======
+{% extends "accounts/base.html" %}
+{% load static %}
+
+{% block title %}Verify Email | The Spotlight{% endblock %}
+
+{% block content %}
+<main class="relative z-10 flex-1 flex items-center justify-center px-4 py-8 sm:px-6 lg:px-8 bg-[#000000]">
+  <div class="w-full max-w-md sm:max-w-lg bg-[#0a0a0a]/95 backdrop-blur-xl border border-[#262626] rounded-3xl shadow-2xl p-6 sm:p-10 transition-all">
+    
+    <!-- Hero Email Icon Badge with Glow -->
+    <div class="flex justify-center mb-6">
+      <div class="relative">
+        <!-- Glow Effect behind icon -->
+        <div class="absolute -inset-1 rounded-full bg-gradient-to-r from-[#f7c18b] to-[#e5a96c] opacity-30 blur-lg animate-pulse"></div>
+        <div class="relative w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-[#000000] border border-[#262626] flex items-center justify-center shadow-inner">
+          <i class="fa-regular fa-paper-plane text-2xl sm:text-3xl text-[#f7c18b]"></i>
+        </div>
+      </div>
+    </div>
+
+    <!-- Django Messages Display -->
+    {% if messages %}
+      {% for message in messages %}
+        <div class="p-3 mb-4 text-xs rounded-xl {% if message.tags == 'error' %}bg-red-500/10 border border-red-500/30 text-red-400{% else %}bg-[#f7c18b]/10 border border-[#f7c18b]/30 text-[#f7c18b]{% endif %}">
+          {{ message }}
+        </div>
+      {% endfor %}
+    {% endif %}
+
+    <!-- Header Section -->
+    <div class="text-center space-y-2">
+      <h2 class="text-2xl sm:text-3xl font-extrabold text-[#ffffff] tracking-tight">
+        Verify Your Email
+      </h2>
+      <p class="text-xs sm:text-sm text-[#ffffff]/75 leading-relaxed max-w-sm mx-auto">
+        We've sent a confirmation link to:
+      </p>
+
+      <!-- Highlighted Email Badge -->
+      {% if email %}
+        <div class="inline-block mt-2 px-3.5 py-1.5 rounded-full bg-[#000000] border border-[#f7c18b]/40">
+          <span class="text-xs sm:text-sm font-semibold text-[#f7c18b] break-all">
+            <i class="fa-regular fa-envelope mr-1.5 text-[#ffffff]/60"></i>{{ email }}
+          </span>
+        </div>
+      {% endif %}
+    </div>
+
+    <!-- Notice Card -->
+    <div class="mt-6 p-4 rounded-2xl bg-[#000000]/80 border border-[#262626] text-center space-y-1">
+      <p class="text-xs sm:text-sm text-[#ffffff]">
+        Please check your inbox and click the link to activate your <span class="text-[#f7c18b] font-semibold">Spotlight</span> account.
+      </p>
+      <p class="text-[11px] text-[#ffffff]/60">
+        Can't find it? Make sure to check your spam or junk folder.
+      </p>
+    </div>
+
+    <!-- Actions Section -->
+    <div class="mt-8 space-y-4">
+      <!-- Request new verification form (POST) -->
+      <form method="post" action="{% url 'accounts:resend_verification' %}">
+        {% csrf_token %}
+        <input type="hidden" name="email" value="{{ email|default:'' }}">
+        <button type="submit" class="w-full bg-[#f7c18b] hover:bg-[#fad3ab] text-[#000000] font-bold py-3 px-4 rounded-xl transition-all shadow-lg flex items-center justify-center space-x-2 text-xs sm:text-sm cursor-pointer">
+          <i class="fa-solid fa-rotate-right text-sm"></i>
+          <span>Resend Verification Email</span>
+        </button>
+      </form>
+
+      <!-- Secondary Navigation -->
+      <div class="pt-4 border-t border-[#262626] text-center text-xs flex items-center justify-between">
+        <a href="{% url 'accounts:login' %}" class="text-[#f7c18b] hover:underline transition-all flex items-center space-x-1.5 font-medium">
+          <i class="fa-solid fa-arrow-left text-[10px]"></i>
+          <span>Back to sign in</span>
+        </a>
+
+        <a href="{% url 'accounts:register' %}" class="text-[#f7c18b] hover:underline font-semibold transition-all">
+          Need a different account?
+        </a>
+      </div>
+    </div>
+
+  </div>
+</main>
+{% endblock %}
+>>>>>>> 37ab93a1070dbe585c2a9f422cdb63ae80844133
