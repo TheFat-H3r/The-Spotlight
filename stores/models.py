@@ -94,7 +94,9 @@ class Store(models.Model):
 
   # Contact and Fulfillment
   contact_phone = models.CharField(max_length=16, blank=True)
+  contact_email = models.CharField(blank=True)
   whatsapp = models.CharField(max_length=16, blank=True)
+  social_links = models.CharField(blank=True)
   pickup_location = models.CharField(
       max_length=150, blank=True, help_text="Where customers collect orders."
   )
@@ -153,6 +155,15 @@ class Store(models.Model):
   def accepts_bookings(self):
     """True for stores that offer bookable services."""
     return self.store_type in (self.StoreType.SERVICES, self.StoreType.BOTH)
+
+  @staticmethod
+  def generate_unique_slug(name):
+      base = slugify(name)[:150] or "vendor"
+      slug, n = base, 2
+      while Store.objects.filter(slug=slug).exists():
+          slug = f"{base}-{n}"
+          n += 1
+      return slug
 
   def save(self, *args, **kwargs):
     # Auto-generate unique slug if missing

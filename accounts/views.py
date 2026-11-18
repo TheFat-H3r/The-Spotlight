@@ -1,3 +1,5 @@
+import re
+
 from django.contrib import messages
 from django.contrib.auth import logout, authenticate, login
 from django.shortcuts import redirect, render
@@ -7,16 +9,17 @@ from django.views import View
 
 from accounts.models import User
 from accounts.utils import redirect_by_role, send_password_reset_email, send_verification_email
+from stores.models import Store
 
 
 class RegisterView(View):
     template_name = 'accounts/register.html'
 
     def get(self, request):
-        # if request.user.is_authenticated:
-                    # if request.user.is_email_verified:
-                    #     return redirect('core:home')
-                    # return redirect('accounts:verify_email_confirm')
+        if request.user.is_authenticated:
+            if request.user.is_email_verified:
+                return redirect('core:home')
+            return redirect('accounts:resend_verification')
         return render(request, self.template_name)
 
     def post(self, request):
@@ -72,7 +75,7 @@ class RegisterView(View):
         # Send Email Verification Link via Brevo API
         if user.auth_provider == User.AuthProvider.EMAIL:
             token = user.generate_email_verification_token()
-            verification_path = reverse('accounts:verify_email_confirm', kwargs={'token': token})
+            verification_path = reverse('accounts:resend_verification', kwargs={'token': token})
             verification_url = request.build_absolute_uri(verification_path)
 
             send_verification_email(
@@ -87,7 +90,7 @@ class RegisterView(View):
             if user.role == User.Role.VENDOR:
                 request.session['pending_vendor_id'] = user.pk
                 messages.success(request, "Account created! Please complete your vendor application below. Don't forget to verify your email via the link sent to your inbox.")
-                return redirect('accounts:vendor_application')
+                return redirect('store:store-create')
 
             messages.success(request, "Registration successful! Check your email to activate your account.")
             return redirect('accounts:verify_email')
@@ -129,7 +132,7 @@ class VerifyEmailConfirmView(View):
 
 
 class ResendVerificationEmailView(View):
-    """Dedicated form page for users to enter their email and request a new link."""
+    
     template_name = 'accounts/resend_verification.html'
 
     def get(self, request):
@@ -176,10 +179,10 @@ class LoginView(View):
     template_name = 'accounts/login.html'
 
     def get(self, request):
-        # if request.user.is_authenticated:
-            # if request.user.is_email_verified:
-            #     return redirect('core:home')
-            # return redirect('accounts:verify_email_confirm')
+        if request.user.is_authenticated:
+            if request.user.is_email_verified:
+                return redirect('core:home')
+            return redirect('accounts:resend_verification')
         return render(request, self.template_name)
 
     def post(self, request):
@@ -222,19 +225,151 @@ class ProfileView(LoginRequiredMixin, View):
     template_name = 'accounts/profile.html'
     login_url = 'accounts:login'
 
-    def get(self, request):
+    def _get_role_data(self, user):
         
-        return render(request, self.template_name)
+        customer_profile = None
+        vendor_profile = None
+
+        if user.role == User.Role.VENDOR:
+            default_name = user.full_name or user.email.split('@')[0]
+            vendor_profile, _ = Store.objects.get_or_create(
+                owner=user,
+                defaults={
+                    'name': default_name,
+                    'slug': Store.generate_unique_slug(default_name),
+                    'contact_email': user.email,
+                    'contact_phone': user.phone or '',
+                }
+            )
+
+        return customer_profile, vendor_profile
+
+    def get(self, request):
+        user = request.user
+        customer_profile, vendor_profile = self._get_role_data(user)
+        edit_mode = request.GET.get('edit') == 'true'
+
+        context = {
+            'user_obj': user,
+            'customer_profile': customer_profile,
+            'vendor_profile': vendor_profile,
+            'residence_choices': User.Residence.choices,
+            'course_choices': User.Course.choices,
+            'edit_mode': edit_mode,
+        }
+        return render(request, self.template_name, context)
 
     def post(self, request):
-        
+        user = request.user
+        customer_profile, vendor_profile = self._get_role_data(user)
+
+        # 1. Common User Fields
+        full_name = request.POST.get('full_name', '').strip()
+        phone = request.POST.get('phone', '').strip()
+
+        # 2. Customer Fields
+        course = request.POST.get('course', '').strip()
+        cohort = request.POST.get('cohort', '').strip().upper()
+        residence = request.POST.get('residence', '').strip()
+        room_number = request.POST.get('room_number', '').strip().upper()
+
+        # 3. VendorProfile Fields
+        business_name = request.POST.get('business_name', '').strip()
+        tagline = request.POST.get('tagline', '').strip()
+        description = request.POST.get('description', '').strip()
+        contact_email = request.POST.get('contact_email', '').strip()
+        contact_phone = request.POST.get('contact_phone', '').strip()
+        whatsapp = request.POST.get('whatsapp', '').strip()
+
+        instagram = request.POST.get('instagram', '').strip()
+        tiktok = request.POST.get('tiktok', '').strip()
+        website = request.POST.get('website', '').strip()
+
+        logo = request.FILES.get('logo')
+        banner = request.FILES.get('banner')
+
+        error_context = {
+            'user_obj': user,
+            'customer_profile': customer_profile,
+            'vendor_profile': vendor_profile,
+            'residence_choices': User.Residence.choices,
+            'edit_mode': True,
+            'form_data': request.POST,
+        }
+
+        # 4. Validate Common Fields
+        if not full_name:
+            messages.error(request, "Full name is required.")
+            return render(request, self.template_name, error_context)
+
+        if not phone:
+            messages.error(request, "Phone number is required.")
+            return render(request, self.template_name, error_context)
+
+        # 5. Validate & Save Role-Specific Profile
+        if user.role == User.Role.CUSTOMER:
+            if cohort and not re.match(r"^[A-Z]'\d{2}$", cohort):
+                messages.error(request, "Cohort must strictly match the format F'25.")
+                return render(request, self.template_name, error_context)
+
+            if residence and residence not in User.Residence.values:
+                messages.error(request, "Please select a valid campus residence.")
+                return render(request, self.template_name, error_context)
+
+            if room_number and not re.match(r"^[A-Z]\d{3}$", room_number):
+                messages.error(request, "Room number must strictly match the format S101.")
+                return render(request, self.template_name, error_context)
+
+            assert customer_profile is not None
+            customer_profile.course = course
+            customer_profile.cohort = cohort
+            customer_profile.residence = residence
+            customer_profile.room_number = room_number
+            customer_profile.save()
+
+        elif user.role == User.Role.VENDOR:
+            if not business_name:
+                messages.error(request, "Business name is required for vendors.")
+                return render(request, self.template_name, error_context)
+
+            social_links = {}
+            if instagram:
+                social_links['instagram'] = instagram
+            if tiktok:
+                social_links['tiktok'] = tiktok
+            if website:
+                social_links['website'] = website
+
+            assert vendor_profile is not None
+            if Store.name != business_name:
+                vendor_profile.slug = Store.generate_unique_slug(business_name)
+
+            vendor_profile.name = business_name
+            vendor_profile.tagline = tagline
+            vendor_profile.description = description
+            vendor_profile.contact_email = contact_email or user.email
+            vendor_profile.contact_phone = contact_phone or phone
+            vendor_profile.whatsapp = whatsapp
+            vendor_profile.social_links = social_links
+
+            if logo:
+                vendor_profile.logo = logo
+            if banner:
+                vendor_profile.banner = banner
+
+            vendor_profile.save()
+
+        # 6. Save Base User Updates
+        user.full_name = full_name
+        user.phone = phone
+        user.save(update_fields=['full_name', 'phone'])
+
         messages.success(request, "Your profile has been updated successfully.")
         return redirect('accounts:profile')
 
 
-      
 class PasswordResetRequestView(View):
-    """Handles 'Forgot Password' email submission."""
+    
     template_name = 'accounts/password_reset.html'
 
     def get(self, request):
@@ -336,4 +471,4 @@ class PasswordResetConfirmView(View):
 
 def logout_view(request):
     logout(request)
-    return redirect("users:login")
+    return redirect("accounts:login")

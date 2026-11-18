@@ -1,6 +1,7 @@
 from django.urls import path
 from .views import store_create, store_dashboard, store_delete, store_toggle_orders, store_update, stores_home, store
 
+app_name = "store"
 urlpatterns = [
     # Public routes
     path('', stores_home, name='stores-home'),

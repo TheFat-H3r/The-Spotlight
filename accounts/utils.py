@@ -100,17 +100,16 @@ def send_password_reset_email(user_email: str, user_name: str, reset_url: str) -
 
     
 def redirect_by_role(user):
-    """Routes authenticated users based on role and onboarding completion."""
+    
     if user.role == User.Role.ADMIN or user.is_superuser:
         return redirect('/admin/')
 
     if user.role == User.Role.VENDOR:
-        has_profile = hasattr(user, 'vendor_profile')
-        # has_application = VendorApplication.objects.filter(applicant=user).exists()
+        has_store = hasattr(user, 'stores')
 
         # Redirect to vendor application if not yet submitted
-        # if not has_profile and not has_application:
-        #     return redirect('accounts:vendor_application')
+        if not has_store:
+            return redirect('store:create-store')
 
         return redirect('core:home')
 

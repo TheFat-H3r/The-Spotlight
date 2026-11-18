@@ -7,6 +7,9 @@ from django.db import models
 from django.utils import timezone
 from django.core.validators import RegexValidator
 from django.core.signing import TimestampSigner, BadSignature, SignatureExpired
+from django.utils.text import slugify
+
+from stores.models import Store
 
 
 class UserManager(BaseUserManager):
