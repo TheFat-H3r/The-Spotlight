@@ -15,7 +15,7 @@ class RegisterView(View):
     def get(self, request):
         # if request.user.is_authenticated:
                     # if request.user.is_email_verified:
-                    #     return redirect('marketplace:home')
+                    #     return redirect('core:home')
                     # return redirect('accounts:verify_email_confirm')
         return render(request, self.template_name)
 
@@ -92,7 +92,7 @@ class RegisterView(View):
             messages.success(request, "Registration successful! Check your email to activate your account.")
             return redirect('accounts:verify_email')
 
-        return redirect('marketplace:home')
+        return redirect('core:home')
 
 
 class VerifyEmailNoticeView(View):
@@ -101,7 +101,7 @@ class VerifyEmailNoticeView(View):
 
     def get(self, request):
         if request.user.is_authenticated and request.user.is_email_verified:
-            return redirect('marketplace:home')
+            return redirect('core:home')
 
         # Obtain email from logged in user or temporary session key
         email = request.user.email if request.user.is_authenticated else request.session.get('unverified_email', '')
@@ -134,7 +134,7 @@ class ResendVerificationEmailView(View):
 
     def get(self, request):
         if request.user.is_authenticated and request.user.is_email_verified:
-            return redirect('marketplace:home')
+            return redirect('core:home')
 
         email = request.user.email if request.user.is_authenticated else request.session.get('unverified_email', '')
         return render(request, self.template_name, {'email': email})
@@ -178,7 +178,7 @@ class LoginView(View):
     def get(self, request):
         # if request.user.is_authenticated:
             # if request.user.is_email_verified:
-            #     return redirect('marketplace:home')
+            #     return redirect('core:home')
             # return redirect('accounts:verify_email_confirm')
         return render(request, self.template_name)
 
@@ -239,7 +239,7 @@ class PasswordResetRequestView(View):
 
     def get(self, request):
         if request.user.is_authenticated:
-            return redirect('marketplace:home')
+            return redirect('core:home')
         return render(request, self.template_name)
 
     def post(self, request):

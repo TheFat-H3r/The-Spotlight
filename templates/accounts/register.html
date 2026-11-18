@@ -4,13 +4,15 @@
 {% block title %}Sign Up | The Spotlight{% endblock %}
 
 {% block content %}
-<main class="relative z-10 flex-1 flex items-center justify-center px-4 py-8 sm:px-6 lg:px-8">
-  <div class="w-full max-w-md bg-spotlight-card/90 backdrop-blur-xl border border-spotlight-border rounded-3xl shadow-2xl p-8 sm:p-10">
+<main class="relative z-10 flex-1 flex items-center justify-center px-4 py-8 sm:px-6 lg:px-8 bg-[#000000]">
+  <div class="w-full max-w-md bg-[#0a0a0a]/95 backdrop-blur-xl border border-[#262626] rounded-3xl shadow-2xl p-8 sm:p-10">
     
     <!-- Auth Form Header -->
     <div class="mb-8 text-center">
-      <h1 class="text-2xl font-bold text-white">Create an Account</h1>
-      <p class="text-xs text-slate-400 mt-1">Join The Spotlight by Nova Group today</p>
+      <h1 class="text-2xl font-bold text-[#ffffff]">Create an Account</h1>
+      <p class="text-xs text-[#ffffff]/75 mt-1">
+        Join <span class="text-[#f7c18b] font-semibold">The Spotlight</span> by <span class="text-[#f7c18b] font-semibold">Nova Group</span> today
+      </p>
     </div>
 
     <!-- Django Messages Display -->
@@ -22,23 +24,23 @@
       {% endfor %}
     {% endif %}
 
-    <!-- Google OAuth Link -->
-    <a href="{% provider_login_url 'google' process='login' %}" class="w-full bg-white hover:bg-slate-100 text-slate-900 font-semibold py-3 px-4 rounded-xl border border-slate-200 transition-all shadow-lg flex items-center justify-center space-x-3 text-center cursor-pointer">
+    <!-- Google OAuth Link (Matched to Black & Champagne Gold Theme) -->
+    <a href="{% provider_login_url 'google' process='login' %}" class="w-full bg-[#121212] hover:bg-[#1c1c1c] text-[#ffffff] font-semibold py-3 px-4 rounded-xl border border-[#f7c18b]/50 hover:border-[#f7c18b] transition-all shadow-lg flex items-center justify-center space-x-3 text-center cursor-pointer group">
       <svg class="w-5 h-5 flex-shrink-0" viewBox="0 0 24 24">
         <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
         <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
         <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/>
         <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/>
       </svg>
-      <span class="text-sm">Continue with Google</span>
+      <span class="text-sm group-hover:text-[#f7c18b] transition-colors">Continue with Google</span>
     </a>
 
     <!-- Divider -->
     <div class="relative my-6 text-center">
       <div class="absolute inset-0 flex items-center">
-        <div class="w-full border-t border-spotlight-border"></div>
+        <div class="w-full border-t border-[#262626]"></div>
       </div>
-      <span class="relative bg-spotlight-card px-4 text-xs uppercase tracking-wider text-slate-500 font-semibold">
+      <span class="relative bg-[#0a0a0a] px-4 text-xs uppercase tracking-wider text-[#ffffff]/60 font-semibold">
         or register with email
       </span>
     </div>
@@ -49,87 +51,87 @@
 
       <!-- Full Name Field -->
       <div>
-        <label class="block text-xs font-semibold text-slate-300 mb-1.5">Full Name</label>
+        <label class="block text-xs font-semibold text-[#ffffff] mb-1.5">Full Name</label>
         <div class="relative flex items-center">
           <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
-            <i class="fa-regular fa-user text-sm text-slate-500"></i>
+            <i class="fa-regular fa-user text-sm text-[#ffffff]/50"></i>
           </div>
-          <input type="text" name="full_name" value="{{ full_name|default:'' }}" required placeholder="Jane Doe" class="w-full bg-spotlight-bg border border-spotlight-border rounded-xl pl-10 pr-4 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-spotlight-cyan transition-all" />
+          <input type="text" name="full_name" value="{{ full_name|default:'' }}" required placeholder="Jane Doe" class="w-full bg-[#000000] border border-[#262626] rounded-xl pl-10 pr-4 py-2.5 text-sm text-[#ffffff] placeholder-[#ffffff]/35 focus:outline-none focus:border-[#f7c18b] transition-all" />
         </div>
       </div>
 
       <!-- Email Field -->
       <div>
-        <label class="block text-xs font-semibold text-slate-300 mb-1.5 flex justify-between">
+        <label class="block text-xs font-semibold text-[#ffffff] mb-1.5 flex justify-between">
           <span>Email Address</span>
-          <span class="text-slate-500 text-[11px]">Valid Email Required</span>
+          <span class="text-[#f7c18b] text-[11px] font-normal">Valid Email Required</span>
         </label>
         <div class="relative flex items-center">
           <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
-            <i class="fa-regular fa-envelope text-sm text-slate-500"></i>
+            <i class="fa-regular fa-envelope text-sm text-[#ffffff]/50"></i>
           </div>
-          <input type="email" name="email" value="{{ email|default:'' }}" required placeholder="jane@example.com" class="w-full bg-spotlight-bg border border-spotlight-border rounded-xl pl-10 pr-4 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-spotlight-cyan transition-all" />
+          <input type="email" name="email" value="{{ email|default:'' }}" required placeholder="jane@example.com" class="w-full bg-[#000000] border border-[#262626] rounded-xl pl-10 pr-4 py-2.5 text-sm text-[#ffffff] placeholder-[#ffffff]/35 focus:outline-none focus:border-[#f7c18b] transition-all" />
         </div>
       </div>
 
       <!-- Phone Field -->
       <div>
-        <label class="block text-xs font-semibold text-slate-300 mb-1.5">Phone Number</label>
+        <label class="block text-xs font-semibold text-[#ffffff] mb-1.5">Phone Number</label>
         <div class="relative flex items-center">
           <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
-            <i class="fa-solid fa-phone text-sm text-slate-500"></i>
+            <i class="fa-solid fa-phone text-sm text-[#ffffff]/50"></i>
           </div>
-          <input type="tel" name="phone" value="{{ phone|default:'' }}" required placeholder="+1234567890" class="w-full bg-spotlight-bg border border-spotlight-border rounded-xl pl-10 pr-4 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-spotlight-cyan transition-all" />
+          <input type="tel" name="phone" value="{{ phone|default:'' }}" required placeholder="+1234567890" class="w-full bg-[#000000] border border-[#262626] rounded-xl pl-10 pr-4 py-2.5 text-sm text-[#ffffff] placeholder-[#ffffff]/35 focus:outline-none focus:border-[#f7c18b] transition-all" />
         </div>
       </div>
 
       <!-- Account Role Selection -->
       <div>
-        <label class="block text-xs font-semibold text-slate-300 mb-1.5">Register as a</label>
+        <label class="block text-xs font-semibold text-[#ffffff] mb-1.5">Register as a</label>
         <div class="relative flex items-center">
           <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
-            <i class="fa-solid fa-user-tag text-sm text-slate-500"></i>
+            <i class="fa-solid fa-user-tag text-sm text-[#ffffff]/50"></i>
           </div>
-          <select name="role" class="w-full bg-spotlight-bg border border-spotlight-border rounded-xl pl-10 pr-4 py-2.5 text-sm text-white focus:outline-none focus:border-spotlight-cyan transition-all">
-            <option value="customer" {% if role == 'customer' or not role %}selected{% endif %}>Customer</option>
-            <option value="vendor" {% if role == 'vendor' %}selected{% endif %}>Vendor</option>
+          <select name="role" class="w-full bg-[#000000] border border-[#262626] rounded-xl pl-10 pr-4 py-2.5 text-sm text-[#ffffff] focus:outline-none focus:border-[#f7c18b] transition-all">
+            <option value="customer" class="bg-[#0a0a0a] text-[#ffffff]" {% if role == 'customer' or not role %}selected{% endif %}>Customer</option>
+            <option value="vendor" class="bg-[#0a0a0a] text-[#ffffff]" {% if role == 'vendor' %}selected{% endif %}>Vendor</option>
           </select>
         </div>
       </div>
 
       <!-- Password Field -->
       <div>
-        <label class="block text-xs font-semibold text-slate-300 mb-1.5">Password</label>
+        <label class="block text-xs font-semibold text-[#ffffff] mb-1.5">Password</label>
         <div class="relative flex items-center">
           <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
-            <i class="fa-solid fa-lock text-sm text-slate-500"></i>
+            <i class="fa-solid fa-lock text-sm text-[#ffffff]/50"></i>
           </div>
-          <input type="password" name="password" required minlength="8" placeholder="At least 8 characters" class="w-full bg-spotlight-bg border border-spotlight-border rounded-xl pl-10 pr-4 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-spotlight-cyan transition-all" />
+          <input type="password" name="password" required minlength="8" placeholder="At least 8 characters" class="w-full bg-[#000000] border border-[#262626] rounded-xl pl-10 pr-4 py-2.5 text-sm text-[#ffffff] placeholder-[#ffffff]/35 focus:outline-none focus:border-[#f7c18b] transition-all" />
         </div>
       </div>
 
       <!-- Confirm Password Field -->
       <div>
-        <label class="block text-xs font-semibold text-slate-300 mb-1.5">Confirm Password</label>
+        <label class="block text-xs font-semibold text-[#ffffff] mb-1.5">Confirm Password</label>
         <div class="relative flex items-center">
           <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
-            <i class="fa-solid fa-lock text-sm text-slate-500"></i>
+            <i class="fa-solid fa-lock text-sm text-[#ffffff]/50"></i>
           </div>
-          <input type="password" name="confirm_password" required placeholder="Repeat your password" class="w-full bg-spotlight-bg border border-spotlight-border rounded-xl pl-10 pr-4 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-spotlight-cyan transition-all" />
+          <input type="password" name="confirm_password" required placeholder="Repeat your password" class="w-full bg-[#000000] border border-[#262626] rounded-xl pl-10 pr-4 py-2.5 text-sm text-[#ffffff] placeholder-[#ffffff]/35 focus:outline-none focus:border-[#f7c18b] transition-all" />
         </div>
       </div>
 
-      <!-- Submit Button -->
-      <button type="submit" class="w-full mt-2 bg-gradient-to-r from-spotlight-cyan via-spotlight-delivery to-[#0077B6] hover:opacity-90 text-spotlight-bg font-bold py-3 px-4 rounded-xl transition-all shadow-lg flex items-center justify-center space-x-2">
+      <!-- Submit Button (Warm Gold #f7c18b with Black #000000 text) -->
+      <button type="submit" class="w-full mt-2 bg-[#f7c18b] hover:bg-[#fad3ab] text-[#000000] font-bold py-3 px-4 rounded-xl transition-all shadow-lg flex items-center justify-center space-x-2 cursor-pointer">
         <span>Create Spotlight Account</span>
         <i class="fa-solid fa-arrow-right text-sm"></i>
       </button>
     </form>
 
     <!-- Switch to Login Navigation -->
-    <div class="mt-6 pt-4 border-t border-spotlight-border text-center text-xs text-slate-400">
+    <div class="mt-6 pt-4 border-t border-[#262626] text-center text-xs text-[#ffffff]">
       <span>Already have an account?</span>
-      <a href="{% url 'accounts:login' %}" class="text-spotlight-cyan font-semibold hover:underline ml-1">
+      <a href="{% url 'accounts:login' %}" class="text-[#f7c18b] font-semibold hover:underline ml-1 transition-all">
         Sign in instead
       </a>
     </div>

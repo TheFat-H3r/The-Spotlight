@@ -112,7 +112,7 @@ def redirect_by_role(user):
         # if not has_profile and not has_application:
         #     return redirect('accounts:vendor_application')
 
-        return redirect('marketplace:home')
+        return redirect('core:home')
 
     # Default: CUSTOMER
-    return redirect('marketplace:home')
+    return redirect('core:home')
