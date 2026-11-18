@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+
+{% block title %}{{ business_type.name }} | The Spotlight{% endblock %}
+
+{% block content %}
+<section class="container py-5">
+    <a href="{% url 'marketplace:home' %}" class="text-cyan">
+        ← Back to Marketplace
+    </a>
+
+    <h1 class="fw-bold mt-4">{{ business_type.name }}</h1>
+
+    <p class="text-muted">
+        {{ business_type.description|default:"Explore businesses of this type." }}
+    </p>
+
+    <div class="row g-4 mt-3">
+        {% for store in stores %}
+            <div class="col-md-6 col-lg-4">
+                <div class="market-card p-3">
+                    <h5>{{ store.name }}</h5>
+                    <p>{{ store.description|truncatewords:20 }}</p>
+
+                    <a href="{% url 'marketplace:store_detail' store.slug %}"
+                       class="btn btn-spotlight btn-sm">
+                        Visit Store
+                    </a>
+                </div>
+            </div>
+        {% empty %}
+            <p>No businesses of this type are available yet.</p>
+        {% endfor %}
+    </div>
+</section>
+{% endblock %}
