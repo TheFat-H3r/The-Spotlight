@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}{{ service.name }} | The Spotlight{% endblock %}
+
+{% block content %}
+<section class="container py-5">
+    <a href="{% url 'marketplace:home' %}" class="text-cyan">
+        ← Back to Marketplace
+    </a>
+
+    <div class="row g-5 mt-3">
+        <div class="col-md-6">
+            {% if service.image %}
+                <img src="{{ service.image.url }}"
+                     class="img-fluid rounded-4"
+                     alt="{{ service.name }}">
+            {% else %}
+                <div class="image-placeholder">Service image</div>
+            {% endif %}
+        </div>
+
+        <div class="col-md-6">
+            <span class="section-label">SERVICE DETAILS</span>
+            <h1 class="fw-bold">{{ service.name }}</h1>
+
+            <p>{{ service.description }}</p>
+
+            <h3 class="text-cyan fw-bold">
+                Starting from MUR {{ service.starting_price }}
+            </h3>
+
+            <p>
+                <strong>Provider:</strong>
+                <a href="{% url 'marketplace:store_detail' service.store.slug %}">
+                    {{ service.store.name }}
+                </a>
+            </p>
+
+            {% if service.pricing_tier %}
+                <p><strong>Pricing:</strong> {{ service.pricing_tier }}</p>
+            {% endif %}
+
+            <!-- Connect to the actual booking application -->
+            <button class="btn btn-spotlight" type="button" disabled>
+                Booking integration pending
+            </button>
+        </div>
+    </div>
+</section>
+{% endblock %}

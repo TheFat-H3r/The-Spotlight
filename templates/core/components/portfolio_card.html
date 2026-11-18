@@ -1,0 +1,28 @@
+<article class="achievement-card mb-3">
+
+    {% if achievement.badge_image %}
+        <img src="{{ achievement.badge_image.url }}"
+             class="achievement-image"
+             alt="{{ achievement.title }}">
+    {% endif %}
+
+    <div class="p-3">
+        <h6 class="fw-bold">{{ achievement.title }}</h6>
+
+        <p class="small text-muted">
+            {{ achievement.description|truncatewords:15 }}
+        </p>
+
+        {% if achievement.store %}
+            <small class="text-muted">
+                By {{ achievement.store.name }}
+            </small> 
+        {% endif %}
+
+        <!-- Replace with the actual achievement detail URL -->
+        <a href="#" class="text-cyan small fw-bold">
+            Explore achievement →
+        </a>
+    </div>
+
+</article>

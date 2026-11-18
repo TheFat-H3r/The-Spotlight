@@ -1,0 +1,28 @@
+<article class="announcement-card mb-3">
+
+    <span class="announcement-label">
+        ANNOUNCEMENT
+    </span>
+
+    <h6 class="fw-bold mt-2">
+        {{ announcement.title }}
+    </h6>
+
+    <p class="small text-muted">
+        {{ announcement.description|truncatewords:20 }}
+    </p>
+
+    {% if announcement.created_at %}
+        <small class="text-muted">
+            {{ announcement.created_at|date:"d M Y" }}
+        </small>
+    {% endif %}
+
+    {% if announcement.target_url %}
+        <a href="{{ announcement.target_url }}"
+           class="text-cyan small fw-bold">
+            Read More →
+        </a>
+    {% endif %}
+
+</article>

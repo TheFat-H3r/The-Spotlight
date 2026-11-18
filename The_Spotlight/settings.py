@@ -145,6 +145,7 @@ LOGIN_REDIRECT_URL = "/"
 LOGOUT_REDIRECT_URL = "/login/"
 
 # ACCOUNT_ADAPTER = "accounts.adapters.CustomAccountAdapter"
+# ACCOUNT_ADAPTER = "accounts.adapters.CustomAccountAdapter"
 
 # Google OAuth Credentials (Obtain from Google Cloud Console)
 SOCIALACCOUNT_PROVIDERS = {
