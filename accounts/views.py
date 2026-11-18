@@ -230,6 +230,9 @@ class ProfileView(LoginRequiredMixin, View):
         customer_profile = None
         vendor_profile = None
 
+        if user.role == User.Role.CUSTOMER:
+            customer_profile = user
+
         if user.role == User.Role.VENDOR:
             default_name = user.full_name or user.email.split('@')[0]
             vendor_profile, _ = Store.objects.get_or_create(
@@ -266,6 +269,7 @@ class ProfileView(LoginRequiredMixin, View):
         # 1. Common User Fields
         full_name = request.POST.get('full_name', '').strip()
         phone = request.POST.get('phone', '').strip()
+        avatar = request.FILES.get('avatar')
 
         # 2. Customer Fields
         course = request.POST.get('course', '').strip()
@@ -287,6 +291,7 @@ class ProfileView(LoginRequiredMixin, View):
 
         logo = request.FILES.get('logo')
         banner = request.FILES.get('banner')
+
 
         error_context = {
             'user_obj': user,
@@ -325,6 +330,7 @@ class ProfileView(LoginRequiredMixin, View):
             customer_profile.cohort = cohort
             customer_profile.residence = residence
             customer_profile.room_number = room_number
+            
             customer_profile.save()
 
         elif user.role == User.Role.VENDOR:
@@ -362,7 +368,9 @@ class ProfileView(LoginRequiredMixin, View):
         # 6. Save Base User Updates
         user.full_name = full_name
         user.phone = phone
-        user.save(update_fields=['full_name', 'phone'])
+        if avatar:
+            user.avatar = avatar
+        user.save(update_fields=['full_name', 'phone', 'avatar'])
 
         messages.success(request, "Your profile has been updated successfully.")
         return redirect('accounts:profile')
