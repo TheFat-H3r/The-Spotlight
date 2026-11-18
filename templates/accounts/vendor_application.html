@@ -1,0 +1,184 @@
+{% extends "accounts/base.html" %}
+{% load static %}
+
+{% block title %}Vendor Application | The Spotlight{% endblock %}
+
+{% block content %}
+<main class="relative z-10 flex-1 flex items-center justify-center px-4 py-8 sm:px-6 lg:px-8">
+  <div class="w-full max-w-2xl bg-spotlight-card/90 backdrop-blur-xl border border-spotlight-border rounded-3xl shadow-2xl p-6 sm:p-10 transition-all">
+
+    <!-- Header Icon -->
+    <div class="flex justify-center mb-6">
+      <div class="relative">
+        <div class="absolute -inset-1 rounded-full bg-gradient-to-r from-amber-400 to-spotlight-cyan opacity-35 blur-lg"></div>
+        <div class="relative w-16 h-16 rounded-2xl bg-spotlight-bg border border-spotlight-border flex items-center justify-center shadow-inner">
+          <i class="fa-solid fa-store text-2xl text-amber-400"></i>
+        </div>
+      </div>
+    </div>
+
+    <!-- Django Messages -->
+    {% if messages %}
+      <div class="mb-6 space-y-2">
+        {% for message in messages %}
+          <div class="p-3.5 text-xs sm:text-sm rounded-xl flex items-center space-x-2.5 {% if message.tags == 'error' %}bg-red-500/10 border border-red-500/30 text-red-400{% else %}bg-green-500/10 border border-green-500/30 text-green-400{% endif %}">
+            <i class="fa-solid {% if message.tags == 'error' %}fa-circle-exclamation{% else %}fa-circle-check{% endif %}"></i>
+            <span>{{ message }}</span>
+          </div>
+        {% endfor %}
+      </div>
+    {% endif %}
+
+    {% if show_form %}
+      <!-- ===================================================== -->
+      <!-- 1. APPLICATION SUBMISSION FORM                        -->
+      <!-- ===================================================== -->
+      <div class="text-center mb-8">
+        <span class="px-3 py-1 text-[11px] font-bold uppercase tracking-wider rounded-full bg-amber-500/15 text-amber-400 border border-amber-500/30">
+          Vendor Onboarding
+        </span>
+        <h2 class="mt-3 text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
+          Apply to Sell on The Spotlight
+        </h2>
+        <p class="mt-2 text-xs sm:text-sm text-slate-400 max-w-md mx-auto">
+          Tell us about your campus business or service. Once approved by an administrator, your storefront will go live.
+        </p>
+      </div>
+
+      <form method="post" action="{% url 'accounts:vendor_application' %}" class="space-y-5">
+        {% csrf_token %}
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
+          <div>
+            <label class="block text-xs font-semibold text-slate-300 mb-1.5">Business / Brand Name *</label>
+            <div class="relative flex items-center">
+              <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
+                <i class="fa-solid fa-shop text-sm text-slate-500"></i>
+              </div>
+              <input type="text" name="business_name" required maxlength="150"
+                value="{{ form_data.business_name|default:'' }}"
+                placeholder="e.g. Nova Campus Bites"
+                class="w-full bg-spotlight-bg border border-spotlight-border rounded-xl pl-10 pr-4 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-spotlight-cyan transition-all" />
+            </div>
+          </div>
+
+          <div>
+            <label class="block text-xs font-semibold text-slate-300 mb-1.5">Business Category *</label>
+            <div class="relative flex items-center">
+              <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
+                <i class="fa-solid fa-tags text-sm text-slate-500"></i>
+              </div>
+              <select name="business_type" required
+                class="w-full bg-spotlight-bg border border-spotlight-border rounded-xl pl-10 pr-4 py-2.5 text-sm text-white focus:outline-none focus:border-spotlight-cyan transition-all">
+                <option value="">-- Select Category --</option>
+                <option value="Food & Beverages" {% if form_data.business_type == 'Food & Beverages' %}selected{% endif %}>Food & Beverages</option>
+                <option value="Fashion & Thrift" {% if form_data.business_type == 'Fashion & Thrift' %}selected{% endif %}>Fashion & Thrift</option>
+                <option value="Tech & Gadgets" {% if form_data.business_type == 'Tech & Gadgets' %}selected{% endif %}>Tech & Gadgets</option>
+                <option value="Beauty & Grooming" {% if form_data.business_type == 'Beauty & Grooming' %}selected{% endif %}>Beauty & Grooming</option>
+                <option value="Tutoring & Academic Services" {% if form_data.business_type == 'Tutoring & Academic Services' %}selected{% endif %}>Tutoring & Academic Services</option>
+                <option value="Design & Photography" {% if form_data.business_type == 'Design & Photography' %}selected{% endif %}>Design & Photography</option>
+                <option value="Other" {% if form_data.business_type == 'Other' %}selected{% endif %}>Other</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-slate-300 mb-1.5">Business Contact Phone *</label>
+          <div class="relative flex items-center">
+            <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
+              <i class="fa-solid fa-phone text-sm text-slate-500"></i>
+            </div>
+            <input type="text" name="contact_phone" required maxlength="20"
+              value="{{ form_data.contact_phone|default:user_obj.phone|default:'' }}"
+              placeholder="+230 5000 0000"
+              class="w-full bg-spotlight-bg border border-spotlight-border rounded-xl pl-10 pr-4 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-spotlight-cyan transition-all" />
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-slate-300 mb-1.5">What will you sell or offer? *</label>
+          <textarea name="description" rows="4" required
+            placeholder="Describe your products, pricing range, delivery/pickup options on campus..."
+            class="w-full bg-spotlight-bg border border-spotlight-border rounded-xl px-4 py-3 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-spotlight-cyan transition-all">{{ form_data.description|default:'' }}</textarea>
+          <p class="text-[11px] text-slate-500 mt-1">Minimum 20 characters.</p>
+        </div>
+
+        <button type="submit" class="w-full bg-gradient-to-r from-spotlight-cyan via-spotlight-delivery to-[#0077B6] hover:opacity-90 text-spotlight-bg font-bold py-3 px-4 rounded-xl transition-all shadow-lg flex items-center justify-center space-x-2 text-xs sm:text-sm cursor-pointer">
+          <span>Submit Vendor Application</span>
+          <i class="fa-solid fa-paper-plane text-sm"></i>
+        </button>
+      </form>
+
+    {% else %}
+      <!-- ===================================================== -->
+      <!-- 2. APPLICATION STATUS TRACKER (ALREADY SUBMITTED)     -->
+      <!-- ===================================================== -->
+      <div class="text-center space-y-3">
+        <h2 class="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
+          Application Status
+        </h2>
+        <p class="text-xs sm:text-sm text-slate-400">
+          Submitted for <strong class="text-white">{{ existing_app.business_name }}</strong>
+        </p>
+
+        <!-- Status Pill -->
+        <div class="pt-2">
+          {% if existing_app.status == 'pending' %}
+            <span class="inline-flex items-center space-x-2 px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider bg-amber-500/15 text-amber-400 border border-amber-500/30">
+              <i class="fa-solid fa-clock"></i>
+              <span>Pending Review</span>
+            </span>
+          {% elif existing_app.status == 'approved' %}
+            <span class="inline-flex items-center space-x-2 px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">
+              <i class="fa-solid fa-circle-check"></i>
+              <span>Approved</span>
+            </span>
+          {% else %}
+            <span class="inline-flex items-center space-x-2 px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider bg-red-500/15 text-red-400 border border-red-500/30">
+              <i class="fa-solid fa-circle-xmark"></i>
+              <span>Rejected</span>
+            </span>
+          {% endif %}
+        </div>
+      </div>
+
+      <!-- Summary Box -->
+      <div class="mt-6 p-5 rounded-2xl bg-spotlight-bg/60 border border-spotlight-border/60 space-y-3 text-xs sm:text-sm">
+        <div class="flex justify-between">
+          <span class="text-slate-500">Category</span>
+          <span class="font-semibold text-white">{{ existing_app.business_type }}</span>
+        </div>
+        <div class="flex justify-between">
+          <span class="text-slate-500">Contact Phone</span>
+          <span class="font-semibold text-white">{{ existing_app.contact_phone }}</span>
+        </div>
+        <div class="pt-2 border-t border-spotlight-border/50">
+          <span class="block text-slate-500 mb-1">Description</span>
+          <p class="text-slate-300 leading-relaxed">{{ existing_app.description }}</p>
+        </div>
+
+        {% if existing_app.admin_notes %}
+          <div class="pt-2 border-t border-spotlight-border/50">
+            <span class="block text-amber-400 font-semibold mb-1">Reviewer Feedback</span>
+            <p class="text-slate-300">{{ existing_app.admin_notes }}</p>
+          </div>
+        {% endif %}
+      </div>
+
+      <!-- Actions -->
+      <div class="mt-6 flex flex-col sm:flex-row items-center justify-center gap-3">
+        {% if existing_app.status == 'rejected' %}
+          <a href="{% url 'accounts:vendor_application' %}?reapply=true" class="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-gradient-to-r from-spotlight-cyan to-[#0077B6] text-spotlight-bg font-bold text-xs sm:text-sm text-center">
+            Submit New Application
+          </a>
+        {% endif %}
+        <a href="{% url 'marketplace:home' %}" class="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-spotlight-bg hover:bg-slate-800 border border-spotlight-border text-xs sm:text-sm font-semibold text-white text-center transition-all">
+          Browse Marketplace
+        </a>
+      </div>
+    {% endif %}
+
+  </div>
+</main>
+{% endblock %}
