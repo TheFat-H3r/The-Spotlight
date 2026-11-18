@@ -50,13 +50,10 @@ INSTALLED_APPS = [
 
     # Custom apps
     'accounts',
-    'marketplace',
-    'products',
-    'orders',
-    'bookings',
-    'reviews',
-    'advertising',
-    'portfolios',
+    'core',
+    'stores',
+    'transactions',
+    'marketing',
 ]
 
 AUTH_USER_MODEL = "accounts.User"
@@ -147,7 +144,7 @@ SOCIALACCOUNT_STORE_TOKENS = False
 LOGIN_REDIRECT_URL = "/"
 LOGOUT_REDIRECT_URL = "/accounts/login/"
 
-ACCOUNT_ADAPTER = "accounts.adapters.CustomAccountAdapter"
+# ACCOUNT_ADAPTER = "accounts.adapters.CustomAccountAdapter"
 
 # Google OAuth Credentials (Obtain from Google Cloud Console)
 SOCIALACCOUNT_PROVIDERS = {

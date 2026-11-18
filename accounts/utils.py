@@ -1,5 +1,5 @@
 from django.shortcuts import redirect
-from .models import User, VendorApplication
+from .models import User
 import sib_api_v3_sdk
 from sib_api_v3_sdk.rest import ApiException
 from django.conf import settings
@@ -106,11 +106,11 @@ def redirect_by_role(user):
 
     if user.role == User.Role.VENDOR:
         has_profile = hasattr(user, 'vendor_profile')
-        has_application = VendorApplication.objects.filter(applicant=user).exists()
+        # has_application = VendorApplication.objects.filter(applicant=user).exists()
 
         # Redirect to vendor application if not yet submitted
-        if not has_profile and not has_application:
-            return redirect('accounts:vendor_application')
+        # if not has_profile and not has_application:
+        #     return redirect('accounts:vendor_application')
 
         return redirect('marketplace:home')
 
