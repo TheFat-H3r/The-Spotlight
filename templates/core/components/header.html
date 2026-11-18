@@ -31,7 +31,7 @@
             {% if request.user.is_authenticated %}
               <li><span class="dropdown-item-text">{{ request.user.get_short_name|default:request.user.email }}</span></li>
               <li><hr class="dropdown-divider"></li>
-              <li><a class="dropdown-item" href="{% url 'core:home' %}">
+              <li><a class="dropdown-item" href="{% url 'accounts:profile' %}">
                 <i class="bi bi-person me-2" aria-hidden="true"></i>My account
               </a></li>
               <li><a class="dropdown-item" href="#">
