@@ -1,0 +1,56 @@
+<header class="site-header navbar navbar-expand-lg navbar-dark shadow-sm" style="background-color: #0B132B;">
+  <div class="container">
+    <a class="navbar-brand fw-bold" href="{% url 'marketplace:home' %}">
+      <i class="bi bi-stars text-info me-1" aria-hidden="true"></i>
+      The Spotlight
+    </a>
+
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse"
+            data-bs-target="#marketplaceNavbar" aria-controls="marketplaceNavbar"
+            aria-expanded="false" aria-label="Toggle navigation">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+
+    <nav class="collapse navbar-collapse" id="marketplaceNavbar">
+      <div class="navbar-nav me-auto">
+        <a class="nav-link" href="{% url 'marketplace:home' %}">Marketplace</a>
+      </div>
+
+      <div class="d-flex align-items-center gap-2 ms-auto">
+        <a class="btn btn-outline-light" href="#" aria-label="Shopping cart" title="Shopping cart">
+          <i class="bi bi-cart3" aria-hidden="true"></i>
+          <span class="visually-hidden">Cart</span>
+        </a>
+
+        <div class="dropdown">
+          <button class="btn btn-outline-light dropdown-toggle" type="button"
+                  data-bs-toggle="dropdown" aria-expanded="false" aria-label="Profile menu">
+            <i class="bi bi-person-circle" aria-hidden="true"></i>
+          </button>
+          <ul class="dropdown-menu dropdown-menu-end">
+            {% if request.user.is_authenticated %}
+              <li><span class="dropdown-item-text">{{ request.user.get_short_name|default:request.user.email }}</span></li>
+              <li><hr class="dropdown-divider"></li>
+              <li><a class="dropdown-item" href="{% url 'users:home' %}">
+                <i class="bi bi-person me-2" aria-hidden="true"></i>My account
+              </a></li>
+              <li><a class="dropdown-item" href="#">
+                <i class="bi bi-gear me-2" aria-hidden="true"></i>Settings
+              </a></li>
+              <li><a class="dropdown-item" href="{% url 'users:logout' %}">
+                <i class="bi bi-box-arrow-right me-2" aria-hidden="true"></i>Sign out
+              </a></li>
+            {% else %}
+              <li><a class="dropdown-item" href="{% url 'users:login' %}">
+                <i class="bi bi-box-arrow-in-right me-2" aria-hidden="true"></i>Sign in
+              </a></li>
+              <li><a class="dropdown-item" href="{% url 'users:register' %}">
+                <i class="bi bi-person-plus me-2" aria-hidden="true"></i>Create an account
+              </a></li>
+            {% endif %}
+          </ul>
+        </div>
+      </div>
+    </nav>
+  </div>
+</header>

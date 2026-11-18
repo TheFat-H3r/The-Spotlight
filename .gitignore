@@ -106,3 +106,4 @@ credentials.json
 # =========================
 test-results/
 playwright-report/
+__pycache__
