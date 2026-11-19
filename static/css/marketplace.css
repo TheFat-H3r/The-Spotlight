@@ -1,82 +1,50 @@
-
 /* =========================================================
-   THE SPOTLIGHT - PUBLIC MARKETPLACE
-   Main Stylesheet
+   THE SPOTLIGHT - UNIFIED SITE & MARKETPLACE STYLESHEET
+   Palette: White (#FFFFFF) | Pitch Black (#000000) | Gold (#F7C18B / #9C662D)
    ========================================================= */
 
 
 /* =========================================================
-   1. BRAND VARIABLES
+1. GLOBAL RESET & BASE
    ========================================================= */
 
-:root {
-    --spotlight-navy: #0B132B;
-    --spotlight-midnight: #000000;
-    --spotlight-cyan: #18C7DA;
-    --spotlight-amber: #EF7D18;
-
-    --spotlight-white: #FFFFFF;
-    --spotlight-off-white: #F8FAFC;
-
-    --spotlight-background: #F3F6FA;
-    --spotlight-card: #FFFFFF;
-
-    --spotlight-text: #172033;
-    --spotlight-muted: #64748B;
-
-    --spotlight-border: #E2E8F0;
-    --spotlight-dark-border: #1E293B;
-
-    --spotlight-success: #16A34A;
-    --spotlight-danger: #DC2626;
-
-    --radius-small: 8px;
-    --radius-medium: 14px;
-    --radius-large: 20px;
-
-    --transition-fast: 180ms ease;
-    --transition-normal: 300ms ease;
-    --transition-slow: 500ms ease;
-
-    --shadow-small: 0 2px 8px rgba(11, 19, 43, 0.06);
-    --shadow-medium: 0 8px 24px rgba(11, 19, 43, 0.09);
-    --shadow-large: 0 16px 40px rgba(11, 19, 43, 0.14);
-
-    --container-width: 1440px;
-}
-
-
-/* =========================================================
-   2. GLOBAL STYLES
-   ========================================================= */
-
-* {
+*,
+*::before,
+*::after {
     box-sizing: border-box;
 }
 
 html {
     scroll-behavior: smooth;
-    scroll-padding-top: 100px;
+    scroll-padding-top: 95px;
+    -webkit-text-size-adjust: 100%;
 }
 
 body {
     margin: 0;
-    background-color: var(--spotlight-background);
-    color: var(--spotlight-text);
-    font-family: "Inter", "Segoe UI", Arial, sans-serif;
+    background-color: #ffffff;
+    color: #000000;
+    font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
     font-size: 15px;
     line-height: 1.6;
     overflow-x: hidden;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+::selection {
+    background-color: #f7c18b;
+    color: #000000;
 }
 
 a {
-    color: var(--spotlight-cyan);
+    color: #9c662d;
     text-decoration: none;
-    transition: color var(--transition-fast);
+    transition: color 180ms ease;
 }
 
 a:hover {
-    color: var(--spotlight-amber);
+    color: #000000;
 }
 
 img {
@@ -95,12 +63,12 @@ section {
 }
 
 .container {
-    max-width: var(--container-width);
+    max-width: 1440px;
 }
 
 
 /* =========================================================
-   3. TYPOGRAPHY
+2. TYPOGRAPHY & BRAND UTILITIES
    ========================================================= */
 
 h1,
@@ -109,7 +77,7 @@ h3,
 h4,
 h5,
 h6 {
-    color: var(--spotlight-navy);
+    color: #000000;
     font-weight: 700;
     line-height: 1.3;
 }
@@ -123,19 +91,25 @@ h2 {
 }
 
 p {
-    color: var(--spotlight-text);
+    color: #000000;
 }
 
 .text-muted {
-    color: var(--spotlight-muted) !important;
+    color: #64748b !important;
 }
 
-.text-cyan {
-    color: var(--spotlight-cyan) !important;
+.text-gold {
+    color: #f7c18b !important;
 }
 
-.text-amber {
-    color: var(--spotlight-amber) !important;
+.text-gold-link {
+    color: #9c662d !important;
+    transition: color 180ms ease;
+}
+
+.text-gold-link:hover {
+    color: #000000 !important;
+    text-decoration: underline !important;
 }
 
 .fw-bold {
@@ -145,124 +119,220 @@ p {
 .section-label {
     display: inline-block;
     margin-bottom: 8px;
-    color: var(--spotlight-cyan);
+    color: #9c662d !important;
     font-size: 11px;
     font-weight: 800;
     letter-spacing: 1.5px;
+    text-transform: uppercase;
 }
 
 
 /* =========================================================
-   4. BUTTONS
+3. BUTTONS
    ========================================================= */
 
 .btn {
-    border-radius: var(--radius-small);
+    border-radius: 10px;
     font-weight: 600;
     transition:
-        background-color var(--transition-fast),
-        color var(--transition-fast),
-        transform var(--transition-fast),
-        box-shadow var(--transition-fast);
+        background-color 180ms ease,
+        color 180ms ease,
+        border-color 180ms ease,
+        transform 180ms ease,
+        box-shadow 180ms ease;
 }
 
 .btn-spotlight {
-    background: var(--spotlight-cyan);
-    border: 1px solid var(--spotlight-cyan);
-    color: var(--spotlight-navy);
+    background-color: #f7c18b !important;
+    border: 1px solid #f7c18b !important;
+    color: #000000 !important;
+    font-weight: 700;
     padding: 10px 20px;
 }
 
-.btn-spotlight:hover {
-    background: #0FAFC1;
-    border-color: #0FAFC1;
-    color: var(--spotlight-white);
+.btn-spotlight:hover,
+.btn-spotlight:focus {
+    background-color: #000000 !important;
+    border-color: #000000 !important;
+    color: #f7c18b !important;
     transform: translateY(-2px);
-    box-shadow: 0 6px 15px rgba(24, 199, 218, 0.25);
+    box-shadow: 0 6px 15px rgba(0, 0, 0, 0.18);
 }
 
 .btn-outline-spotlight {
-    background: transparent;
-    border: 1px solid var(--spotlight-cyan);
-    color: var(--spotlight-navy);
+    background-color: #ffffff !important;
+    border: 1.5px solid #000000 !important;
+    color: #000000 !important;
     padding: 9px 18px;
 }
 
-.btn-outline-spotlight:hover {
-    background: var(--spotlight-cyan);
-    color: var(--spotlight-navy);
+.btn-outline-spotlight:hover,
+.btn-outline-spotlight:focus {
+    background-color: #000000 !important;
+    border-color: #000000 !important;
+    color: #f7c18b !important;
     transform: translateY(-2px);
 }
 
 .btn:focus-visible,
 a:focus-visible,
 button:focus-visible {
-    outline: 3px solid var(--spotlight-amber);
+    outline: 3px solid #f7c18b;
     outline-offset: 3px;
 }
 
 
 /* =========================================================
-   5. MARKETPLACE HERO
+4. GLOBAL SITE HEADER & FOOTER
+   ========================================================= */
+
+.site-header {
+    position: sticky;
+    top: 0;
+    z-index: 1030;
+    background-color: #000000 !important;
+    border-bottom: 1px solid #262626;
+    transition: box-shadow 300ms ease, background-color 300ms ease;
+}
+
+.site-header.scrolled {
+    box-shadow: 0 5px 20px rgba(0, 0, 0, 0.35);
+}
+
+.site-header .nav-link {
+    color: rgba(255, 255, 255, 0.85) !important;
+    font-weight: 600;
+    transition: color 180ms ease;
+}
+
+.site-header .nav-link:hover,
+.site-header .nav-link.active {
+    color: #f7c18b !important;
+}
+
+.btn-header-icon {
+    color: #ffffff;
+    border: 1px solid #262626;
+    background-color: #0a0a0a;
+    border-radius: 10px;
+    transition: border-color 180ms ease, color 180ms ease;
+}
+
+.btn-header-icon:hover {
+    border-color: #f7c18b;
+    color: #f7c18b;
+}
+
+.dropdown-menu-spotlight {
+    background-color: #0a0a0a;
+    border: 1px solid #262626;
+    border-radius: 12px;
+}
+
+.dropdown-menu-spotlight .dropdown-item {
+    color: #ffffff;
+    font-size: 0.875rem;
+}
+
+.dropdown-menu-spotlight .dropdown-item:hover {
+    background-color: rgba(247, 193, 139, 0.12);
+    color: #f7c18b;
+}
+
+.dropdown-menu-spotlight .dropdown-divider {
+    border-top-color: #262626;
+}
+
+.site-footer {
+    background-color: #000000 !important;
+    color: #ffffff;
+    border-top: 2px solid #f7c18b;
+}
+
+.site-footer h2 {
+    color: #f7c18b;
+    letter-spacing: 0.06em;
+}
+
+.site-footer a {
+    color: rgba(255, 255, 255, 0.75);
+    transition: color 180ms ease;
+}
+
+.site-footer a:hover {
+    color: #f7c18b !important;
+}
+
+
+/* =========================================================
+5. MARKETPLACE HERO & SEARCH
    ========================================================= */
 
 .marketplace-hero {
-    background:
-        radial-gradient(
-            circle at 85% 20%,
-            rgba(24, 199, 218, 0.16),
-            transparent 35%
-        ),
-        linear-gradient(
-            120deg,
-            var(--spotlight-navy),
-            var(--spotlight-midnight)
-        );
-
-    color: var(--spotlight-white);
-    overflow: hidden;
+    background-color: #000000 !important;
+    color: #ffffff !important;
+    border-bottom: 3px solid #f7c18b;
 }
 
 .marketplace-hero h1 {
-    color: var(--spotlight-white);
+    color: #ffffff;
 }
 
-.marketplace-hero p {
-    color: #CBD5E1 !important;
+.marketplace-hero .lead {
+    color: rgba(255, 255, 255, 0.8) !important;
 }
 
 .hero-label {
-    color: var(--spotlight-cyan);
+    color: #f7c18b;
     letter-spacing: 2px;
 }
 
 .marketplace-search {
     max-width: 650px;
-    background: var(--spotlight-white);
-    border-radius: var(--radius-medium);
+    background-color: #121212;
+    border: 1px solid #333333;
+    border-radius: 14px;
     padding: 6px;
-    box-shadow: var(--shadow-large);
+    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.35);
 }
 
 .marketplace-search .form-control {
-    border: none;
-    box-shadow: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+    background-color: #121212 !important;
+    border: none !important;
+    box-shadow: none !important;
+    color: #ffffff !important;
     padding: 12px;
+    border-radius: 10px 0 0 10px;
+}
+
+.marketplace-search .form-control::placeholder {
+    color: rgba(255, 255, 255, 0.5);
+    opacity: 1;
+}
+
+.marketplace-search .form-control:focus {
+    background-color: #121212 !important;
+    color: #ffffff !important;
+    box-shadow: 0 0 0 2px rgba(247, 193, 139, 0.35) !important;
 }
 
 .marketplace-search .btn {
     min-width: 110px;
+    border-radius: 10px;
 }
 
 
 /* =========================================================
-   6. ADVERTISEMENT BANNER
+6. ADVERTISEMENT BANNER
    ========================================================= */
 
 .advertisement-section {
     width: 100%;
     overflow: hidden;
-    background: var(--spotlight-navy);
+    background-color: #000000;
 }
 
 .advertisement-banner {
@@ -272,18 +342,13 @@ button:focus-visible {
     min-height: 250px;
     padding: 45px 10%;
     overflow: hidden;
-
-    background:
-        linear-gradient(
-            90deg,
-            rgba(11, 19, 43, 0.96),
-            rgba(12, 24, 54, 0.75)
-        ),
-        linear-gradient(
-            135deg,
-            var(--spotlight-navy),
-            var(--spotlight-midnight)
-        );
+    background: linear-gradient(
+        90deg,
+        rgba(0, 0, 0, 0.96) 0%,
+        rgba(10, 10, 10, 0.82) 100%
+    );
+    color: #ffffff;
+    border-bottom: 2px solid #f7c18b;
 }
 
 .advertisement-image {
@@ -300,28 +365,29 @@ button:focus-visible {
     position: relative;
     z-index: 2;
     max-width: 650px;
+    -webkit-animation: fadeInUp 700ms ease both;
     animation: fadeInUp 700ms ease both;
 }
 
 .advertisement-content h2 {
-    color: var(--spotlight-white);
+    color: #ffffff;
     font-size: clamp(24px, 4vw, 38px);
     margin: 15px 0;
 }
 
 .advertisement-content p {
-    color: #CBD5E1;
+    color: rgba(255, 255, 255, 0.8);
 }
 
 .sponsored-label {
     display: inline-block;
-    background: var(--spotlight-amber);
-    color: var(--spotlight-white);
+    background-color: #f7c18b !important;
+    color: #000000 !important;
     font-size: 10px;
     font-weight: 800;
     letter-spacing: 1.2px;
-    padding: 6px 12px;
-    border-radius: 4px;
+    padding: 5px 12px;
+    border-radius: 5px;
 }
 
 .advertisement-section .carousel-control-prev,
@@ -331,7 +397,7 @@ button:focus-visible {
 
 
 /* =========================================================
-   7. SECTION HEADINGS
+7. SECTION HEADINGS
    ========================================================= */
 
 .section-heading {
@@ -348,7 +414,7 @@ button:focus-visible {
 
 
 /* =========================================================
-   8. FEATURED VENDOR CAROUSEL
+8. FEATURED VENDOR CAROUSEL
    ========================================================= */
 
 .vendor-carousel-wrapper {
@@ -363,7 +429,9 @@ button:focus-visible {
     gap: 20px;
     overflow-x: auto;
     scroll-behavior: smooth;
+    -webkit-overflow-scrolling: touch;
     scrollbar-width: none;
+    -ms-overflow-style: none;
     padding: 15px 4px 25px;
     flex: 1;
 }
@@ -374,23 +442,23 @@ button:focus-visible {
 
 .vendor-card {
     flex: 0 0 220px;
-    background: var(--spotlight-card);
-    border: 1px solid var(--spotlight-border);
-    border-radius: var(--radius-medium);
+    background-color: #ffffff !important;
+    color: #000000 !important;
+    border: 1px solid #e5e7eb !important;
+    border-radius: 16px;
     padding: 22px 18px;
     text-align: center;
-    box-shadow: var(--shadow-small);
-
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.04);
     transition:
-        transform var(--transition-normal),
-        box-shadow var(--transition-normal),
-        border-color var(--transition-normal);
+        transform 300ms ease,
+        box-shadow 300ms ease,
+        border-color 300ms ease;
 }
 
 .vendor-card:hover {
-    transform: translateY(-7px);
-    box-shadow: var(--shadow-medium);
-    border-color: var(--spotlight-cyan);
+    transform: translateY(-6px);
+    box-shadow: 0 10px 24px rgba(0, 0, 0, 0.09);
+    border-color: #f7c18b !important;
 }
 
 .vendor-logo {
@@ -399,11 +467,12 @@ button:focus-visible {
     margin: 0 auto 15px;
     border-radius: 50%;
     overflow: hidden;
-    background: #E0F7FA;
+    background-color: #000000 !important;
+    border: 2px solid #f7c18b;
     display: flex;
     align-items: center;
     justify-content: center;
-    color: var(--spotlight-navy);
+    color: #f7c18b !important;
     font-size: 28px;
     font-weight: 800;
 }
@@ -417,6 +486,7 @@ button:focus-visible {
 .vendor-card h5 {
     font-size: 16px;
     margin-bottom: 8px;
+    color: #000000;
 }
 
 .vendor-card p {
@@ -425,42 +495,48 @@ button:focus-visible {
 
 .vendor-type {
     display: inline-block;
-    background: #E0F7FA;
-    color: #087F8C;
+    background-color: #000000 !important;
+    color: #f7c18b !important;
     padding: 4px 10px;
     font-size: 11px;
-    border-radius: 30px;
-    font-weight: 700;
+    border-radius: 6px;
+    font-weight: 600;
 }
 
 .carousel-arrow {
+    -webkit-appearance: none;
+    appearance: none;
     flex: 0 0 38px;
+    width: 38px;
     height: 38px;
     border-radius: 50%;
-    border: 1px solid var(--spotlight-border);
-    background: var(--spotlight-white);
-    color: var(--spotlight-navy);
-    font-size: 24px;
+    border: 1px solid #f7c18b !important;
+    background-color: #000000 !important;
+    color: #f7c18b !important;
+    font-size: 22px;
+    line-height: 1;
     display: flex;
     justify-content: center;
     align-items: center;
     cursor: pointer;
-    transition: var(--transition-fast);
+    transition: background-color 180ms ease, color 180ms ease;
 }
 
 .carousel-arrow:hover {
-    background: var(--spotlight-cyan);
-    border-color: var(--spotlight-cyan);
+    background-color: #f7c18b !important;
+    border-color: #f7c18b !important;
+    color: #000000 !important;
 }
 
 
 /* =========================================================
-   9. MARKETPLACE THREE-COLUMN LAYOUT
+9. MARKETPLACE THREE-COLUMN LAYOUT
    ========================================================= */
 
 .marketplace-container {
     max-width: 1600px;
     margin: auto;
+    background-color: #ffffff;
 }
 
 .marketplace-container > .row {
@@ -469,29 +545,31 @@ button:focus-visible {
 
 
 /* =========================================================
-   10. FILTER SIDEBAR
+10. FILTER SIDEBAR
    ========================================================= */
 
 .filter-panel {
-    background: var(--spotlight-card);
-    border: 1px solid var(--spotlight-border);
-    border-radius: var(--radius-medium);
+    background-color: #ffffff !important;
+    color: #000000 !important;
+    border: 1px solid #e5e7eb !important;
+    border-radius: 16px;
     padding: 22px;
-    box-shadow: var(--shadow-small);
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.04);
     position: sticky;
-    top: 100px;
+    top: 95px;
 }
 
 .filter-panel h5 {
     font-size: 17px;
+    color: #000000;
 }
 
 .filter-group {
-    border-bottom: 1px solid var(--spotlight-border);
+    border-bottom: 1px solid #e5e7eb;
     padding-bottom: 18px;
 }
 
-.filter-group:last-child {
+.filter-group:last-of-type {
     border-bottom: none;
     padding-bottom: 0;
 }
@@ -499,46 +577,49 @@ button:focus-visible {
 .filter-group label {
     display: block;
     font-size: 13px;
-    color: var(--spotlight-navy);
+    color: #000000;
 }
 
 .filter-panel .form-control,
 .filter-panel .form-select {
-    border: 1px solid var(--spotlight-border);
-    border-radius: var(--radius-small);
+    background-color: #f8f9fa;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    color: #000000;
     font-size: 13px;
     padding: 10px;
 }
 
 .filter-panel .form-control:focus,
 .filter-panel .form-select:focus {
-    border-color: var(--spotlight-cyan);
-    box-shadow: 0 0 0 3px rgba(24, 199, 218, 0.12);
+    background-color: #ffffff;
+    border-color: #000000;
+    box-shadow: 0 0 0 3px rgba(247, 193, 139, 0.45);
 }
 
 
 /* =========================================================
-   11. PRODUCT AND SERVICE CARDS
+11. PRODUCT AND SERVICE CARDS
    ========================================================= */
 
 .market-card {
     height: 100%;
-    background: var(--spotlight-card);
-    border: 1px solid var(--spotlight-border);
-    border-radius: var(--radius-medium);
+    background-color: #ffffff !important;
+    color: #000000 !important;
+    border: 1px solid #e5e7eb !important;
+    border-radius: 16px;
     overflow: hidden;
-    box-shadow: var(--shadow-small);
-
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.04);
     transition:
-        transform var(--transition-normal),
-        box-shadow var(--transition-normal),
-        border-color var(--transition-normal);
+        transform 300ms ease,
+        box-shadow 300ms ease,
+        border-color 300ms ease;
 }
 
 .market-card:hover {
-    transform: translateY(-6px);
-    box-shadow: var(--shadow-medium);
-    border-color: rgba(24, 199, 218, 0.65);
+    transform: translateY(-5px);
+    box-shadow: 0 10px 24px rgba(0, 0, 0, 0.09);
+    border-color: #f7c18b !important;
 }
 
 .product-card,
@@ -557,7 +638,7 @@ button:focus-visible {
     width: 100%;
     height: 210px;
     object-fit: cover;
-    transition: transform var(--transition-slow);
+    transition: transform 500ms ease;
 }
 
 .market-card:hover .card-image {
@@ -568,16 +649,13 @@ button:focus-visible {
     position: absolute;
     top: 12px;
     left: 12px;
-    background: linear-gradient(
-        135deg,
-        #FFD000,
-        var(--spotlight-amber)
-    );
-    color: var(--spotlight-navy);
-    padding: 5px 10px;
+    background-color: #000000 !important;
+    color: #f7c18b !important;
+    border: 1px solid #f7c18b;
+    padding: 4px 10px;
     font-size: 10px;
     font-weight: 800;
-    border-radius: 5px;
+    border-radius: 6px;
     z-index: 2;
 }
 
@@ -592,6 +670,7 @@ button:focus-visible {
 
 .market-card h5 {
     font-size: 16px;
+    color: #000000;
 }
 
 .market-card p {
@@ -599,9 +678,10 @@ button:focus-visible {
 }
 
 .image-placeholder {
-    min-height: 190px;
-    background: #E8EEF5;
-    color: var(--spotlight-muted);
+    min-height: 210px;
+    background-color: #f8f9fa;
+    color: #64748b;
+    border-bottom: 1px solid #e5e7eb;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -609,68 +689,71 @@ button:focus-visible {
 }
 
 .rating {
-    color: #D97706;
+    color: #d97706 !important;
     font-size: 13px;
     font-weight: 700;
 }
 
 .pricing-tier {
     display: inline-block;
-    padding: 5px 10px;
-    background: #F1F5F9;
-    color: var(--spotlight-navy);
-    border-radius: 5px;
+    padding: 4px 10px;
+    background-color: #000000 !important;
+    color: #f7c18b !important;
+    border-radius: 6px;
     font-size: 11px;
-    font-weight: 700;
+    font-weight: 600;
 }
 
 
 /* =========================================================
-   12. RIGHT SIDEBAR
+12. RIGHT SIDEBAR
    ========================================================= */
 
 .sidebar-panel {
-    background: var(--spotlight-card);
-    border: 1px solid var(--spotlight-border);
-    border-radius: var(--radius-medium);
+    background-color: #ffffff !important;
+    color: #000000 !important;
+    border: 1px solid #e5e7eb !important;
+    border-radius: 16px;
     padding: 20px;
-    box-shadow: var(--shadow-small);
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.04);
 }
 
 .sidebar-panel h5 {
     font-size: 16px;
+    color: #000000;
 }
 
 .support-panel {
-    background: linear-gradient(
-        145deg,
-        var(--spotlight-navy),
-        var(--spotlight-midnight)
-    );
-    border-color: var(--spotlight-midnight);
+    background-color: #000000 !important;
+    color: #ffffff !important;
+    border: 1px solid #f7c18b !important;
 }
 
 .support-panel h5 {
-    color: var(--spotlight-white);
+    color: #f7c18b !important;
 }
 
 .support-panel p {
-    color: #CBD5E1 !important;
+    color: rgba(255, 255, 255, 0.78) !important;
 }
 
+.achievement-card,
 .portfolio-card {
-    background: var(--spotlight-off-white);
-    border: 1px solid var(--spotlight-border);
-    border-radius: var(--radius-small);
+    background-color: #ffffff !important;
+    border: 1px solid #e5e7eb !important;
+    border-radius: 12px;
     overflow: hidden;
-    transition: var(--transition-normal);
+    transition: transform 300ms ease, border-color 300ms ease, box-shadow 300ms ease;
 }
 
+.achievement-card:hover,
 .portfolio-card:hover {
     transform: translateY(-3px);
-    box-shadow: var(--shadow-small);
+    border-color: #f7c18b !important;
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.07);
 }
 
+.achievement-image,
 .portfolio-image {
     display: block;
     width: 100%;
@@ -678,45 +761,54 @@ button:focus-visible {
     object-fit: cover;
 }
 
+.achievement-card h6,
 .portfolio-card h6 {
     font-size: 14px;
+    color: #000000;
 }
 
 .announcement-card {
-    border-left: 3px solid var(--spotlight-amber);
-    padding: 12px;
-    background: #FFFBF5;
-    border-radius: 0 var(--radius-small) var(--radius-small) 0;
+    background-color: #ffffff !important;
+    border: 1px solid #e5e7eb !important;
+    border-left: 3px solid #f7c18b !important;
+    padding: 14px;
+    border-radius: 10px;
 }
 
 .announcement-label {
+    display: inline-block;
+    background-color: #f7c18b !important;
+    color: #000000 !important;
     font-size: 9px;
     font-weight: 800;
     letter-spacing: 1px;
-    color: var(--spotlight-amber);
+    padding: 3px 8px;
+    border-radius: 4px;
 }
 
 
 /* =========================================================
-   13. CUSTOMER REVIEWS
+13. CUSTOMER REVIEWS
    ========================================================= */
 
 .review-card {
     height: 100%;
-    background: var(--spotlight-card);
-    border: 1px solid var(--spotlight-border);
-    border-radius: var(--radius-medium);
+    background-color: #ffffff !important;
+    color: #000000 !important;
+    border: 1px solid #e5e7eb !important;
+    border-radius: 16px;
     padding: 22px;
-    box-shadow: var(--shadow-small);
-
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.04);
     transition:
-        transform var(--transition-normal),
-        box-shadow var(--transition-normal);
+        transform 300ms ease,
+        box-shadow 300ms ease,
+        border-color 300ms ease;
 }
 
 .review-card:hover {
     transform: translateY(-5px);
-    box-shadow: var(--shadow-medium);
+    border-color: #f7c18b !important;
+    box-shadow: 0 10px 24px rgba(0, 0, 0, 0.09);
 }
 
 .review-avatar,
@@ -729,11 +821,13 @@ button:focus-visible {
 
 .review-avatar {
     object-fit: cover;
+    border: 2px solid #f7c18b;
 }
 
 .review-avatar-placeholder {
-    background: var(--spotlight-navy);
-    color: var(--spotlight-white);
+    background-color: #000000 !important;
+    color: #f7c18b !important;
+    border: 2px solid #f7c18b;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -742,37 +836,34 @@ button:focus-visible {
 }
 
 .review-stars {
-    color: #F59E0B;
+    color: #d97706 !important;
     font-size: 18px;
     letter-spacing: 2px;
 }
 
 .review-text {
-    color: var(--spotlight-muted);
+    color: #000000;
     font-size: 14px;
     line-height: 1.7;
 }
 
 
 /* =========================================================
-   14. STORE DETAIL PAGE
+14. STORE DETAIL PAGE
    ========================================================= */
 
 .store-hero {
-    background: linear-gradient(
-        120deg,
-        var(--spotlight-navy),
-        var(--spotlight-midnight)
-    );
-    color: var(--spotlight-white);
+    background: linear-gradient(120deg, #000000 0%, #111111 100%);
+    color: #ffffff;
+    border-bottom: 3px solid #f7c18b;
 }
 
 .store-hero h1 {
-    color: var(--spotlight-white);
+    color: #ffffff;
 }
 
 .store-hero p {
-    color: #CBD5E1;
+    color: rgba(255, 255, 255, 0.8);
 }
 
 .store-profile {
@@ -784,8 +875,9 @@ button:focus-visible {
 .store-logo {
     width: 115px;
     height: 115px;
-    border-radius: var(--radius-large);
-    background: var(--spotlight-white);
+    border-radius: 20px;
+    background-color: #ffffff;
+    border: 2px solid #f7c18b;
     padding: 8px;
     overflow: hidden;
     flex-shrink: 0;
@@ -800,8 +892,8 @@ button:focus-visible {
 .store-placeholder {
     width: 100%;
     height: 100%;
-    background: #E0F7FA;
-    color: var(--spotlight-navy);
+    background-color: #000000;
+    color: #f7c18b;
     display: flex;
     justify-content: center;
     align-items: center;
@@ -812,42 +904,46 @@ button:focus-visible {
 
 
 /* =========================================================
-   15. EMPTY STATES
+15. EMPTY STATES
    ========================================================= */
 
 .empty-state {
-    background: var(--spotlight-white);
-    border: 1px dashed #CBD5E1;
-    border-radius: var(--radius-medium);
+    background-color: #ffffff !important;
+    color: #000000 !important;
+    border: 1px dashed #cbd5e1 !important;
+    border-radius: 16px;
     padding: 45px 20px;
     text-align: center;
 }
 
 .empty-state h5 {
     margin-bottom: 10px;
+    color: #000000;
 }
 
 
 /* =========================================================
-   16. QUICK VIEW MODAL
+16. QUICK VIEW MODAL
    ========================================================= */
 
 .modal-content {
-    border: none;
-    border-radius: var(--radius-large);
+    background-color: #ffffff;
+    color: #000000;
+    border: 2px solid #f7c18b;
+    border-radius: 16px;
     overflow: hidden;
-    box-shadow: var(--shadow-large);
+    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.25);
 }
 
 .modal-header {
-    background: var(--spotlight-navy);
-    color: var(--spotlight-white);
-    border: none;
+    background-color: #000000;
+    color: #ffffff;
+    border-bottom: 1px solid #f7c18b;
     padding: 20px;
 }
 
 .modal-header .modal-title {
-    color: var(--spotlight-white);
+    color: #ffffff;
 }
 
 .modal-header .btn-close {
@@ -866,30 +962,31 @@ button:focus-visible {
 
 
 /* =========================================================
-   17. BACK TO TOP BUTTON
+17. BACK TO TOP BUTTON
    ========================================================= */
 
 .back-to-top {
+    -webkit-appearance: none;
+    appearance: none;
     position: fixed;
     right: 25px;
     bottom: 25px;
     width: 45px;
     height: 45px;
-    border: none;
+    border: 1px solid #f7c18b !important;
     border-radius: 50%;
-    background: var(--spotlight-cyan);
-    color: var(--spotlight-navy);
-    font-size: 22px;
+    background-color: #000000 !important;
+    color: #f7c18b !important;
+    font-size: 20px;
     font-weight: 800;
+    line-height: 1;
     cursor: pointer;
     z-index: 1000;
-
     opacity: 0;
     visibility: hidden;
     transform: translateY(15px);
-
-    transition: var(--transition-normal);
-    box-shadow: var(--shadow-medium);
+    transition: opacity 300ms ease, transform 300ms ease, background-color 180ms ease;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.22);
 }
 
 .back-to-top.visible {
@@ -899,14 +996,14 @@ button:focus-visible {
 }
 
 .back-to-top:hover {
-    background: var(--spotlight-amber);
+    background-color: #f7c18b !important;
+    color: #000000 !important;
     transform: translateY(-4px);
 }
 
 
 /* =========================================================
-   18. SCROLL REVEAL ANIMATIONS
-   JavaScript adds .is-visible when elements enter viewport.
+18. SCROLL REVEAL ANIMATIONS
    ========================================================= */
 
 .reveal-section {
@@ -949,19 +1046,19 @@ button:focus-visible {
 
 
 /* =========================================================
-   19. LOADING SKELETONS
+19. LOADING SKELETONS & ANIMATION KEYFRAMES
    ========================================================= */
 
 .skeleton {
     background: linear-gradient(
         90deg,
-        #E8EDF3 25%,
-        #F8FAFC 50%,
-        #E8EDF3 75%
+        #f1f5f9 25%,
+        #ffffff 50%,
+        #f1f5f9 75%
     );
     background-size: 200% 100%;
     animation: skeletonLoading 1.5s infinite linear;
-    border-radius: var(--radius-small);
+    border-radius: 8px;
 }
 
 .skeleton-image {
@@ -981,10 +1078,19 @@ button:focus-visible {
     margin: 15px 0;
 }
 
+@-webkit-keyframes fadeInUp {
+    from {
+        opacity: 0;
+        -webkit-transform: translateY(25px);
+        transform: translateY(25px);
+    }
 
-/* =========================================================
-   20. ANIMATION KEYFRAMES
-   ========================================================= */
+    to {
+        opacity: 1;
+        -webkit-transform: translateY(0);
+        transform: translateY(0);
+    }
+}
 
 @keyframes fadeInUp {
     from {
@@ -1010,26 +1116,7 @@ button:focus-visible {
 
 
 /* =========================================================
-   21. STICKY HEADER SUPPORT
-   Shared header should have class .site-header.
-   ========================================================= */
-
-.site-header {
-    position: sticky;
-    top: 0;
-    z-index: 1030;
-    transition:
-        box-shadow var(--transition-normal),
-        background-color var(--transition-normal);
-}
-
-.site-header.scrolled {
-    box-shadow: 0 5px 20px rgba(11, 19, 43, 0.15);
-}
-
-
-/* =========================================================
-   22. RESPONSIVE DESIGN: TABLETS
+20. RESPONSIVE DESIGN
    ========================================================= */
 
 @media (max-width: 991.98px) {
@@ -1059,11 +1146,6 @@ button:focus-visible {
 
 }
 
-
-/* =========================================================
-   23. RESPONSIVE DESIGN: MOBILE
-   ========================================================= */
-
 @media (max-width: 767.98px) {
 
     body {
@@ -1080,7 +1162,11 @@ button:focus-visible {
 
     .marketplace-search {
         flex-direction: column;
-        gap: 5px;
+        gap: 6px;
+    }
+
+    .marketplace-search .form-control {
+        border-radius: 10px;
     }
 
     .marketplace-search .btn {
@@ -1135,11 +1221,6 @@ button:focus-visible {
 
 }
 
-
-/* =========================================================
-   24. SMALL MOBILE SCREENS
-   ========================================================= */
-
 @media (max-width: 400px) {
 
     .marketplace-hero h1 {
@@ -1162,11 +1243,6 @@ button:focus-visible {
     }
 
 }
-
-
-/* =========================================================
-   25. ACCESSIBILITY: REDUCED MOTION
-   ========================================================= */
 
 @media (prefers-reduced-motion: reduce) {
 
