@@ -8,9 +8,48 @@
 1. GLOBAL RESET & BASE
    ========================================================= */
 
-*,
-*::before,
-*::after {
+:root {
+    --spotlight-navy: #000000;
+    --spotlight-midnight: #0A0A0A;
+    --spotlight-cyan: #F7C18B;
+    --spotlight-amber: #F7C18B;
+
+    --spotlight-white: #FFFFFF;
+    --spotlight-off-white: #0A0A0A;
+
+    --spotlight-background: #000000;
+    --spotlight-card: #0A0A0A;
+
+    --spotlight-text: #FFFFFF;
+    --spotlight-muted: #A3A3A3;
+
+    --spotlight-border: #262626;
+    --spotlight-dark-border: #262626;
+
+    --spotlight-success: #16A34A;
+    --spotlight-danger: #DC2626;
+
+    --radius-small: 8px;
+    --radius-medium: 14px;
+    --radius-large: 20px;
+
+    --transition-fast: 180ms ease;
+    --transition-normal: 300ms ease;
+    --transition-slow: 500ms ease;
+
+    --shadow-small: 0 2px 8px rgba(0, 0, 0, 0.35);
+    --shadow-medium: 0 8px 24px rgba(0, 0, 0, 0.45);
+    --shadow-large: 0 16px 40px rgba(0, 0, 0, 0.55);
+
+    --container-width: 1440px;
+}
+
+
+/* =========================================================
+   2. GLOBAL STYLES
+   ========================================================= */
+
+* {
     box-sizing: border-box;
 }
 
@@ -28,17 +67,42 @@ body {
     font-size: 15px;
     line-height: 1.6;
     overflow-x: hidden;
-    -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
 }
 
-::selection {
-    background-color: #f7c18b;
-    color: #000000;
+input,
+select,
+textarea,
+.form-control,
+.form-select {
+    background-color: #000000;
+    color: #FFFFFF;
+    border-color: #262626;
+}
+
+input::placeholder,
+textarea::placeholder,
+.form-control::placeholder {
+    color: #A3A3A3;
+}
+
+option {
+    background-color: #000000;
+    color: #FFFFFF;
+}
+
+input:focus,
+select:focus,
+textarea:focus,
+.form-control:focus,
+.form-select:focus {
+    background-color: #000000;
+    color: #FFFFFF;
+    border-color: #F7C18B;
+    box-shadow: 0 0 0 3px rgba(247, 193, 139, 0.16);
 }
 
 a {
-    color: #9c662d;
+    color: var(--spotlight-cyan);
     text-decoration: none;
     transition: color 180ms ease;
 }
@@ -77,7 +141,7 @@ h3,
 h4,
 h5,
 h6 {
-    color: #000000;
+    color: var(--spotlight-white);
     font-weight: 700;
     line-height: 1.3;
 }
@@ -143,34 +207,30 @@ p {
 }
 
 .btn-spotlight {
-    background-color: #f7c18b !important;
-    border: 1px solid #f7c18b !important;
-    color: #000000 !important;
-    font-weight: 700;
+    background: var(--spotlight-cyan);
+    border: 1px solid var(--spotlight-cyan);
+    color: #000000;
     padding: 10px 20px;
 }
 
-.btn-spotlight:hover,
-.btn-spotlight:focus {
-    background-color: #000000 !important;
-    border-color: #000000 !important;
-    color: #f7c18b !important;
+.btn-spotlight:hover {
+    background: #FFD5A8;
+    border-color: #FFD5A8;
+    color: #000000;
     transform: translateY(-2px);
-    box-shadow: 0 6px 15px rgba(0, 0, 0, 0.18);
+    box-shadow: 0 6px 15px rgba(247, 193, 139, 0.25);
 }
 
 .btn-outline-spotlight {
-    background-color: #ffffff !important;
-    border: 1.5px solid #000000 !important;
-    color: #000000 !important;
+    background: transparent;
+    border: 1px solid var(--spotlight-cyan);
+    color: var(--spotlight-cyan);
     padding: 9px 18px;
 }
 
-.btn-outline-spotlight:hover,
-.btn-outline-spotlight:focus {
-    background-color: #000000 !important;
-    border-color: #000000 !important;
-    color: #f7c18b !important;
+.btn-outline-spotlight:hover {
+    background: var(--spotlight-cyan);
+    color: #000000;
     transform: translateY(-2px);
 }
 
@@ -186,100 +246,29 @@ button:focus-visible {
 4. GLOBAL SITE HEADER & FOOTER
    ========================================================= */
 
-.site-header {
-    position: sticky;
-    top: 0;
-    z-index: 1030;
-    background-color: #000000 !important;
-    border-bottom: 1px solid #262626;
-    transition: box-shadow 300ms ease, background-color 300ms ease;
-}
-
-.site-header.scrolled {
-    box-shadow: 0 5px 20px rgba(0, 0, 0, 0.35);
-}
-
-.site-header .nav-link {
-    color: rgba(255, 255, 255, 0.85) !important;
-    font-weight: 600;
-    transition: color 180ms ease;
-}
-
-.site-header .nav-link:hover,
-.site-header .nav-link.active {
-    color: #f7c18b !important;
-}
-
-.btn-header-icon {
-    color: #ffffff;
-    border: 1px solid #262626;
-    background-color: #0a0a0a;
-    border-radius: 10px;
-    transition: border-color 180ms ease, color 180ms ease;
-}
-
-.btn-header-icon:hover {
-    border-color: #f7c18b;
-    color: #f7c18b;
-}
-
-.dropdown-menu-spotlight {
-    background-color: #0a0a0a;
-    border: 1px solid #262626;
-    border-radius: 12px;
-}
-
-.dropdown-menu-spotlight .dropdown-item {
-    color: #ffffff;
-    font-size: 0.875rem;
-}
-
-.dropdown-menu-spotlight .dropdown-item:hover {
-    background-color: rgba(247, 193, 139, 0.12);
-    color: #f7c18b;
-}
-
-.dropdown-menu-spotlight .dropdown-divider {
-    border-top-color: #262626;
-}
-
-.site-footer {
-    background-color: #000000 !important;
-    color: #ffffff;
-    border-top: 2px solid #f7c18b;
-}
-
-.site-footer h2 {
-    color: #f7c18b;
-    letter-spacing: 0.06em;
-}
-
-.site-footer a {
-    color: rgba(255, 255, 255, 0.75);
-    transition: color 180ms ease;
-}
-
-.site-footer a:hover {
-    color: #f7c18b !important;
-}
-
-
-/* =========================================================
-5. MARKETPLACE HERO & SEARCH
-   ========================================================= */
-
 .marketplace-hero {
-    background-color: #000000 !important;
-    color: #ffffff !important;
-    border-bottom: 3px solid #f7c18b;
+    background:
+        radial-gradient(
+            circle at 85% 20%,
+            rgba(247, 193, 139, 0.16),
+            transparent 35%
+        ),
+        linear-gradient(
+            120deg,
+            var(--spotlight-navy),
+            var(--spotlight-midnight)
+        );
+
+    color: var(--spotlight-white);
+    overflow: hidden;
 }
 
 .marketplace-hero h1 {
     color: #ffffff;
 }
 
-.marketplace-hero .lead {
-    color: rgba(255, 255, 255, 0.8) !important;
+.marketplace-hero p {
+    color: #A3A3A3 !important;
 }
 
 .hero-label {
@@ -289,9 +278,8 @@ button:focus-visible {
 
 .marketplace-search {
     max-width: 650px;
-    background-color: #121212;
-    border: 1px solid #333333;
-    border-radius: 14px;
+    background: var(--spotlight-card);
+    border-radius: var(--radius-medium);
     padding: 6px;
     box-shadow: 0 16px 40px rgba(0, 0, 0, 0.35);
 }
@@ -342,13 +330,18 @@ button:focus-visible {
     min-height: 250px;
     padding: 45px 10%;
     overflow: hidden;
-    background: linear-gradient(
-        90deg,
-        rgba(0, 0, 0, 0.96) 0%,
-        rgba(10, 10, 10, 0.82) 100%
-    );
-    color: #ffffff;
-    border-bottom: 2px solid #f7c18b;
+
+    background:
+        linear-gradient(
+            90deg,
+            rgba(0, 0, 0, 0.96),
+            rgba(12, 24, 54, 0.75)
+        ),
+        linear-gradient(
+            135deg,
+            var(--spotlight-navy),
+            var(--spotlight-midnight)
+        );
 }
 
 .advertisement-image {
@@ -376,7 +369,7 @@ button:focus-visible {
 }
 
 .advertisement-content p {
-    color: rgba(255, 255, 255, 0.8);
+    color: #A3A3A3;
 }
 
 .sponsored-label {
@@ -467,12 +460,11 @@ button:focus-visible {
     margin: 0 auto 15px;
     border-radius: 50%;
     overflow: hidden;
-    background-color: #000000 !important;
-    border: 2px solid #f7c18b;
+    background: #262626;
     display: flex;
     align-items: center;
     justify-content: center;
-    color: #f7c18b !important;
+    color: var(--spotlight-white);
     font-size: 28px;
     font-weight: 800;
 }
@@ -495,8 +487,8 @@ button:focus-visible {
 
 .vendor-type {
     display: inline-block;
-    background-color: #000000 !important;
-    color: #f7c18b !important;
+    background: rgba(247, 193, 139, 0.12);
+    color: var(--spotlight-cyan);
     padding: 4px 10px;
     font-size: 11px;
     border-radius: 6px;
@@ -510,11 +502,10 @@ button:focus-visible {
     width: 38px;
     height: 38px;
     border-radius: 50%;
-    border: 1px solid #f7c18b !important;
-    background-color: #000000 !important;
-    color: #f7c18b !important;
-    font-size: 22px;
-    line-height: 1;
+    border: 1px solid var(--spotlight-border);
+    background: var(--spotlight-card);
+    color: var(--spotlight-cyan);
+    font-size: 24px;
     display: flex;
     justify-content: center;
     align-items: center;
@@ -577,7 +568,7 @@ button:focus-visible {
 .filter-group label {
     display: block;
     font-size: 13px;
-    color: #000000;
+    color: var(--spotlight-white);
 }
 
 .filter-panel .form-control,
@@ -592,9 +583,8 @@ button:focus-visible {
 
 .filter-panel .form-control:focus,
 .filter-panel .form-select:focus {
-    background-color: #ffffff;
-    border-color: #000000;
-    box-shadow: 0 0 0 3px rgba(247, 193, 139, 0.45);
+    border-color: #F7C18B;
+    box-shadow: 0 0 0 3px rgba(247, 193, 139, 0.16);
 }
 
 
@@ -617,9 +607,9 @@ button:focus-visible {
 }
 
 .market-card:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 10px 24px rgba(0, 0, 0, 0.09);
-    border-color: #f7c18b !important;
+    transform: translateY(-6px);
+    box-shadow: var(--shadow-medium);
+    border-color: rgba(247, 193, 139, 0.65);
 }
 
 .product-card,
@@ -649,10 +639,13 @@ button:focus-visible {
     position: absolute;
     top: 12px;
     left: 12px;
-    background-color: #000000 !important;
-    color: #f7c18b !important;
-    border: 1px solid #f7c18b;
-    padding: 4px 10px;
+    background: linear-gradient(
+        135deg,
+        #FFE2BF,
+        var(--spotlight-amber)
+    );
+    color: #000000;
+    padding: 5px 10px;
     font-size: 10px;
     font-weight: 800;
     border-radius: 6px;
@@ -678,10 +671,9 @@ button:focus-visible {
 }
 
 .image-placeholder {
-    min-height: 210px;
-    background-color: #f8f9fa;
-    color: #64748b;
-    border-bottom: 1px solid #e5e7eb;
+    min-height: 190px;
+    background: #141414;
+    color: var(--spotlight-muted);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -689,17 +681,17 @@ button:focus-visible {
 }
 
 .rating {
-    color: #d97706 !important;
+    color: var(--spotlight-cyan);
     font-size: 13px;
     font-weight: 700;
 }
 
 .pricing-tier {
     display: inline-block;
-    padding: 4px 10px;
-    background-color: #000000 !important;
-    color: #f7c18b !important;
-    border-radius: 6px;
+    padding: 5px 10px;
+    background: #262626;
+    color: var(--spotlight-white);
+    border-radius: 5px;
     font-size: 11px;
     font-weight: 600;
 }
@@ -734,7 +726,7 @@ button:focus-visible {
 }
 
 .support-panel p {
-    color: rgba(255, 255, 255, 0.78) !important;
+    color: #A3A3A3 !important;
 }
 
 .achievement-card,
@@ -768,11 +760,10 @@ button:focus-visible {
 }
 
 .announcement-card {
-    background-color: #ffffff !important;
-    border: 1px solid #e5e7eb !important;
-    border-left: 3px solid #f7c18b !important;
-    padding: 14px;
-    border-radius: 10px;
+    border-left: 3px solid var(--spotlight-amber);
+    padding: 12px;
+    background: rgba(247, 193, 139, 0.08);
+    border-radius: 0 var(--radius-small) var(--radius-small) 0;
 }
 
 .announcement-label {
@@ -836,7 +827,7 @@ button:focus-visible {
 }
 
 .review-stars {
-    color: #d97706 !important;
+    color: var(--spotlight-cyan);
     font-size: 18px;
     letter-spacing: 2px;
 }
@@ -863,7 +854,7 @@ button:focus-visible {
 }
 
 .store-hero p {
-    color: rgba(255, 255, 255, 0.8);
+    color: #A3A3A3;
 }
 
 .store-profile {
@@ -875,9 +866,8 @@ button:focus-visible {
 .store-logo {
     width: 115px;
     height: 115px;
-    border-radius: 20px;
-    background-color: #ffffff;
-    border: 2px solid #f7c18b;
+    border-radius: var(--radius-large);
+    background: var(--spotlight-card);
     padding: 8px;
     overflow: hidden;
     flex-shrink: 0;
@@ -892,8 +882,8 @@ button:focus-visible {
 .store-placeholder {
     width: 100%;
     height: 100%;
-    background-color: #000000;
-    color: #f7c18b;
+    background: #262626;
+    color: var(--spotlight-cyan);
     display: flex;
     justify-content: center;
     align-items: center;
@@ -908,10 +898,9 @@ button:focus-visible {
    ========================================================= */
 
 .empty-state {
-    background-color: #ffffff !important;
-    color: #000000 !important;
-    border: 1px dashed #cbd5e1 !important;
-    border-radius: 16px;
+    background: var(--spotlight-card);
+    border: 1px dashed #262626;
+    border-radius: var(--radius-medium);
     padding: 45px 20px;
     text-align: center;
 }
@@ -975,9 +964,9 @@ button:focus-visible {
     height: 45px;
     border: 1px solid #f7c18b !important;
     border-radius: 50%;
-    background-color: #000000 !important;
-    color: #f7c18b !important;
-    font-size: 20px;
+    background: var(--spotlight-cyan);
+    color: var(--spotlight-cyan);
+    font-size: 22px;
     font-weight: 800;
     line-height: 1;
     cursor: pointer;
@@ -1052,9 +1041,9 @@ button:focus-visible {
 .skeleton {
     background: linear-gradient(
         90deg,
-        #f1f5f9 25%,
-        #ffffff 50%,
-        #f1f5f9 75%
+        #141414 25%,
+        #262626 50%,
+        #141414 75%
     );
     background-size: 200% 100%;
     animation: skeletonLoading 1.5s infinite linear;
@@ -1116,7 +1105,76 @@ button:focus-visible {
 
 
 /* =========================================================
-20. RESPONSIVE DESIGN
+   21. STICKY HEADER SUPPORT
+   Shared header should have class .site-header.
+   ========================================================= */
+
+.site-header {
+    position: sticky;
+    top: 0;
+    z-index: 1030;
+    transition:
+        box-shadow var(--transition-normal),
+        background-color var(--transition-normal);
+    background-color: #000000;
+    border-bottom: 1px solid #262626;
+}
+
+.site-header .navbar-brand,
+.site-header .nav-link,
+.site-header .text-info {
+    color: #FFFFFF !important;
+}
+
+.site-header .navbar-brand .bi-stars,
+.site-header .text-info {
+    color: #F7C18B !important;
+}
+
+.site-header .nav-link:hover,
+.site-header .nav-link:focus-visible {
+    color: #F7C18B !important;
+}
+
+.site-header .btn-outline-light {
+    border-color: #262626;
+    color: #FFFFFF;
+}
+
+.site-header .btn-outline-light:hover,
+.site-header .btn-outline-light:focus-visible {
+    background-color: #F7C18B;
+    border-color: #F7C18B;
+    color: #000000;
+}
+
+.site-header .dropdown-menu {
+    background-color: #0A0A0A;
+    border: 1px solid #262626;
+}
+
+.site-header .dropdown-item,
+.site-header .dropdown-item-text {
+    color: #FFFFFF;
+}
+
+.site-header .dropdown-item:hover,
+.site-header .dropdown-item:focus {
+    background-color: #262626;
+    color: #F7C18B;
+}
+
+.site-header .dropdown-divider {
+    border-color: #262626;
+}
+
+.site-header.scrolled {
+    box-shadow: 0 5px 20px rgba(0, 0, 0, 0.45);
+}
+
+
+/* =========================================================
+   22. RESPONSIVE DESIGN: TABLETS
    ========================================================= */
 
 @media (max-width: 991.98px) {
