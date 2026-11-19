@@ -34,6 +34,7 @@ class Advertisement(models.Model):
   target_url = models.URLField(
       blank=True, help_text='Custom landing page or store link for the ad click.'
   )
+  is_active = models.BooleanField(default=True, help_text='Whether the ad is currently active and visible.')
 
   # Scheduling & Budget
   start_date = models.DateTimeField()

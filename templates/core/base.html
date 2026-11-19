@@ -53,7 +53,7 @@
           <div class="dropdown">
             <button class="btn btn-header-icon dropdown-toggle d-flex align-items-center gap-2" type="button"
                     data-bs-toggle="dropdown" aria-expanded="false" aria-label="Profile menu">
-              <i class="bi bi-person-circle text-gold" aria-hidden="true"></i>
+              <i class="bi bi-person-circle text-white" aria-hidden="true"></i>
               {% if request.user.is_authenticated %}
                 <span class="small d-none d-sm-inline text-white">
                   {{ request.user.get_short_name|default:request.user.email }}

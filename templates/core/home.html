@@ -113,7 +113,7 @@
 
                 <article class="vendor-card">
 
-                    <a href="{% url 'marketplace:store_detail' store.slug %}"
+                    <a href="{% url 'store:store-profile' store.slug %}"
                        class="text-decoration-none text-black">
 
                         <div class="vendor-logo">
@@ -301,7 +301,7 @@
                                     <p class="small text-black">
                                         Vendor:
                                         {% if product.store %}
-                                            <a href="{% url 'marketplace:store_detail' product.store.slug %}"
+                                            <a href="{% url 'store:store-profile' product.store.slug %}"
                                                class="fw-semibold text-gold-link text-decoration-none">
                                                 {{ product.store.name }}
                                             </a>
@@ -392,7 +392,7 @@
                                     <p class="small text-black">
                                         Provider:
                                         {% if service.store %}
-                                            <a href="{% url 'marketplace:store_detail' service.store.slug %}"
+                                            <a href="{% url 'store:store-profile' service.store.slug %}"
                                                class="fw-semibold text-gold-link text-decoration-none">
                                                 {{ service.store.name }}
                                             </a>
@@ -440,39 +440,39 @@
         <aside class="col-lg-3">
 
             <section class="sidebar-panel p-3 mb-4">
-                <h5 class="fw-bold mb-3 text-black">Vendor Achievements</h5>
+                <h5 class="fw-bold mb-3 text-black">Advertisements</h5>
 
-                {% for achievement in featured_achievements %}
+                {% for advertisement in advertisements %}
                     <article class="achievement-card mb-3">
 
-                        {% if achievement.badge_image %}
-                            <img src="{{ achievement.badge_image.url }}"
+                        {% if advertisement.banner_image %}
+                            <img src="{{ advertisement.banner_image.url }}"
                                  class="achievement-image"
-                                 alt="{{ achievement.title }}">
+                                 alt="{{ advertisement.title }}">
                         {% endif %}
 
                         <div class="p-3">
-                            <h6 class="fw-bold text-black">{{ achievement.title }}</h6>
+                            <h6 class="fw-bold text-black">{{ advertisement.title }}</h6>
 
                             <p class="small text-muted">
-                                {{ achievement.description|truncatewords:15 }}
+                                {{ advertisement.description|truncatewords:15 }}
                             </p>
 
-                            {% if achievement.store %}
+                            {% if advertisement.store %}
                                 <small class="text-muted d-block mb-1">
-                                    By {{ achievement.store.name }}
+                                    By <b>{{ advertisement.store.name }}</b>
                                 </small>
                             {% endif %}
 
-                            <a href="#" class="text-gold-link small fw-bold text-decoration-none">
-                                Explore achievement →
+                            <a href="{{ advertisement.target_url }}" target="_blank" class="text-gold-link small fw-bold text-decoration-none">
+                                Explore advertisement →
                             </a>
                         </div>
 
                     </article>
                 {% empty %}
                     <p class="text-muted small mb-0">
-                        Vendor Achievements will appear here.
+                        No Advertisement. Advertisements will appear here.
                     </p>
                 {% endfor %}
             </section>
@@ -483,7 +483,7 @@
                     Have a question about using The Spotlight?
                     Contact our support team.
                 </p>
-                <a href="#" class="btn btn-spotlight btn-sm w-100">
+                <a href="core:contact-support" class="btn btn-spotlight btn-sm w-100">
                     Contact Support
                 </a>
             </section>
@@ -548,19 +548,19 @@
 
                     <div class="d-flex align-items-center gap-3 mb-3">
 
-                        {% if review.customer.profile_picture %}
-                            <img src="{{ review.customer.profile_picture.url }}"
+                        {% if review.author.avatar %}
+                            <img src="{{ review.author.avatar.url }}"
                                  class="review-avatar"
                                  alt="Customer profile">
                         {% else %}
                             <div class="review-avatar-placeholder">
-                                {{ review.customer|first|upper }}
+                                {{ review.author|first|upper }}
                             </div>
                         {% endif %}
 
                         <div>
                             <h6 class="fw-bold mb-0 text-black">
-                                {{ review.customer|default:"Customer" }}
+                                {{ review.author|default:"Customer" }}
                             </h6>
 
                             <small class="text-muted">
@@ -570,7 +570,7 @@
 
                     </div>
 
-                    <div class="review-stars" aria-label="{{ review.rating }} out of 5 stars">
+                    <div class="review-stars" aria-label="{{ review.overall_rating }} out of 5 stars">
                         {% for star in "12345" %}
                             {% if forloop.counter <= review.rating %}
                                 ★
