@@ -97,7 +97,9 @@ credentials.json
 # =========================
 # Database files
 # =========================
-
+*.sqlite
+*.sqlite3
+*.db
 
 # =========================
 # Test artifacts
