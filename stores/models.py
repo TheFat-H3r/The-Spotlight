@@ -196,6 +196,7 @@ class Service(models.Model):
         Store, on_delete=models.CASCADE, related_name="services"
     )
     name = models.CharField(max_length=255)
+    slug = models.SlugField(max_length=265, unique=True, blank=True, help_text="Auto-generated from the name if left blank.")
     description = models.TextField(blank=True, default="")
     category = models.ForeignKey(
         Category,
@@ -226,6 +227,7 @@ class Product(models.Model):
         Store, on_delete=models.CASCADE, related_name="products"
     )
     name = models.CharField(max_length=255)
+    slug = models.SlugField(max_length=255, unique=True, blank=True, help_text="Auto-generated from the name if left blank.")
     description = models.TextField(blank=True, default="")
     category = models.ForeignKey(
         Category,
