@@ -1,0 +1,193 @@
+{% extends "core/base.html" %}
+{% load static %}
+
+{% block title %}Checkout — The Spotlight{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+  <div class="mb-4">
+    <a href="{% url 'transactions:cart_detail' %}" class="text-decoration-none text-dark small">
+      <i class="bi bi-arrow-left me-1"></i>Back to Cart
+    </a>
+    <h1 class="h3 fw-bold mt-2 mb-1">Checkout</h1>
+    <p class="text-muted small mb-0">
+      Confirm your contact and handover details. Stores will contact you directly once your order is placed.
+    </p>
+  </div>
+
+  <form method="post" action="{% url 'transactions:checkout' %}">
+    {% csrf_token %}
+    <div class="row g-4">
+      <!-- Left Column: Contact, Fulfilment & Payment -->
+      <div class="col-lg-7">
+        <!-- Contact Information -->
+        <div class="card border-0 shadow-sm mb-4">
+          <div class="card-header bg-dark text-white py-3">
+            <h2 class="h6 fw-bold text-uppercase mb-0 text-warning">
+              <i class="bi bi-person-lines-fill me-2"></i>1. Contact Details
+            </h2>
+          </div>
+          <div class="card-body">
+            <div class="row g-3">
+              <div class="col-md-6">
+                <label for="id_customer_name" class="form-label small fw-semibold">Full Name *</label>
+                <input type="text"
+                       id="id_customer_name"
+                       name="customer_name"
+                       value="{{ default_name }}"
+                       class="form-control"
+                       required readonly>
+              </div>
+              <div class="col-md-6">
+                <label for="id_customer_phone" class="form-label small fw-semibold">Phone / WhatsApp *</label>
+                <input type="tel"
+                       id="id_customer_phone"
+                       name="customer_phone"
+                       value="{{ default_phone }}"
+                       class="form-control"
+                       placeholder="+230 5XXX XXXX"
+                       required>
+              </div>
+              <div class="col-12">
+                <label class="form-label small fw-semibold">Confirmation Email</label>
+                <input type="email"
+                       value="{{ request.user.email }}"
+                       class="form-control"
+                       readonly>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Fulfilment Method -->
+        <div class="card border-0 shadow-sm mb-4">
+          <div class="card-header bg-dark text-white py-3">
+            <h2 class="h6 fw-bold text-uppercase mb-0 text-warning">
+              <i class="bi bi-geo-alt-fill me-2"></i>2. Pickup or Delivery
+            </h2>
+          </div>
+          <div class="card-body">
+            <div class="mb-3">
+              <label for="id_fulfilment_method" class="form-label small fw-semibold">How would you like to receive your order? *</label>
+              <select id="id_fulfilment_method" name="fulfilment_method" class="form-select">
+                {% for value, label in fulfilment_choices %}
+                  <option value="{{ value }}">{{ label }}</option>
+                {% endfor %}
+              </select>
+            </div>
+
+            <div id="pickup-fields" class="mb-3">
+              <label for="id_pickup_location" class="form-label small fw-semibold">Preferred Campus Pickup Spot</label>
+              <input type="text"
+                     id="id_pickup_location"
+                     name="pickup_location"
+                     value="{{ pickup_location }}"
+                     class="form-control"
+                     readonly>
+            </div>
+
+            <div id="delivery-fields" class="mb-3 d-none">
+              <label for="id_delivery_address" class="form-label small fw-semibold">Delivery Residence & Room / Address *</label>
+              <input type="text"
+                     id="id_delivery_address"
+                     name="delivery_address"
+                     value="{{ delivery_location }}"
+                     class="form-control"
+                     placeholder="e.g., Songhai S101, Maps, Kongo, Aksum">
+            </div>
+
+            <div>
+              <label for="id_customer_note" class="form-label small fw-semibold">Order Note for Store(s) (Optional)</label>
+              <textarea id="id_customer_note"
+                        name="customer_note"
+                        rows="2"
+                        class="form-control"
+                        placeholder="Preferred time, dietary notes, or instructions..."></textarea>
+            </div>
+          </div>
+        </div>
+
+        <!-- Payment Method -->
+        <div class="card border-0 shadow-sm">
+          <div class="card-header bg-dark text-white py-3">
+            <h2 class="h6 fw-bold text-uppercase mb-0 text-warning">
+              <i class="bi bi-wallet2 me-2"></i>3. Payment Method
+            </h2>
+          </div>
+          <div class="card-body">
+            <select id="id_payment_method" name="payment_method" class="form-select">
+              {% for value, label in payment_choices %}
+                <option value="{{ value }}">{{ label }}</option>
+              {% endfor %}
+            </select>
+            <div class="form-text small mt-2">
+              Payment is settled directly with the vendor upon confirmation, pickup, or delivery.
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right Column: Per-Store Order Breakdown -->
+      <div class="col-lg-5">
+        <div class="card border-0 shadow-sm sticky-top" style="top: 90px;">
+          <div class="card-header bg-dark text-white py-3">
+            <h2 class="h6 fw-bold text-uppercase mb-0 text-warning">Order Review</h2>
+          </div>
+          <div class="card-body">
+            {% for store, store_items in items_by_store.items %}
+              <div class="mb-3 pb-3 {% if not forloop.last %}border-bottom{% endif %}">
+                <div class="d-flex align-items-center gap-2 mb-2">
+                  <i class="bi bi-shop text-warning"></i>
+                  <span class="fw-bold small">{{ store.name }}</span>
+                </div>
+                <ul class="list-unstyled small mb-0 d-grid gap-2">
+                  {% for item in store_items %}
+                    <li class="d-flex justify-content-between">
+                      <span>
+                        <span class="fw-semibold">{{ item.quantity }}×</span> {{ item.product.name }}
+                        {% if item.variant_name %}<span class="text-muted">({{ item.variant_name }})</span>{% endif %}
+                      </span>
+                      <span class="fw-semibold">MUR {{ item.line_total }}</span>
+                    </li>
+                  {% endfor %}
+                </ul>
+              </div>
+            {% endfor %}
+
+            <hr>
+            <div class="d-flex justify-content-between align-items-center mb-3">
+              <span class="fw-bold">Total Payable</span>
+              <span class="h4 fw-bold mb-0">MUR {{ cart.subtotal }}</span>
+            </div>
+
+            <button type="submit" class="btn btn-spotlight w-100 fw-bold py-2">
+              <i class="bi bi-check2-circle me-1"></i>Confirm & Place Order
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </form>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  document.addEventListener("DOMContentLoaded", () => {
+    const fulfilmentSelect = document.getElementById("id_fulfilment_method");
+    const pickupFields = document.getElementById("pickup-fields");
+    const deliveryFields = document.getElementById("delivery-fields");
+    const deliveryInput = document.getElementById("id_delivery_address");
+
+    function toggleFulfilmentFields() {
+      const isDelivery = fulfilmentSelect.value === "delivery";
+      pickupFields.classList.toggle("d-none", isDelivery);
+      deliveryFields.classList.toggle("d-none", !isDelivery);
+      deliveryInput.required = isDelivery;
+    }
+
+    fulfilmentSelect.addEventListener("change", toggleFulfilmentFields);
+    toggleFulfilmentFields();
+  });
+</script>
+{% endblock %}

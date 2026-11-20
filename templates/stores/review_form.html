@@ -1,0 +1,147 @@
+{% extends "core/base.html" %}
+{% load static %}
+
+{% block title %}Review {{ store.name }} — The Spotlight{% endblock %}
+
+{% block extra_css %}
+<style>
+  /* Interactive reverse-ordered star rating bar */
+  .star-rating {
+    display: inline-flex;
+    flex-direction: row-reverse;
+    gap: 0.35rem;
+  }
+  .star-rating input {
+    display: none;
+  }
+  .star-rating label {
+    font-size: 2rem;
+    color: #dee2e6;
+    cursor: pointer;
+    transition: color 0.15s ease, transform 0.1s ease;
+  }
+  .star-rating label:hover,
+  .star-rating label:hover ~ label,
+  .star-rating input:checked ~ label {
+    color: #ffc107;
+  }
+  .star-rating label:hover {
+    transform: scale(1.1);
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+  <div class="row justify-content-center">
+    <div class="col-lg-6">
+      <div class="mb-3">
+        <a href="{% url 'store:store-profile' slug=store.slug %}" class="text-decoration-none text-dark small">
+          <i class="bi bi-arrow-left me-1"></i>Back to {{ store.name }}
+        </a>
+      </div>
+
+      <div class="card border-0 shadow-sm">
+        <div class="card-header bg-dark text-white py-3 d-flex align-items-center justify-content-between">
+          <div>
+            <h1 class="h5 fw-bold mb-0 text-warning">
+              {% if existing_review %}Update Your Review{% else %}Rate & Review{% endif %}
+            </h1>
+            <div class="small text-white-50">{{ store.name }}</div>
+          </div>
+          <i class="bi bi-chat-square-quote fs-3 text-warning"></i>
+        </div>
+
+        <div class="card-body p-4">
+          <form method="post" action="{% url 'store:submit-review' slug=store.slug %}">
+            {% csrf_token %}
+
+            <!-- Star Rating Selector -->
+            <div class="mb-4 text-center">
+              <label class="form-label d-block fw-semibold small text-uppercase text-muted mb-2">
+                Overall Experience *
+              </label>
+              <div class="star-rating" role="radiogroup" aria-label="Star rating">
+                {% for star in "54321" %}
+                  <input type="radio"
+                         id="star-{{ star }}"
+                         name="rating"
+                         value="{{ star }}"
+                         {% if submitted_rating|stringformat:"s" == star %}checked{% endif %}
+                         required>
+                  <label for="star-{{ star }}" title="{{ star }} star{{ star|pluralize }}">
+                    <i class="bi bi-star-fill"></i>
+                  </label>
+                {% endfor %}
+              </div>
+              <div id="rating-label" class="small text-muted mt-1">Click a star to rate</div>
+            </div>
+
+            <!-- Optional Headline -->
+            <div class="mb-3">
+              <label for="id_title" class="form-label small fw-semibold">
+                Review Headline <span class="text-muted fw-normal">(Optional)</span>
+              </label>
+              <input type="text"
+                     id="id_title"
+                     name="title"
+                     value="{{ submitted_title }}"
+                     maxlength="120"
+                     class="form-control"
+                     placeholder="e.g., Fast campus delivery & great quality">
+            </div>
+
+            <!-- Review Comment -->
+            <div class="mb-4">
+              <label for="id_comment" class="form-label small fw-semibold">
+                Your Feedback
+              </label>
+              <textarea id="id_comment"
+                        name="comment"
+                        rows="4"
+                        class="form-control"
+                        placeholder="Share how the communication, quality, and pickup/delivery went...">{{ submitted_comment }}</textarea>
+            </div>
+
+            <div class="d-grid gap-2">
+              <button type="submit" class="btn btn-spotlight fw-bold py-2">
+                <i class="bi bi-send me-1"></i>
+                {% if existing_review %}Update Review{% else %}Submit Review{% endif %}
+              </button>
+              <a href="{% url 'store:store-profile' slug=store.slug %}" class="btn btn-outline-secondary btn-sm">
+                Cancel
+              </a>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  document.addEventListener("DOMContentLoaded", () => {
+    const labels = {
+      "1": "1 / 5 — Poor",
+      "2": "2 / 5 — Fair",
+      "3": "3 / 5 — Good",
+      "4": "4 / 5 — Very Good",
+      "5": "5 / 5 — Excellent"
+    };
+    const ratingText = document.getElementById("rating-label");
+    const inputs = document.querySelectorAll('input[name="rating"]');
+
+    function updateLabel() {
+      const checked = document.querySelector('input[name="rating"]:checked');
+      if (checked && labels[checked.value]) {
+        ratingText.textContent = labels[checked.value];
+      }
+    }
+
+    inputs.forEach((input) => input.addEventListener("change", updateLabel));
+    updateLabel();
+  });
+</script>
+{% endblock %}

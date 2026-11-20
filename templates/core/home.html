@@ -65,7 +65,7 @@
         <div class="row align-items-center">
             <div class="col-lg-8">
                 <h1 class="display-4 fw-bold mt-2 text-white">
-                    Discover. Connect. <span class="text-gold">Grow.</span>
+                    Anytime. <span class="text-gold">Anywhere.</span>
                 </h1>
                 <p class="lead">
                     Discover products, services and trusted businesses
@@ -330,13 +330,16 @@
                                                 data-price="MUR {{ product.price }}"
                                                 data-image="{% if product.image %}{{ product.image.url }}{% endif %}"
                                                 data-url="{% url 'store:product-detail' slug=product.slug|default:'#' %}">
-                                            Quick View
+                                            Details
                                         </button>
 
-                                        <a href="{% url 'store:product-detail' slug=product.slug|default:'#' %}"
-                                           class="btn btn-spotlight btn-sm flex-fill">
-                                            Details
-                                        </a>
+                                        <form method="post" action="{% url 'transactions:add_to_cart' product.id %}" class="flex-fill">
+                                            {% csrf_token %}
+                                            <input type="hidden" name="quantity" value="1">
+                                            <button type="submit" class="btn btn-spotlight btn-sm w-100">
+                                                Add to Cart
+                                            </button>
+                                        </form>
                                     </div>
                                 </div>
                             </article>
@@ -600,7 +603,7 @@
 
                     <div class="review-stars" aria-label="{{ review.overall_rating }} out of 5 stars">
                         {% for star in "12345" %}
-                            {% if forloop.counter <= review.rating %}
+                            {% if forloop.counter <= review.overall_rating %}
                                 ★
                             {% else %}
                                 ☆
@@ -609,7 +612,7 @@
                     </div>
 
                     <p class="review-text mt-3 text-black">
-                        {{ review.comment }}
+                        {{ review.body|slice:":180" }}{% if review.body|length > 200 %}...{% endif %}
                     </p>
 
                     {% if review.store %}

@@ -75,7 +75,7 @@ class RegisterView(View):
         # Send Email Verification Link via Brevo API
         if user.auth_provider == User.AuthProvider.EMAIL:
             token = user.generate_email_verification_token()
-            verification_path = reverse('accounts:resend_verification', kwargs={'token': token})
+            verification_path = reverse('accounts:resend_verification')
             verification_url = request.build_absolute_uri(verification_path)
 
             send_verification_email(
@@ -239,7 +239,7 @@ class ProfileView(LoginRequiredMixin, View):
                 owner=user,
                 defaults={
                     'name': default_name,
-                    'slug': Store.generate_unique_slug(default_name),
+                    'slug': Store.generate_unique_slug(default_name), # type: ignore
                     'contact_email': user.email,
                     'contact_phone': user.phone or '',
                 }
@@ -348,7 +348,7 @@ class ProfileView(LoginRequiredMixin, View):
 
             assert vendor_profile is not None
             if Store.name != business_name:
-                vendor_profile.slug = Store.generate_unique_slug(business_name)
+                vendor_profile.slug = Store.generate_unique_slug(business_name) # type: ignore
 
             vendor_profile.name = business_name
             vendor_profile.tagline = tagline

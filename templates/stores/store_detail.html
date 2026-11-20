@@ -138,19 +138,19 @@
 
                         <div class="d-flex align-items-center gap-3 mb-3">
 
-                            {% if review.customer.profile_picture %}
-                                <img src="{{ review.customer.profile_picture.url }}"
+                            {% if review.author.avatar %}
+                                <img src="{{ review.author.avatar.url }}"
                                     class="review-avatar"
                                     alt="Customer profile">
                             {% else %}
                                 <div class="review-avatar-placeholder">
-                                    {{ review.customer|first|upper }}
+                                    {{ review.author.full_name|first|upper }}
                                 </div>
                             {% endif %}
 
                             <div>
-                                <h6 class="fw-bold mb-0">
-                                    {{ review.customer|default:"Customer" }}
+                                <h6 class="fw-bold mb-0 text-black">
+                                    {{ review.author.full_name|default:"Customer" }}
                                 </h6>
 
                                 <small class="text-muted">
@@ -162,7 +162,7 @@
 
                         <div class="review-stars" aria-label="{{ review.rating }} out of 5 stars">
                             {% for star in "12345" %}
-                                {% if forloop.counter <= review.rating %}
+                                {% if forloop.counter <= review.overall_rating %}
                                     ★
                                 {% else %}
                                     ☆
@@ -171,7 +171,7 @@
                         </div>
 
                         <p class="review-text mt-3">
-                            {{ review.comment }}
+                            {{ review.body|slice:":180" }}{% if review.body|length > 200 %}...{% endif %}
                         </p>
 
                         {% if review.store %}

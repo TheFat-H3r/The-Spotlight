@@ -1,0 +1,178 @@
+{% extends "core/base.html" %}
+{% load static %}
+
+{% block title %}Your Cart — The Spotlight{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+  <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-2">
+    <div>
+      <h1 class="h3 fw-bold mb-1">Shopping Cart</h1>
+      <p class="text-muted small mb-0">
+        {% if items %}
+          Review your items below. Orders from multiple stores are automatically split per vendor at checkout.
+        {% else %}
+          Your cart is currently empty.
+        {% endif %}
+      </p>
+    </div>
+    <a href="{% url 'core:home' %}#products-section" class="btn btn-outline-dark btn-sm">
+      <i class="bi bi-arrow-left me-1"></i>Continue Shopping
+    </a>
+  </div>
+
+  {% if items %}
+    <div class="row g-4">
+      <!-- Left Column: Items Grouped by Store -->
+      <div class="col-lg-8">
+        {% for store, group in grouped_stores.items %}
+          <div class="card border-0 shadow-sm mb-4">
+            <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center py-3">
+              <div class="d-flex align-items-center gap-2">
+                <i class="bi bi-shop text-warning"></i>
+                <span class="fw-semibold">{{ store.name }}</span>
+              </div>
+              <span class="small text-white-50">
+                Store Subtotal: <strong class="text-warning">MUR {{ group.subtotal }}</strong>
+              </span>
+            </div>
+
+            <div class="card-body p-0">
+              <div class="table-responsive">
+                <table class="table align-middle mb-0">
+                  <thead class="table-light small text-uppercase text-muted">
+                    <tr>
+                      <th class="ps-3">Product</th>
+                      <th>Unit Price</th>
+                      <th style="width: 150px;">Quantity</th>
+                      <th class="text-end">Total</th>
+                      <th class="text-end pe-3" style="width: 60px;"></th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {% for item in group.items %}
+                      <tr>
+                        <td class="ps-3">
+                          <div class="d-flex align-items-center gap-3">
+                            {% if item.product.image %}
+                              <img src="{{ item.product.image.url }}"
+                                   alt="{{ item.product.name }}"
+                                   class="rounded border"
+                                   style="width: 56px; height: 56px; object-fit: cover;">
+                            {% else %}
+                              <div class="rounded bg-light border d-flex align-items-center justify-content-center text-muted"
+                                   style="width: 56px; height: 56px;">
+                                <i class="bi bi-bag"></i>
+                              </div>
+                            {% endif %}
+                            <div>
+                              <div class="fw-semibold">{{ item.product.name }}</div>
+                              {% if item.variant_name %}
+                                <div class="small text-muted">{{ item.variant_name }}</div>
+                              {% endif %}
+                            </div>
+                          </div>
+                        </td>
+
+                        <td class="small">MUR {{ item.product.price }}</td>
+
+                        <td>
+                            <div class="d-inline-flex align-items-center border rounded overflow-hidden">
+                                <!-- Decrease (-) button: submits quantity - 1 (removes item if currently 1) -->
+                                <form method="post" action="{% url 'transactions:update_cart_item' item.id %}" class="m-0">
+                                {% csrf_token %}
+                                <input type="hidden" name="quantity" value="{{ item.quantity|add:'-1' }}">
+                                <button type="submit"
+                                        class="btn btn-sm btn-light border-0 rounded-0 px-2"
+                                        title="{% if item.quantity == 1 %}Remove item{% else %}Decrease quantity{% endif %}"
+                                        aria-label="Decrease quantity of {{ item.product.name }}">
+                                    <i class="bi {% if item.quantity == 1 %}bi-trash text-danger{% else %}bi-dash{% endif %}"></i>
+                                </button>
+                                </form>
+
+                                <!-- Current quantity display -->
+                                <span class="px-3 small fw-semibold user-select-none">{{ item.quantity }}</span>
+
+                                <!-- Increase (+) button: submits quantity + 1 (disabled at max stock) -->
+                                <form method="post" action="{% url 'transactions:update_cart_item' item.id %}" class="m-0">
+                                {% csrf_token %}
+                                <input type="hidden" name="quantity" value="{{ item.quantity|add:'1' }}">
+                                <button type="submit"
+                                        class="btn btn-sm btn-light border-0 rounded-0 px-2"
+                                        title="Increase quantity"
+                                        aria-label="Increase quantity of {{ item.product.name }}"
+                                        {% if item.product.stock is not None and item.quantity >= item.product.stock %}disabled{% endif %}>
+                                    <i class="bi bi-plus"></i>
+                                </button>
+                                </form>
+                            </div>
+                            </td>
+
+                        <td class="text-end fw-semibold">MUR {{ item.line_total }}</td>
+
+                        <td class="text-end pe-3">
+                          <form method="post" action="{% url 'transactions:remove_cart_item' item.id %}">
+                            {% csrf_token %}
+                            <button type="submit"
+                                    class="btn btn-link text-danger p-0"
+                                    title="Remove item"
+                                    aria-label="Remove {{ item.product.name }}">
+                              <i class="bi bi-trash"></i>
+                            </button>
+                          </form>
+                        </td>
+                      </tr>
+                    {% endfor %}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        {% endfor %}
+      </div>
+
+      <!-- Right Column: Order Summary -->
+      <div class="col-lg-4">
+        <div class="card border-0 shadow-sm sticky-top" style="top: 90px;">
+          <div class="card-header bg-dark text-white py-3">
+            <h2 class="h6 fw-bold text-uppercase mb-0 text-warning">Cart Summary</h2>
+          </div>
+          <div class="card-body">
+            <div class="d-flex justify-content-between mb-2 small">
+              <span class="text-muted">Total Items</span>
+              <span class="fw-semibold">{{ cart.total_items }}</span>
+            </div>
+            <div class="d-flex justify-content-between mb-2 small">
+              <span class="text-muted">Stores</span>
+              <span class="fw-semibold">{{ grouped_stores|length }}</span>
+            </div>
+            <hr>
+            <div class="d-flex justify-content-between align-items-center mb-3">
+              <span class="fw-bold">Estimated Subtotal</span>
+              <span class="h5 fw-bold mb-0">MUR {{ cart.subtotal }}</span>
+            </div>
+            <p class="text-muted small mb-3">
+              <i class="bi bi-info-circle me-1"></i>
+              Each store will receive your order immediately and reach out to confirm pickup or campus delivery.
+            </p>
+            <a href="{% url 'transactions:checkout' %}" class="btn btn-spotlight w-100 fw-semibold py-2">
+              Proceed to Checkout <i class="bi bi-arrow-right ms-1"></i>
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+  {% else %}
+    <div class="card border-0 shadow-sm text-center py-5">
+      <div class="card-body">
+        <i class="bi bi-cart-x display-4 text-muted mb-3 d-block"></i>
+        <h2 class="h5 fw-bold">Nothing in your cart yet</h2>
+        <p class="text-muted small mb-4">Explore products from student ventures and local businesses on campus.</p>
+        <a href="{% url 'core:home' %}#products-section" class="btn btn-spotlight px-4">
+          Browse Marketplace
+        </a>
+      </div>
+    </div>
+  {% endif %}
+</div>
+{% endblock %}

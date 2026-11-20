@@ -1,10 +1,19 @@
 from django.urls import path
-from .views import create_booking, create_order, customer_bookings_list, customer_orders_list, owner_bookings_list, owner_orders_list, update_booking_status, update_order_status
+from .views import add_to_cart, cart_detail, checkout, create_booking, create_order, customer_bookings_list, customer_orders_list, owner_bookings_list, owner_orders_list, remove_cart_item, update_booking_status, update_cart_item, update_order_status
 
+app_name = "transactions"
 urlpatterns = [
     # Customer-facing transaction routes
     path('my-orders/', customer_orders_list, name='customer-orders'),
     path('my-bookings/', customer_bookings_list, name='customer-bookings'),
+
+    #Cart
+    path("cart/", cart_detail, name="cart_detail"),
+    path("cart/add/<int:product_id>/", add_to_cart, name="add_to_cart"),
+    path("cart/item/<int:item_id>/update/", update_cart_item, name="update_cart_item"),
+    path("cart/item/<int:item_id>/remove/", remove_cart_item, name="remove_cart_item"),
+    path("checkout/", checkout, name="checkout"),
+
     path('store/<slug:store_slug>/order/new/', create_order, name='create-order'),
     path('store/<slug:store_slug>/booking/new/', create_booking, name='create-booking'),
 

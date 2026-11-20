@@ -715,3 +715,79 @@ class OrderStatusHistory(models.Model):
 
     def __str__(self):
         return f"{self.order.order_number}: {self.from_status or '—'} → {self.to_status}"
+
+class Cart(models.Model):
+    if TYPE_CHECKING:
+        customer_id: int
+        items: models.Manager["CartItem"]
+
+    customer = models.OneToOneField(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="cart",
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    @property
+    def total_items(self) -> int:
+        return sum(item.quantity for item in self.items.all()) # type: ignore
+
+    @property
+    def subtotal(self) -> Decimal:
+        return sum((item.line_total for item in self.items.all()), ZERO) # type: ignore
+
+    def __str__(self):
+        return f"Cart #{self.pk} - {self.customer.email}"
+
+
+class CartItem(models.Model):
+    if TYPE_CHECKING:
+        cart_id: int
+        product_id: int
+
+    cart = models.ForeignKey(
+        Cart, on_delete=models.CASCADE, related_name="items"
+    )
+    product = models.ForeignKey(
+        Product, on_delete=models.CASCADE, related_name="cart_items"
+    )
+    variant_name = models.CharField(max_length=100, blank=True, default="")
+    quantity = models.PositiveIntegerField(default=1, validators=[MinValueValidator(1)])
+    selected_options = models.JSONField(default=dict, blank=True)
+    added_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["added_at", "id"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["cart", "product"],
+                name="unique_product_per_cart"
+            )
+        ]
+
+    @property
+    def line_total(self) -> Decimal: 
+        return self.product.price * self.quantity
+
+    def __str__(self):
+        return f"{self.quantity} × {self.product.name}"
+
+
+class VendorNotification(models.Model):
+    store = models.ForeignKey(
+        "stores.Store", on_delete=models.CASCADE, related_name="notifications"
+    )
+    order = models.ForeignKey(
+        Order, on_delete=models.CASCADE, related_name="notifications", null=True, blank=True
+    )
+    title = models.CharField(max_length=200)
+    message = models.TextField()
+    is_read = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+
+    def __str__(self):
+        return f"{self.store} — {self.title}"

@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>New Order {{ order.order_number }} — The Spotlight</title>
+</head>
+<body style="margin:0; padding:0; background-color:#f4f4f5; font-family:-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; color:#111111;">
+  <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background-color:#f4f4f5; padding:24px 12px;">
+    <tr>
+      <td align="center">
+        <table role="presentation" width="600" cellspacing="0" cellpadding="0" style="max-width:600px; width:100%; background-color:#ffffff; border-radius:10px; overflow:hidden; border:1px solid #e4e4e7;">
+
+          <!-- Header with Store Logo -->
+          <tr>
+            <td style="background-color:#111111; padding:22px 28px; border-bottom:3px solid #D4AF37;">
+              <table role="presentation" width="100%" cellspacing="0" cellpadding="0">
+                <tr>
+                  <td style="vertical-align:middle;">
+                    {% if store_logo_url %}
+                      <img src="{{ store_logo_url }}" alt="{{ store.name }}" width="44" height="44"
+                           style="width:44px; height:44px; border-radius:50%; object-fit:cover; vertical-align:middle; margin-right:12px; border:2px solid #D4AF37;">
+                    {% endif %}
+                    <span style="font-size:17px; font-weight:800; color:#ffffff; vertical-align:middle;">
+                      {{ store.name }}
+                    </span>
+                  </td>
+                  <td align="right" style="vertical-align:middle;">
+                    <span style="font-size:11px; font-weight:800; letter-spacing:1px; color:#D4AF37; text-transform:uppercase;">
+                      THE SPOTLIGHT
+                    </span>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          <!-- Alert Headline & Order Reference -->
+          <tr>
+            <td style="padding:26px 28px 14px 28px;">
+              <span style="display:inline-block; background-color:#D4AF37; color:#111111; font-size:11px; font-weight:800; padding:4px 10px; border-radius:4px; text-transform:uppercase;">
+                New Order Received
+              </span>
+              <h1 style="margin:10px 0 6px 0; font-size:22px; color:#111111;">
+                Order {{ order.order_number }} &mdash; MUR {{ order.total }}
+              </h1>
+              <p style="margin:0; font-size:13px; color:#71717a;">
+                Tracking Ref: <strong style="font-family:monospace; color:#111111;">{{ order.checkout_reference }}</strong>
+              </p>
+            </td>
+          </tr>
+
+          <!-- Buyer Details Card -->
+          <tr>
+            <td style="padding:8px 28px 18px 28px;">
+              <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background-color:#fafafa; border:1px solid #e4e4e7; border-left:4px solid #111111; border-radius:6px;">
+                <tr>
+                  <td style="padding:16px;">
+                    <div style="font-size:12px; font-weight:800; text-transform:uppercase; letter-spacing:0.6px; color:#111111; margin-bottom:10px;">
+                      Buyer &amp; Fulfilment Details
+                    </div>
+                    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="font-size:13px; color:#27272a; line-height:1.6;">
+                      <tr>
+                        <td style="width:135px; color:#71717a;"><strong>Buyer Name:</strong></td>
+                        <td>{{ buyer_name }}</td>
+                      </tr>
+                      <tr>
+                        <td style="color:#71717a;"><strong>Phone / WhatsApp:</strong></td>
+                        <td>
+                          {% if buyer_phone %}
+                            <a href="tel:{{ buyer_phone }}" style="color:#111111; font-weight:700; text-decoration:none;">{{ buyer_phone }}</a>
+                          {% else %}
+                            Not provided
+                          {% endif %}
+                        </td>
+                      </tr>
+                      <tr>
+                        <td style="color:#71717a;"><strong>Buyer Email:</strong></td>
+                        <td>
+                          {% if buyer_email %}
+                            <a href="mailto:{{ buyer_email }}" style="color:#111111; text-decoration:underline;">{{ buyer_email }}</a>
+                          {% else %}
+                            Not provided
+                          {% endif %}
+                        </td>
+                      </tr>
+                      <tr>
+                        <td style="color:#71717a;"><strong>Fulfilment:</strong></td>
+                        <td>{{ order.get_fulfilment_method_display }}</td>
+                      </tr>
+                      <tr>
+                        <td style="color:#71717a;"><strong>Location / Address:</strong></td>
+                        <td>
+                          {% if order.fulfilment_method == "delivery" %}
+                            {{ order.delivery_address|default:"Not specified" }}
+                          {% else %}
+                            {{ order.pickup_location|default:"Campus / Store default" }}
+                          {% endif %}
+                        </td>
+                      </tr>
+                      <tr>
+                        <td style="color:#71717a;"><strong>Payment Method:</strong></td>
+                        <td>{{ order.get_payment_method_display }} ({{ order.get_payment_status_display }})</td>
+                      </tr>
+                      {% if order.customer_note %}
+                      <tr>
+                        <td style="color:#71717a; vertical-align:top;"><strong>Customer Note:</strong></td>
+                        <td style="color:#b45309; font-weight:600;">"{{ order.customer_note }}"</td>
+                      </tr>
+                      {% endif %}
+                    </table>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          <!-- Ordered Items Table -->
+          <tr>
+            <td style="padding:0 28px 20px 28px;">
+              <div style="font-size:12px; font-weight:800; text-transform:uppercase; letter-spacing:0.6px; color:#71717a; margin-bottom:8px;">
+                Items Ordered
+              </div>
+              <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="border:1px solid #e4e4e7; border-radius:8px; overflow:hidden;">
+                {% for item in items %}
+                <tr>
+                  <td style="padding:10px 12px; border-bottom:1px solid #f4f4f5; width:56px; vertical-align:middle;">
+                    {% if item.image_url %}
+                      <img src="{{ item.image_url }}" alt="{{ item.name }}" width="48" height="48"
+                           style="width:48px; height:48px; border-radius:6px; object-fit:cover; border:1px solid #e4e4e7; display:block;">
+                    {% else %}
+                      <div style="width:48px; height:48px; border-radius:6px; background-color:#f4f4f5; text-align:center; line-height:48px; font-size:18px; color:#71717a;">
+                        &#128230;
+                      </div>
+                    {% endif %}
+                  </td>
+                  <td style="padding:10px 8px; border-bottom:1px solid #f4f4f5; vertical-align:middle;">
+                    <div style="font-size:14px; font-weight:600; color:#111111;">{{ item.name }}</div>
+                    <div style="font-size:12px; color:#71717a;">Qty: {{ item.quantity }} &times; MUR {{ item.unit_price }}</div>
+                  </td>
+                  <td align="right" style="padding:10px 12px; border-bottom:1px solid #f4f4f5; vertical-align:middle; font-size:14px; font-weight:700; color:#111111;">
+                    MUR {{ item.line_total }}
+                  </td>
+                </tr>
+                {% endfor %}
+                <tr style="background-color:#111111; color:#ffffff;">
+                  <td colspan="2" style="padding:12px 14px; font-size:13px; font-weight:600;">
+                    Order Total
+                  </td>
+                  <td align="right" style="padding:12px 14px; font-size:16px; font-weight:800; color:#D4AF37;">
+                    MUR {{ order.total }}
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          <!-- Action Buttons for Seller -->
+          <tr>
+            <td style="padding:0 28px 28px 28px;">
+              <p style="margin:0 0 14px 0; font-size:13px; color:#3f3f46;">
+                Please reach out to <strong>{{ buyer_name }}</strong> promptly to confirm availability and coordinate handover.
+              </p>
+              <table role="presentation" cellspacing="0" cellpadding="0">
+                <tr>
+                  {% if buyer_email %}
+                  <td style="padding-right:8px; padding-bottom:8px;">
+                    <a href="mailto:{{ buyer_email }}?subject=Order%20{{ order.order_number }}%20from%20{{ store.name|urlencode }}"
+                       style="display:inline-block; background-color:#D4AF37; color:#111111; text-decoration:none; font-size:12px; font-weight:700; padding:9px 15px; border-radius:5px;">
+                      Email Buyer
+                    </a>
+                  </td>
+                  {% endif %}
+                  <td style="padding-right:8px; padding-bottom:8px;">
+                    <a href="{{ track_url }}"
+                       style="display:inline-block; background-color:#111111; color:#ffffff; text-decoration:none; font-size:12px; font-weight:600; padding:9px 15px; border-radius:5px;">
+                      Manage / Track Order
+                    </a>
+                  </td>
+                  <td style="padding-right:8px; padding-bottom:8px;">
+                    <a href="{{ store_url }}"
+                       style="display:inline-block; background-color:#ffffff; color:#111111; border:1px solid #d4d4d8; text-decoration:none; font-size:12px; font-weight:600; padding:8px 14px; border-radius:5px;">
+                      Visit Store
+                    </a>
+                  </td>
+                </tr>
+              </table>
+
+              <div style="margin-top:16px; padding-top:14px; border-top:1px solid #e4e4e7; font-size:12px; color:#71717a;">
+                Suspicious order or buyer issue?
+                <a href="{{ report_url }}" style="color:#dc2626; font-weight:600; text-decoration:underline;">
+                  Report to The Spotlight
+                </a>
+              </div>
+            </td>
+          </tr>
+
+          <!-- Footer -->
+          <tr>
+            <td style="background-color:#fafafa; padding:16px 28px; text-align:center; border-top:1px solid #e4e4e7; font-size:12px; color:#71717a;">
+              &copy; The Spotlight Vendor Portal &bull; Support: {{ support_email }}
+            </td>
+          </tr>
+
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>

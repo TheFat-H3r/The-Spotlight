@@ -1,5 +1,8 @@
+from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import get_object_or_404, redirect, render
+
+from transactions.models import Order, OrderItem
 from .models import BusinessType, Store, Product, Service, Review
 
 business_types = BusinessType.objects.all()
@@ -109,3 +112,70 @@ def service_detail(request, slug):
     'business_types': business_types,
     }
   return render(request, 'stores/service_detail.html', context)
+
+@login_required
+def submit_store_review(request, slug):
+    store = get_object_or_404(Store, slug=slug)
+
+    # Prevent store owners from reviewing their own store
+    if getattr(store, "owner_id", None) == request.user.id:
+        messages.warning(request, "You cannot submit a review for your own store.")
+        return redirect("store:store-profile", slug=store.slug)
+
+    # Check if this user already reviewed the store (allows updating their review)
+    existing_review = Review.objects.filter(store=store, author=request.user).first()
+
+    if request.method == "POST":
+        try:
+            rating = int(request.POST.get("rating", 0))
+        except (ValueError, TypeError):
+            rating = 0
+
+        title = request.POST.get("title", "").strip()
+        comment = request.POST.get("comment", "").strip()
+        order = Order.objects.filter(customer=request.user, store=store, status="completed").first()  # Optional: link review to an order
+        order_item = OrderItem.objects.filter(order=order, product__store=store).first() if order else None  # Optional: link review to an order item
+
+        if rating < 1 or rating > 5:
+            messages.error(request, "Please select a star rating between 1 and 5.")
+            return render(
+                request,
+                "stores/review_form.html",
+                {
+                    "store": store,
+                    "existing_review": existing_review,
+                    "submitted_rating": rating,
+                    "submitted_title": title,
+                    "submitted_comment": comment,
+                },
+            )
+
+        review_defaults = {
+            "overall_rating": rating,
+            "body": comment,
+            "order_item": order_item,
+        }
+        if hasattr(Review, "title"):
+            review_defaults["title"] = title
+
+        _, created = Review.objects.update_or_create(
+            store=store,
+            author=request.user,
+            defaults=review_defaults,
+        )
+
+        if created:
+            messages.success(request, f"Thank you! Your review for {store.name} has been posted.")
+        else:
+            messages.success(request, f"Your review for {store.name} has been updated.")
+
+        return redirect("store:store-profile", slug=store.slug)
+
+    context = {
+        "store": store,
+        "existing_review": existing_review,
+        "submitted_rating": existing_review.overall_rating if existing_review else 5,
+        "submitted_title": getattr(existing_review, "title", "") if existing_review else "",
+        "submitted_comment": existing_review.body if existing_review else "",
+    }
+    return render(request, "stores/review_form.html", context)
