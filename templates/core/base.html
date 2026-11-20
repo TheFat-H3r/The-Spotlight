@@ -46,14 +46,14 @@
 
         <div class="d-flex align-items-center gap-2 ms-auto">
           <a class="btn btn-header-icon" href="#" aria-label="Shopping cart" title="Shopping cart">
-            <i class="bi bi-cart3" aria-hidden="true"></i>
+            <i class="bi bi-cart3 nav-link" aria-hidden="true"></i>
             <span class="visually-hidden">Cart</span>
           </a>
 
           <div class="dropdown">
-            <button class="btn btn-header-icon dropdown-toggle d-flex align-items-center gap-2" type="button"
+            <button class="btn btn-header-icon dropdown-toggle d-flex align-items-center gap-2 nav-link" type="button"
                     data-bs-toggle="dropdown" aria-expanded="false" aria-label="Profile menu">
-              <i class="bi bi-person-circle text-white" aria-hidden="true"></i>
+              <i class="bi bi-person-circle" aria-hidden="true"></i>
               {% if request.user.is_authenticated %}
                 <span class="small d-none d-sm-inline text-white">
                   {{ request.user.get_short_name|default:request.user.email }}

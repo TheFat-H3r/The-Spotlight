@@ -14,6 +14,7 @@ def store(request, slug):
   store_services = None
   store_products = None
 
+  assert filtered_store is not None
   if filtered_store.business_type.store_type == "products":
     store_products = Product.objects.filter(store=filtered_store)
 
@@ -87,3 +88,6 @@ def store_toggle_orders(request, slug):
 
 def product_detail(request, id):
   return render(request, 'stores/product_detail.html')
+
+def service_detail(request, id):
+  return render(request, 'stores/service_detail.html')

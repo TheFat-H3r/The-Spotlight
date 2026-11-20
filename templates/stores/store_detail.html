@@ -102,16 +102,22 @@
         <div class="row g-4">
             {% for service in store_services %}
                 <div class="col-md-6 col-lg-4">
-                    <div class="market-card p-3">
-                        <h5>{{ service.name }}</h5>
-                        <p>{{ service.description }}</p>
-                        <p class="fw-bold text-cyan">
-                            Starting from MUR {{ service.starting_price }}
-                        </p>
-                        <a href="{{ service.get_absolute_url|default:'#' }}"
-                           class="btn btn-spotlight btn-sm">
-                            View Service
-                        </a>
+                    <div class="market-card">
+                        {% if service.image %}
+                            <img src="{{ service.image.url }}"
+                                 class="card-image"
+                                 alt="{{ service.name }}">
+                        {% endif %}
+                        <div class="p-3">
+                            <h5>{{ service.name }}</h5>
+                            <p class="text-cyan fw-bold">
+                                MUR {{ service.starting_price }}
+                            </p>
+                            <a href="{% url 'store:service-detail' service.id %}"
+                               class="btn btn-outline-spotlight btn-sm">
+                                View Service
+                            </a>
+                        </div>
                     </div>
                 </div>
             {% empty %}
