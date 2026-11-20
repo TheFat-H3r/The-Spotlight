@@ -1320,3 +1320,21 @@ button:focus-visible {
     }
 
 }
+
+
+.sidebar-slider-viewport {
+    overflow: hidden;
+    width: 100%;
+    position: relative;
+}
+
+.sidebar-slider-track {
+    display: flex;
+    transition: transform 0.6s cubic-bezier(0.25, 1, 0.5, 1);
+}
+
+.sidebar-slide {
+    flex: 0 0 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+}

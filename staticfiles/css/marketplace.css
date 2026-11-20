@@ -1,0 +1,1353 @@
+/* =========================================================
+   THE SPOTLIGHT - UNIFIED SITE & MARKETPLACE STYLESHEET
+   Palette: White (#FFFFFF) | Pitch Black (#000000) | Gold (#F7C18B / #9C662D)
+   ========================================================= */
+
+
+/* =========================================================
+1. GLOBAL RESET & BASE
+   ========================================================= */
+
+:root {
+    --spotlight-navy: #000000;
+    --spotlight-midnight: #0A0A0A;
+    --spotlight-cyan: #F7C18B;
+    --spotlight-amber: #F7C18B;
+
+    --spotlight-white: #FFFFFF;
+    --spotlight-off-white: #0A0A0A;
+
+    --spotlight-background: #000000;
+    --spotlight-card: #0A0A0A;
+
+    --spotlight-text: #FFFFFF;
+    --spotlight-muted: #A3A3A3;
+
+    --spotlight-border: #262626;
+    --spotlight-dark-border: #262626;
+
+    --spotlight-success: #16A34A;
+    --spotlight-danger: #DC2626;
+
+    --radius-small: 8px;
+    --radius-medium: 14px;
+    --radius-large: 20px;
+
+    --transition-fast: 180ms ease;
+    --transition-normal: 300ms ease;
+    --transition-slow: 500ms ease;
+
+    --shadow-small: 0 2px 8px rgba(0, 0, 0, 0.35);
+    --shadow-medium: 0 8px 24px rgba(0, 0, 0, 0.45);
+    --shadow-large: 0 16px 40px rgba(0, 0, 0, 0.55);
+
+    --container-width: 1440px;
+}
+
+
+/* =========================================================
+   2. GLOBAL STYLES
+   ========================================================= */
+
+* {
+    box-sizing: border-box;
+}
+
+html {
+    scroll-behavior: smooth;
+    scroll-padding-top: 95px;
+    -webkit-text-size-adjust: 100%;
+}
+
+body {
+    margin: 0;
+    background-color: #ffffff;
+    color: #000000;
+    font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+    font-size: 15px;
+    line-height: 1.6;
+    overflow-x: hidden;
+}
+
+input,
+select,
+textarea,
+.form-control,
+.form-select {
+    background-color: #000000;
+    color: #FFFFFF;
+    border-color: #262626;
+}
+
+input::placeholder,
+textarea::placeholder,
+.form-control::placeholder {
+    color: #A3A3A3;
+}
+
+option {
+    background-color: #000000;
+    color: #FFFFFF;
+}
+
+input:focus,
+select:focus,
+textarea:focus,
+.form-control:focus,
+.form-select:focus {
+    background-color: #000000;
+    color: #FFFFFF;
+    border-color: #F7C18B;
+    box-shadow: 0 0 0 3px rgba(247, 193, 139, 0.16);
+}
+
+a {
+    color: var(--spotlight-cyan);
+    text-decoration: none;
+    transition: color 180ms ease;
+}
+
+a:hover {
+    color: #000000;
+}
+
+img {
+    max-width: 100%;
+}
+
+button,
+input,
+select,
+textarea {
+    font: inherit;
+}
+
+section {
+    position: relative;
+}
+
+.container {
+    max-width: 1440px;
+}
+
+
+/* =========================================================
+2. TYPOGRAPHY & BRAND UTILITIES
+   ========================================================= */
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+    color: var(--spotlight-white);
+    font-weight: 700;
+    line-height: 1.3;
+}
+
+h1 {
+    letter-spacing: -1.5px;
+}
+
+h2 {
+    letter-spacing: -0.7px;
+}
+
+p {
+    color: #000000;
+}
+
+.text-muted {
+    color: #64748b !important;
+}
+
+.text-gold {
+    color: #f7c18b !important;
+}
+
+.text-gold-link {
+    color: #9c662d !important;
+    transition: color 180ms ease;
+}
+
+.text-gold-link:hover {
+    color: #000000 !important;
+    text-decoration: underline !important;
+}
+
+.fw-bold {
+    font-weight: 700 !important;
+}
+
+.section-label {
+    display: inline-block;
+    margin-bottom: 8px;
+    color: #9c662d !important;
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+}
+
+
+/* =========================================================
+3. BUTTONS
+   ========================================================= */
+
+.btn {
+    border-radius: 10px;
+    font-weight: 600;
+    transition:
+        background-color 180ms ease,
+        color 180ms ease,
+        border-color 180ms ease,
+        transform 180ms ease,
+        box-shadow 180ms ease;
+}
+
+.btn-spotlight {
+    background: var(--spotlight-cyan);
+    border: 1px solid var(--spotlight-cyan);
+    color: #000000;
+    padding: 10px 20px;
+}
+
+.btn-spotlight:hover {
+    background: #FFD5A8;
+    border-color: #FFD5A8;
+    color: #000000;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 15px rgba(247, 193, 139, 0.25);
+}
+
+.btn-outline-spotlight {
+    background: transparent;
+    border: 1px solid var(--spotlight-cyan);
+    color: var(--spotlight-cyan);
+    padding: 9px 18px;
+}
+
+.btn-outline-spotlight:hover {
+    background: var(--spotlight-cyan);
+    color: #000000;
+    transform: translateY(-2px);
+}
+
+.btn:focus-visible,
+a:focus-visible,
+button:focus-visible {
+    outline: 3px solid #f7c18b;
+    outline-offset: 3px;
+}
+
+
+/* =========================================================
+4. GLOBAL SITE HEADER & FOOTER
+   ========================================================= */
+
+.marketplace-hero {
+    background:
+        radial-gradient(
+            circle at 85% 20%,
+            rgba(247, 193, 139, 0.16),
+            transparent 35%
+        ),
+        linear-gradient(
+            120deg,
+            var(--spotlight-navy),
+            var(--spotlight-midnight)
+        );
+
+    color: var(--spotlight-white);
+    overflow: hidden;
+}
+
+.marketplace-hero h1 {
+    color: #ffffff;
+}
+
+.marketplace-hero p {
+    color: #A3A3A3 !important;
+}
+
+.hero-label {
+    color: #f7c18b;
+    letter-spacing: 2px;
+}
+
+.marketplace-search {
+    max-width: 650px;
+    background: var(--spotlight-card);
+    border-radius: var(--radius-medium);
+    padding: 6px;
+    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.35);
+}
+
+.marketplace-search .form-control {
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+    background-color: #121212 !important;
+    border: none !important;
+    box-shadow: none !important;
+    color: #ffffff !important;
+    padding: 12px;
+    border-radius: 10px 0 0 10px;
+}
+
+.marketplace-search .form-control::placeholder {
+    color: rgba(255, 255, 255, 0.5);
+    opacity: 1;
+}
+
+.marketplace-search .form-control:focus {
+    background-color: #121212 !important;
+    color: #ffffff !important;
+    box-shadow: 0 0 0 2px rgba(247, 193, 139, 0.35) !important;
+}
+
+.marketplace-search .btn {
+    min-width: 110px;
+    border-radius: 10px;
+}
+
+
+/* =========================================================
+6. ADVERTISEMENT BANNER
+   ========================================================= */
+
+.advertisement-section {
+    width: 100%;
+    overflow: hidden;
+    background-color: #000000;
+}
+
+.advertisement-banner {
+    position: relative;
+    display: flex;
+    align-items: center;
+    min-height: 250px;
+    padding: 45px 10%;
+    overflow: hidden;
+
+    background:
+        linear-gradient(
+            90deg,
+            rgba(0, 0, 0, 0.96),
+            rgba(12, 24, 54, 0.75)
+        ),
+        linear-gradient(
+            135deg,
+            var(--spotlight-navy),
+            var(--spotlight-midnight)
+        );
+}
+
+.advertisement-image {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    z-index: 0;
+    opacity: 0.35;
+}
+
+.advertisement-content {
+    position: relative;
+    z-index: 2;
+    max-width: 650px;
+    -webkit-animation: fadeInUp 700ms ease both;
+    animation: fadeInUp 700ms ease both;
+}
+
+.advertisement-content h2 {
+    color: #ffffff;
+    font-size: clamp(24px, 4vw, 38px);
+    margin: 15px 0;
+}
+
+.advertisement-content p {
+    color: #A3A3A3;
+}
+
+.sponsored-label {
+    display: inline-block;
+    background-color: #f7c18b !important;
+    color: #000000 !important;
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: 1.2px;
+    padding: 5px 12px;
+    border-radius: 5px;
+}
+
+.advertisement-section .carousel-control-prev,
+.advertisement-section .carousel-control-next {
+    width: 8%;
+}
+
+
+/* =========================================================
+7. SECTION HEADINGS
+   ========================================================= */
+
+.section-heading {
+    position: relative;
+}
+
+.section-heading h2 {
+    margin-bottom: 8px;
+}
+
+.section-heading p {
+    margin-bottom: 0;
+}
+
+
+/* =========================================================
+8. FEATURED VENDOR CAROUSEL
+   ========================================================= */
+
+.vendor-carousel-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    position: relative;
+}
+
+.vendor-carousel {
+    display: flex;
+    gap: 20px;
+    overflow-x: auto;
+    scroll-behavior: smooth;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+    padding: 15px 4px 25px;
+    flex: 1;
+}
+
+.vendor-carousel::-webkit-scrollbar {
+    display: none;
+}
+
+.vendor-card {
+    flex: 0 0 220px;
+    background-color: #ffffff !important;
+    color: #000000 !important;
+    border: 1px solid #e5e7eb !important;
+    border-radius: 16px;
+    padding: 22px 18px;
+    text-align: center;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.04);
+    transition:
+        transform 300ms ease,
+        box-shadow 300ms ease,
+        border-color 300ms ease;
+}
+
+.vendor-card:hover {
+    transform: translateY(-6px);
+    box-shadow: 0 10px 24px rgba(0, 0, 0, 0.09);
+    border-color: #f7c18b !important;
+}
+
+.vendor-logo {
+    width: 75px;
+    height: 75px;
+    margin: 0 auto 15px;
+    border-radius: 50%;
+    overflow: hidden;
+    background: #262626;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--spotlight-white);
+    font-size: 28px;
+    font-weight: 800;
+}
+
+.vendor-logo img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.vendor-card h5 {
+    font-size: 16px;
+    margin-bottom: 8px;
+    color: #000000;
+}
+
+.vendor-card p {
+    font-size: 13px;
+}
+
+.vendor-type {
+    display: inline-block;
+    background: rgba(247, 193, 139, 0.12);
+    color: var(--spotlight-cyan);
+    padding: 4px 10px;
+    font-size: 11px;
+    border-radius: 6px;
+    font-weight: 600;
+}
+
+.carousel-arrow {
+    -webkit-appearance: none;
+    appearance: none;
+    flex: 0 0 38px;
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    border: 1px solid var(--spotlight-border);
+    background: var(--spotlight-card);
+    color: var(--spotlight-cyan);
+    font-size: 24px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+    transition: background-color 180ms ease, color 180ms ease;
+}
+
+.carousel-arrow:hover {
+    background-color: #f7c18b !important;
+    border-color: #f7c18b !important;
+    color: #000000 !important;
+}
+
+
+/* =========================================================
+9. MARKETPLACE THREE-COLUMN LAYOUT
+   ========================================================= */
+
+.marketplace-container {
+    max-width: 1600px;
+    margin: auto;
+    background-color: #ffffff;
+}
+
+.marketplace-container > .row {
+    align-items: start;
+}
+
+
+/* =========================================================
+10. FILTER SIDEBAR
+   ========================================================= */
+
+.filter-panel {
+    background-color: #ffffff !important;
+    color: #000000 !important;
+    border: 1px solid #e5e7eb !important;
+    border-radius: 16px;
+    padding: 22px;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.04);
+    position: sticky;
+    top: 95px;
+}
+
+.filter-panel h5 {
+    font-size: 17px;
+    color: #000000;
+}
+
+.filter-group {
+    border-bottom: 1px solid #e5e7eb;
+    padding-bottom: 18px;
+}
+
+.filter-group:last-of-type {
+    border-bottom: none;
+    padding-bottom: 0;
+}
+
+.filter-group label {
+    display: block;
+    font-size: 13px;
+    color: var(--spotlight-white);
+}
+
+.filter-panel .form-control,
+.filter-panel .form-select {
+    background-color: #f8f9fa;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    color: #000000;
+    font-size: 13px;
+    padding: 10px;
+}
+
+.filter-panel .form-control:focus,
+.filter-panel .form-select:focus {
+    border-color: #F7C18B;
+    box-shadow: 0 0 0 3px rgba(247, 193, 139, 0.16);
+}
+
+
+/* =========================================================
+11. PRODUCT AND SERVICE CARDS
+   ========================================================= */
+
+.market-card {
+    height: 100%;
+    background-color: #ffffff !important;
+    color: #000000 !important;
+    border: 1px solid #e5e7eb !important;
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.04);
+    transition:
+        transform 300ms ease,
+        box-shadow 300ms ease,
+        border-color 300ms ease;
+}
+
+.market-card:hover {
+    transform: translateY(-6px);
+    box-shadow: var(--shadow-medium);
+    border-color: rgba(247, 193, 139, 0.65);
+}
+
+.product-card,
+.service-card {
+    position: relative;
+}
+
+.product-image-wrapper {
+    position: relative;
+    overflow: hidden;
+    height: 210px;
+}
+
+.card-image {
+    display: block;
+    width: 100%;
+    height: 210px;
+    object-fit: cover;
+    transition: transform 500ms ease;
+}
+
+.market-card:hover .card-image {
+    transform: scale(1.06);
+}
+
+.featured-badge {
+    position: absolute;
+    top: 12px;
+    left: 12px;
+    background: linear-gradient(
+        135deg,
+        #FFE2BF,
+        var(--spotlight-amber)
+    );
+    color: #000000;
+    padding: 5px 10px;
+    font-size: 10px;
+    font-weight: 800;
+    border-radius: 6px;
+    z-index: 2;
+}
+
+.market-card .card-body {
+    display: flex;
+    flex-direction: column;
+}
+
+.market-card .card-body > .d-flex:last-of-type {
+    margin-top: auto;
+}
+
+.market-card h5 {
+    font-size: 16px;
+    color: #000000;
+}
+
+.market-card p {
+    font-size: 13px;
+}
+
+.image-placeholder {
+    min-height: 190px;
+    background: #141414;
+    color: var(--spotlight-muted);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+}
+
+.rating {
+    color: var(--spotlight-cyan);
+    font-size: 13px;
+    font-weight: 700;
+}
+
+.pricing-tier {
+    display: inline-block;
+    padding: 5px 10px;
+    background: #262626;
+    color: var(--spotlight-white);
+    border-radius: 5px;
+    font-size: 11px;
+    font-weight: 600;
+}
+
+
+/* =========================================================
+12. RIGHT SIDEBAR
+   ========================================================= */
+
+.sidebar-panel {
+    background-color: #ffffff !important;
+    color: #000000 !important;
+    border: 1px solid #e5e7eb !important;
+    border-radius: 16px;
+    padding: 20px;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.04);
+}
+
+.sidebar-panel h5 {
+    font-size: 16px;
+    color: #000000;
+}
+
+.support-panel {
+    background-color: #000000 !important;
+    color: #ffffff !important;
+    border: 1px solid #f7c18b !important;
+}
+
+.support-panel h5 {
+    color: #f7c18b !important;
+}
+
+.support-panel p {
+    color: #A3A3A3 !important;
+}
+
+.achievement-card,
+.portfolio-card {
+    background-color: #ffffff !important;
+    border: 1px solid #e5e7eb !important;
+    border-radius: 12px;
+    overflow: hidden;
+    transition: transform 300ms ease, border-color 300ms ease, box-shadow 300ms ease;
+}
+
+.achievement-card:hover,
+.portfolio-card:hover {
+    transform: translateY(-3px);
+    border-color: #f7c18b !important;
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.07);
+}
+
+.achievement-image,
+.portfolio-image {
+    display: block;
+    width: 100%;
+    height: 130px;
+    object-fit: cover;
+}
+
+.achievement-card h6,
+.portfolio-card h6 {
+    font-size: 14px;
+    color: #000000;
+}
+
+.announcement-card {
+    border-left: 3px solid var(--spotlight-amber);
+    padding: 12px;
+    background: rgba(247, 193, 139, 0.08);
+    border-radius: 0 var(--radius-small) var(--radius-small) 0;
+}
+
+.announcement-label {
+    display: inline-block;
+    background-color: #f7c18b !important;
+    color: #000000 !important;
+    font-size: 9px;
+    font-weight: 800;
+    letter-spacing: 1px;
+    padding: 3px 8px;
+    border-radius: 4px;
+}
+
+
+/* =========================================================
+13. CUSTOMER REVIEWS
+   ========================================================= */
+
+.review-card {
+    height: 100%;
+    background-color: #ffffff !important;
+    color: #000000 !important;
+    border: 1px solid #e5e7eb !important;
+    border-radius: 16px;
+    padding: 22px;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.04);
+    transition:
+        transform 300ms ease,
+        box-shadow 300ms ease,
+        border-color 300ms ease;
+}
+
+.review-card:hover {
+    transform: translateY(-5px);
+    border-color: #f7c18b !important;
+    box-shadow: 0 10px 24px rgba(0, 0, 0, 0.09);
+}
+
+.review-avatar,
+.review-avatar-placeholder {
+    width: 46px;
+    height: 46px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+.review-avatar {
+    object-fit: cover;
+    border: 2px solid #f7c18b;
+}
+
+.review-avatar-placeholder {
+    background-color: #000000 !important;
+    color: #f7c18b !important;
+    border: 2px solid #f7c18b;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 800;
+    font-size: 18px;
+}
+
+.review-stars {
+    color: var(--spotlight-cyan);
+    font-size: 18px;
+    letter-spacing: 2px;
+}
+
+.review-text {
+    color: #000000;
+    font-size: 14px;
+    line-height: 1.7;
+}
+
+
+/* =========================================================
+14. STORE DETAIL PAGE
+   ========================================================= */
+
+.store-hero {
+    background: linear-gradient(120deg, #000000 0%, #111111 100%);
+    color: #ffffff;
+    border-bottom: 3px solid #f7c18b;
+}
+
+.store-hero h1 {
+    color: #ffffff;
+}
+
+.store-hero p {
+    color: #A3A3A3;
+}
+
+.store-profile {
+    display: flex;
+    align-items: center;
+    gap: 25px;
+}
+
+.store-logo {
+    width: 115px;
+    height: 115px;
+    border-radius: var(--radius-large);
+    background: var(--spotlight-card);
+    padding: 8px;
+    overflow: hidden;
+    flex-shrink: 0;
+}
+
+.store-logo img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+}
+
+.store-placeholder {
+    width: 100%;
+    height: 100%;
+    background: #262626;
+    color: var(--spotlight-cyan);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 42px;
+    font-weight: 800;
+    border-radius: 14px;
+}
+
+
+/* =========================================================
+15. EMPTY STATES
+   ========================================================= */
+
+.empty-state {
+    background: var(--spotlight-card);
+    border: 1px dashed #262626;
+    border-radius: var(--radius-medium);
+    padding: 45px 20px;
+    text-align: center;
+}
+
+.empty-state h5 {
+    margin-bottom: 10px;
+    color: #000000;
+}
+
+
+/* =========================================================
+16. QUICK VIEW MODAL
+   ========================================================= */
+
+.modal-content {
+    background-color: #ffffff;
+    color: #000000;
+    border: 2px solid #f7c18b;
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.25);
+}
+
+.modal-header {
+    background-color: #000000;
+    color: #ffffff;
+    border-bottom: 1px solid #f7c18b;
+    padding: 20px;
+}
+
+.modal-header .modal-title {
+    color: #ffffff;
+}
+
+.modal-header .btn-close {
+    filter: invert(1);
+}
+
+.modal-body {
+    padding: 25px;
+}
+
+.modal-body img {
+    max-height: 300px;
+    width: 100%;
+    object-fit: contain;
+}
+
+
+/* =========================================================
+17. BACK TO TOP BUTTON
+   ========================================================= */
+
+.back-to-top {
+    -webkit-appearance: none;
+    appearance: none;
+    position: fixed;
+    right: 25px;
+    bottom: 25px;
+    width: 45px;
+    height: 45px;
+    border: 1px solid #f7c18b !important;
+    border-radius: 50%;
+    background: var(--spotlight-cyan);
+    color: var(--spotlight-cyan);
+    font-size: 22px;
+    font-weight: 800;
+    line-height: 1;
+    cursor: pointer;
+    z-index: 1000;
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(15px);
+    transition: opacity 300ms ease, transform 300ms ease, background-color 180ms ease;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.22);
+}
+
+.back-to-top.visible {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+}
+
+.back-to-top:hover {
+    background-color: #f7c18b !important;
+    color: #000000 !important;
+    transform: translateY(-4px);
+}
+
+
+/* =========================================================
+18. SCROLL REVEAL ANIMATIONS
+   ========================================================= */
+
+.reveal-section {
+    opacity: 0;
+    transform: translateY(25px);
+    transition:
+        opacity 700ms ease,
+        transform 700ms ease;
+}
+
+.reveal-section.is-visible {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.reveal-item {
+    opacity: 0;
+    transform: translateY(20px);
+    transition:
+        opacity 500ms ease,
+        transform 500ms ease;
+}
+
+.reveal-section.is-visible .reveal-item {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.reveal-section.is-visible .reveal-item:nth-child(2) {
+    transition-delay: 100ms;
+}
+
+.reveal-section.is-visible .reveal-item:nth-child(3) {
+    transition-delay: 200ms;
+}
+
+.reveal-section.is-visible .reveal-item:nth-child(4) {
+    transition-delay: 300ms;
+}
+
+
+/* =========================================================
+19. LOADING SKELETONS & ANIMATION KEYFRAMES
+   ========================================================= */
+
+.skeleton {
+    background: linear-gradient(
+        90deg,
+        #141414 25%,
+        #262626 50%,
+        #141414 75%
+    );
+    background-size: 200% 100%;
+    animation: skeletonLoading 1.5s infinite linear;
+    border-radius: 8px;
+}
+
+.skeleton-image {
+    width: 100%;
+    height: 190px;
+}
+
+.skeleton-text {
+    width: 85%;
+    height: 13px;
+    margin: 12px 0;
+}
+
+.skeleton-title {
+    width: 60%;
+    height: 19px;
+    margin: 15px 0;
+}
+
+@-webkit-keyframes fadeInUp {
+    from {
+        opacity: 0;
+        -webkit-transform: translateY(25px);
+        transform: translateY(25px);
+    }
+
+    to {
+        opacity: 1;
+        -webkit-transform: translateY(0);
+        transform: translateY(0);
+    }
+}
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(25px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes skeletonLoading {
+    from {
+        background-position: 200% 0;
+    }
+
+    to {
+        background-position: -200% 0;
+    }
+}
+
+
+/* =========================================================
+   21. STICKY HEADER SUPPORT
+   Shared header should have class .site-header.
+   ========================================================= */
+
+.site-header {
+    position: sticky;
+    top: 0;
+    z-index: 1030;
+    transition:
+        box-shadow var(--transition-normal),
+        background-color var(--transition-normal);
+    background-color: #000000;
+    border-bottom: 1px solid #262626;
+}
+
+.site-header .navbar-brand,
+.site-header .nav-link,
+.site-header .text-info {
+    color: #FFFFFF !important;
+}
+
+.site-header .navbar-brand .bi-stars,
+.site-header .text-info {
+    color: #F7C18B !important;
+}
+
+.site-header .nav-link:hover,
+.site-header .nav-link:focus-visible {
+    color: #F7C18B !important;
+}
+
+.site-header .btn-outline-light {
+    border-color: #262626;
+    color: #FFFFFF;
+}
+
+.site-header .btn-outline-light:hover,
+.site-header .btn-outline-light:focus-visible {
+    background-color: #F7C18B;
+    border-color: #F7C18B;
+    color: #000000;
+}
+
+.site-header .dropdown-menu {
+    background-color: #0A0A0A;
+    border: 1px solid #262626;
+}
+
+.site-header .dropdown-item,
+.site-header .dropdown-item-text {
+    color: #FFFFFF;
+}
+
+.site-header .dropdown-item:hover,
+.site-header .dropdown-item:focus {
+    background-color: #262626;
+    color: #F7C18B;
+}
+
+.site-header .dropdown-divider {
+    border-color: #262626;
+}
+
+.site-header.scrolled {
+    box-shadow: 0 5px 20px rgba(0, 0, 0, 0.45);
+}
+
+
+/* =========================================================
+   22. RESPONSIVE DESIGN: TABLETS
+   ========================================================= */
+
+@media (max-width: 991.98px) {
+
+    .marketplace-container {
+        padding-left: 20px;
+        padding-right: 20px;
+    }
+
+    .filter-panel {
+        position: static;
+        margin-bottom: 20px;
+    }
+
+    .advertisement-banner {
+        padding: 35px 8%;
+        min-height: 220px;
+    }
+
+    .vendor-card {
+        flex-basis: 200px;
+    }
+
+    .sidebar-panel {
+        margin-top: 15px;
+    }
+
+}
+
+@media (max-width: 767.98px) {
+
+    body {
+        font-size: 14px;
+    }
+
+    .marketplace-hero {
+        padding: 25px 0;
+    }
+
+    .marketplace-hero h1 {
+        font-size: 35px;
+    }
+
+    .marketplace-search {
+        flex-direction: column;
+        gap: 6px;
+    }
+
+    .marketplace-search .form-control {
+        border-radius: 10px;
+    }
+
+    .marketplace-search .btn {
+        width: 100%;
+    }
+
+    .advertisement-banner {
+        min-height: 260px;
+        padding: 30px 12%;
+    }
+
+    .advertisement-content h2 {
+        font-size: 25px;
+    }
+
+    .section-heading h2 {
+        font-size: 23px;
+    }
+
+    .vendor-carousel-wrapper {
+        gap: 5px;
+    }
+
+    .vendor-card {
+        flex-basis: 180px;
+    }
+
+    .carousel-arrow {
+        flex-basis: 32px;
+        height: 32px;
+        font-size: 20px;
+    }
+
+    .store-profile {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+
+    .store-logo {
+        width: 90px;
+        height: 90px;
+    }
+
+    .review-card {
+        padding: 18px;
+    }
+
+    .marketplace-container {
+        padding-left: 12px;
+        padding-right: 12px;
+    }
+
+}
+
+@media (max-width: 400px) {
+
+    .marketplace-hero h1 {
+        font-size: 29px;
+    }
+
+    .vendor-card {
+        flex-basis: 160px;
+    }
+
+    .advertisement-content h2 {
+        font-size: 22px;
+    }
+
+    .back-to-top {
+        right: 15px;
+        bottom: 15px;
+        width: 40px;
+        height: 40px;
+    }
+
+}
+
+@media (prefers-reduced-motion: reduce) {
+
+    *,
+    *::before,
+    *::after {
+        scroll-behavior: auto !important;
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
+
+    .reveal-section,
+    .reveal-item {
+        opacity: 1;
+        transform: none;
+    }
+
+}
+
+.ad-slider-viewport {
+    overflow: hidden;
+    width: 100%;
+    position: relative;
+}
+
+.ad-slider-track {
+    display: flex;
+    transition: transform 0.6s cubic-bezier(0.25, 1, 0.5, 1);
+    /* Negative margin offsets the slide padding so edges align cleanly */
+    margin-left: -0.5rem;
+    margin-right: -0.5rem;
+}
+
+.ad-slide {
+    /* Show 2 columns at a time */
+    flex: 0 0 50%;
+    max-width: 50%;
+    padding-left: 0.5rem;
+    padding-right: 0.5rem;
+    box-sizing: border-box;
+}
+
+/* Optional: Stack to 1 column on very narrow mobile screens */
+@media (max-width: 576px) {
+    .ad-slide {
+        flex: 0 0 100%;
+        max-width: 100%;
+    }
+}
