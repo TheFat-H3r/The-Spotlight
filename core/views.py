@@ -95,11 +95,11 @@ def home(request):
     )
 
     featured_reviews = (
-        Review.objects.filter(status="approved")
+        Review.objects.filter(status="published")
         .select_related("author", "store")
         .order_by("-overall_rating", "-created_at")[:6]
     )
-    print(featured_stores)
+    print(featured_reviews)
     context = {
         # "active_ads": active_ads, #Don't disclose by now
         "featured_stores": featured_stores[:12],

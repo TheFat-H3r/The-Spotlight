@@ -554,13 +554,13 @@
                                  alt="Customer profile">
                         {% else %}
                             <div class="review-avatar-placeholder">
-                                {{ review.author|first|upper }}
+                                {{ review.author.full_name|first|upper }}
                             </div>
                         {% endif %}
 
                         <div>
                             <h6 class="fw-bold mb-0 text-black">
-                                {{ review.author|default:"Customer" }}
+                                {{ review.author.full_name|default:"Customer" }}
                             </h6>
 
                             <small class="text-muted">
