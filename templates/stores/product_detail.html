@@ -1,11 +1,11 @@
-{% extends "base.html" %}
+{% extends "core/base.html" %}
 {% load static %}
 
 {% block title %}{{ product.name }} | The Spotlight{% endblock %}
 
 {% block content %}
 <section class="container py-5">
-    <a href="{% url 'marketplace:home' %}" class="text-cyan">
+    <a href="{% url 'core:home' %}" class="text-cyan">
         ← Back to Marketplace
     </a>
 
@@ -32,7 +32,7 @@
 
             <p>
                 <strong>Vendor:</strong>
-                <a href="{% url 'marketplace:store_detail' product.store.slug %}">
+                <a href="{% url 'store:store-profile' product.store.slug %}">
                     {{ product.store.name }}
                 </a>
             </p>
