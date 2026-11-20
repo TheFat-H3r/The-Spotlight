@@ -80,7 +80,7 @@
                             <p class="text-cyan fw-bold">
                                 MUR {{ product.price }}
                             </p>
-                            <a href="{% url 'store:product-detail' product.id %}"
+                            <a href="{% url 'store:product-detail' product.slug %}"
                                class="btn btn-outline-spotlight btn-sm">
                                 View Product
                             </a>
@@ -113,7 +113,7 @@
                             <p class="text-cyan fw-bold">
                                 MUR {{ service.starting_price }}
                             </p>
-                            <a href="{% url 'store:service-detail' service.id %}"
+                            <a href="{% url 'store:service-detail' service.slug %}"
                                class="btn btn-outline-spotlight btn-sm">
                                 View Service
                             </a>

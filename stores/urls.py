@@ -6,8 +6,8 @@ urlpatterns = [
     # Public routes
     path('', stores_home, name='stores-home'),
     path('<slug:slug>/', store, name='store-profile'),
-    path('product/<int:id>/', product_detail, name='product-detail'),
-    path('service/<int:id>/', service_detail, name='service-detail'),
+    path('product/<slug:slug>/', product_detail, name='product-detail'),
+    path('service/<slug:slug>/', service_detail, name='service-detail'),
 
     # Vendor management CRUD routes
     path('dashboard/', store_dashboard, name='store-dashboard'),

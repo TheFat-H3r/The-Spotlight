@@ -86,8 +86,8 @@ def store_toggle_orders(request, slug):
 
   return redirect('store-dashboard')
 
-def product_detail(request, id):
-  product = Product.objects.filter(id=id).first()
+def product_detail(request, slug):
+  product = Product.objects.filter(slug=slug).first()
   
   context = { 'product': product}
   return render(request, 'stores/product_detail.html', context)
