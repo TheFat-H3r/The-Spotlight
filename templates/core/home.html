@@ -95,8 +95,8 @@
             <span class="section-label">MEET OUR VENDORS</span>
             <h2 class="fw-bold text-black">Featured Stores</h2>
         </div>
-        <a href="#products-section" class="btn btn-outline-spotlight">
-            Explore marketplace
+        <a href="{% url 'store:store-list' %}" class="btn btn-outline-spotlight">
+            Explore Stores
         </a>
     </div>
 
@@ -333,7 +333,7 @@
                                             Quick View
                                         </button>
 
-                                        <a href="{{ product.get_absolute_url|default:'#' }}"
+                                        <a href="{% url 'store:product-detail' slug=product.slug|default:'#' %}"
                                            class="btn btn-spotlight btn-sm flex-fill">
                                             Details
                                         </a>
@@ -411,7 +411,7 @@
                                         Starting from MUR {{ service.starting_price }}
                                     </p>
 
-                                    <a href="{{ service.get_absolute_url|default:'#' }}"
+                                    <a href="{% url 'store:service-detail' slug=service.slug|default:'#' %}"
                                        class="btn btn-spotlight btn-sm w-100">
                                         View Service
                                     </a>

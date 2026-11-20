@@ -100,7 +100,7 @@ credentials.json
 *.sqlite
 *.sqlite3
 *.db
-
+**/migrations/0*
 # =========================
 # Test artifacts
 # =========================

@@ -42,6 +42,31 @@
           <a class="nav-link" href="{% url 'core:home' %}">Marketplace</a>
           <a class="nav-link" href="{% url 'core:home' %}#products-section">Products</a>
           <a class="nav-link" href="{% url 'core:home' %}#services-section">Services</a>
+          <!-- stores dropdown -->
+          <div class="nav-item dropdown">
+            <a class="nav-link dropdown-toggle" href="#" id="storesDropdown" role="button"
+               data-bs-toggle="dropdown" aria-expanded="false">
+              Stores
+            </a>
+            <ul class="dropdown-menu dropdown-menu-dark" aria-labelledby="storesDropdown">
+              <li><a class="dropdown-item" href="{% url 'store:store-list' %}">All Stores</a></li>
+              <li><a class="dropdown-item" href="#">Top Rated</a></li>
+              <li><a class="dropdown-item" href="#">New Arrivals</a></li>
+            </ul>
+          </div>
+          <!-- categories dropdown -->
+          <div class="nav-item dropdown">
+            <a class="nav-link dropdown-toggle" href="#" id="categoriesDropdown" role="button"
+               data-bs-toggle="dropdown" aria-expanded="false">
+              Categories
+            </a>
+            <ul class="dropdown-menu dropdown-menu-dark" aria-labelledby="categoriesDropdown">
+              <li><a class="dropdown-item" href="#">All Categories</a></li>
+              {% for category in business_types %}
+                <li><a class="dropdown-item" href="">{{ category.name }}</a></li>
+              {% endfor %}
+            </ul>
+        </div>
         </div>
 
         <div class="d-flex align-items-center gap-2 ms-auto">

@@ -1,10 +1,11 @@
 from django.urls import path
-from .views import store_create, store_dashboard, store_delete, store_toggle_orders, store_update, stores_home, store, product_detail, service_detail
+from .views import store_create, store_dashboard, store_delete, store_toggle_orders, store_update, store, product_detail, service_detail, stores_list
 
 app_name = "store"
 urlpatterns = [
     # Public routes
-    path('', stores_home, name='stores-home'),
+    path('', stores_list, name='stores-home'),
+    path('all', stores_list, name='store-list'),
     path('<slug:slug>/', store, name='store-profile'),
     path('product/<slug:slug>/', product_detail, name='product-detail'),
     path('service/<slug:slug>/', service_detail, name='service-detail'),

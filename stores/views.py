@@ -1,11 +1,16 @@
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import get_object_or_404, redirect, render
-from .models import Store, Product, Service, Review
+from .models import BusinessType, Store, Product, Service, Review
 
+business_types = BusinessType.objects.all()
 
-def stores_home(request):
-  
-  return render(request, 'stores/home.html')
+def stores_list(request):
+  stores = Store.objects.filter(status="active").order_by("-rating_average", "name")
+  context = {
+      'stores': stores,
+      'business_types': business_types,
+  }
+  return render(request, 'stores/store_list.html', context)
 
 
 def store(request, slug):
@@ -28,6 +33,7 @@ def store(request, slug):
   context = {
       'store': filtered_store,
       'store_reviews': store_reviews,
+      'business_types': business_types,
   }
 
   if store_products is not None:
@@ -50,6 +56,7 @@ def store_dashboard(request):
 
   context = {
       'store': user_store,
+      'business_types': business_types,
   }
   return render(request, 'stores/store_dashboard.html', context)
 
@@ -89,8 +96,16 @@ def store_toggle_orders(request, slug):
 def product_detail(request, slug):
   product = Product.objects.filter(slug=slug).first()
   
-  context = { 'product': product}
+  context = { 
+    'product': product,
+    'business_types': business_types,
+  }
   return render(request, 'stores/product_detail.html', context)
 
-def service_detail(request, id):
-  return render(request, 'stores/service_detail.html')
+def service_detail(request, slug):
+  service = Service.objects.filter(slug=slug).first()
+  context = { 
+    'service': service,
+    'business_types': business_types,
+    }
+  return render(request, 'stores/service_detail.html', context)
