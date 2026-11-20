@@ -1,17 +1,17 @@
-{% extends "base.html" %}
+{% extends "core/base.html" %}
 {% load static %}
 
 {% block title %}{{ store.name }} | The Spotlight{% endblock %}
 
 {% block extra_css %}
-<link rel="stylesheet" href="{% static 'marketplace/css/marketplace.css' %}">
+<link rel="stylesheet" href="{% static 'css/marketplace.css' %}">
 {% endblock %}
 
 {% block content %}
 
 <section class="store-hero">
     <div class="container py-5">
-        <a href="{% url 'marketplace:home' %}"
+        <a href="{% url 'core:home' %}"
            class="text-decoration-none text-cyan">
             ← Back to Marketplace
         </a>
@@ -30,7 +30,6 @@
             <div>
                 <h1 class="fw-bold">{{ store.name }}</h1>
                 <p class="mb-2">{{ store.tagline }}</p>
-                <p class="text-muted">{{ store.description }}</p>
 
                 {% if store.rating_average %}
                     <span class="rating">
@@ -62,6 +61,7 @@
         </div>
     </div>
 
+    {% if store_products %}
     <!-- Store products -->
     <section class="mb-5">
         <h2 class="fw-bold mb-4">Products</h2>
@@ -80,7 +80,7 @@
                             <p class="text-cyan fw-bold">
                                 MUR {{ product.price }}
                             </p>
-                            <a href="{{ product.get_absolute_url|default:'#' }}"
+                            <a href="{% url 'store:product-detail' product.id %}"
                                class="btn btn-outline-spotlight btn-sm">
                                 View Product
                             </a>
@@ -92,7 +92,9 @@
             {% endfor %}
         </div>
     </section>
+    {% endif %}
 
+    {% if store_services %}
     <!-- Store services -->
     <section class="mb-5">
         <h2 class="fw-bold mb-4">Services</h2>
@@ -117,6 +119,7 @@
             {% endfor %}
         </div>
     </section>
+    {% endif %}
 
     <!-- Store reviews -->
     <section>
@@ -125,7 +128,53 @@
         <div class="row g-4">
             {% for review in store_reviews %}
                 <div class="col-md-6 col-lg-4">
-                    {% include "marketplace/components/review_card.html" with review=review %}
+                    <article class="review-card h-100">
+
+                        <div class="d-flex align-items-center gap-3 mb-3">
+
+                            {% if review.customer.profile_picture %}
+                                <img src="{{ review.customer.profile_picture.url }}"
+                                    class="review-avatar"
+                                    alt="Customer profile">
+                            {% else %}
+                                <div class="review-avatar-placeholder">
+                                    {{ review.customer|first|upper }}
+                                </div>
+                            {% endif %}
+
+                            <div>
+                                <h6 class="fw-bold mb-0">
+                                    {{ review.customer|default:"Customer" }}
+                                </h6>
+
+                                <small class="text-muted">
+                                    {{ review.created_at|date:"d M Y" }}
+                                </small>
+                            </div>
+
+                        </div>
+
+                        <div class="review-stars" aria-label="{{ review.rating }} out of 5 stars">
+                            {% for star in "12345" %}
+                                {% if forloop.counter <= review.rating %}
+                                    ★
+                                {% else %}
+                                    ☆
+                                {% endif %}
+                            {% endfor %}
+                        </div>
+
+                        <p class="review-text mt-3">
+                            {{ review.comment }}
+                        </p>
+
+                        {% if review.store %}
+                            <small class="text-muted">
+                                Reviewed: {{ review.store.name }}
+                            </small>
+                        {% endif %}
+
+                    </article>
                 </div>
             {% empty %}
                 <p class="text-muted">No customer reviews are available yet.</p>
