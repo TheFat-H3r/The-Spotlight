@@ -16,6 +16,7 @@ from django.template.loader import render_to_string
 from django.urls import reverse
 from django.utils.html import strip_tags
 from django.db import transaction
+from django.db.models.deletion import ProtectedError
 from django.db.models import F
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
@@ -520,10 +521,81 @@ def remove_cart_item(request, item_id):
 
 @login_required
 def customer_orders_list(request):
-  
-  my_orders = Order.objects.filter(user=request.user).order_by('-created_at')
-  context = {'orders': my_orders}
-  return render(request, 'transactions/customer_orders.html', context)
+    my_orders = list(
+        Order.objects.filter(customer=request.user)
+        .select_related("store", "store__owner")
+        .prefetch_related("items__product")
+        .order_by("-created_at")
+    )
+    support_email = getattr(settings, "SUPPORT_EMAIL", "e.mugisha7@gmail.com")
+    for order in my_orders:
+        vendor_email = order.store.contact_email or order.store.owner.email
+        edit_subject = quote(f"Edit request for order {order.order_number}")
+        edit_body = quote(
+            f"Hello {order.store.name},\n\n"
+            f"I would like to request a change to order {order.order_number}."
+        )
+        report_subject = quote(f"[Issue Report] Order {order.order_number}")
+        order.edit_request_url = (
+            f"mailto:{vendor_email}?subject={edit_subject}&body={edit_body}"
+            if vendor_email
+            else ""
+        )  # type: ignore[attr-defined]
+        order.report_url = f"mailto:{support_email}?subject={report_subject}"  # type: ignore[attr-defined]
+
+    return render(
+        request,
+        "transactions/customer_orders.html",
+        {"orders": my_orders},
+    )
+
+
+@login_required
+@require_POST
+def cancel_customer_order(request, order_id):
+    order = get_object_or_404(
+        Order.objects.select_related("store"),
+        pk=order_id,
+        customer=request.user,
+    )
+    if not order.can_customer_cancel:
+        messages.error(request, "Only pending orders can be cancelled.")
+    else:
+        try:
+            order.change_status(
+                Order.Status.CANCELLED,
+                by=request.user,
+                note="Cancelled by customer",
+            )
+        except ValidationError as error:
+            messages.error(request, " ".join(error.messages))
+        else:
+            messages.success(request, "Your order has been cancelled.")
+    return redirect("transactions:customer-orders")
+
+
+@login_required
+@require_POST
+def delete_customer_order(request, order_id):
+    order = get_object_or_404(
+        Order,
+        pk=order_id,
+        customer=request.user,
+    )
+    if order.status != Order.Status.CANCELLED:
+        messages.error(request, "Only cancelled orders can be deleted.")
+        return redirect("transactions:customer-orders")
+
+    try:
+        order.delete()
+    except ProtectedError:
+        messages.error(
+            request,
+            "This order cannot be deleted because it is linked to a review.",
+        )
+    else:
+        messages.success(request, "The cancelled order has been deleted.")
+    return redirect("transactions:customer-orders")
 
 
 @login_required
@@ -533,16 +605,73 @@ def customer_bookings_list(request):
     if tracking_reference:
         bookings = bookings.filter(reference=tracking_reference)
 
-    my_bookings = (
+    my_bookings = list(
         bookings
         .select_related("service", "service__store", "service__store__owner", "slot")
         .order_by("-created_at")
     )
+    support_email = getattr(settings, "SUPPORT_EMAIL", "e.mugisha7@gmail.com")
+    for booking in my_bookings:
+        vendor_email = booking.service.store.contact_email or booking.service.store.owner.email
+        edit_subject = quote(f"Edit request for booking {booking.reference}")
+        edit_body = quote(
+            f"Hello {booking.service.store.name},\n\n"
+            f"I would like to request a change to booking {booking.reference} "
+            f"for {booking.service.name}."
+        )
+        report_subject = quote(f"[Issue Report] Booking {booking.reference}")
+        booking.edit_request_url = ( # type: ignore
+            f"mailto:{vendor_email}?subject={edit_subject}&body={edit_body}"
+            if vendor_email
+            else ""
+        )
+        booking.report_url = f"mailto:{support_email}?subject={report_subject}" # type: ignore
+
     return render(
         request,
         "transactions/customer_bookings.html",
         {"bookings": my_bookings, "tracking_reference": tracking_reference},
     )
+
+
+@login_required
+@require_POST
+def cancel_customer_booking(request, booking_id):
+    booking = get_object_or_404(
+        Booking.objects.select_related("service", "slot"),
+        pk=booking_id,
+        customer=request.user,
+    )
+    try:
+        booking.cancel_by_customer()
+    except ValidationError as error:
+        messages.error(request, " ".join(error.messages))
+    else:
+        messages.success(request, "Your booking has been cancelled.")
+    return redirect("transactions:customer-bookings")
+
+
+@login_required
+@require_POST
+def delete_customer_booking(request, booking_id):
+    booking = get_object_or_404(Booking, pk=booking_id, customer=request.user)
+    if booking.status not in (
+        Booking.Status.CANCELLED_BY_CUSTOMER,
+        Booking.Status.CANCELLED_BY_VENDOR,
+    ):
+        messages.error(request, "Only cancelled bookings can be deleted.")
+        return redirect("transactions:customer-bookings")
+
+    try:
+        booking.delete()
+    except ProtectedError:
+        messages.error(
+            request,
+            "This booking cannot be deleted because it is linked to a review.",
+        )
+    else:
+        messages.success(request, "The cancelled booking has been deleted.")
+    return redirect("transactions:customer-bookings")
 
 
 

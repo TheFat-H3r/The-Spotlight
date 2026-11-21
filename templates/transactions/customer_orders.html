@@ -1,0 +1,147 @@
+{% extends "core/base.html" %}
+{% load static %}
+
+{% block title %}My Orders | The Spotlight{% endblock %}
+
+{% block content %}
+<main class="container py-5">
+    <div class="mb-3">
+        <a href="{% url 'core:home' %}" class="btn btn-outline-dark btn-sm">
+            <i class="bi bi-arrow-left me-1" aria-hidden="true"></i>
+            Back to Marketplace
+        </a>
+    </div>
+
+    <div class="mb-4">
+        <span class="section-label">ORDER TRACKER</span>
+        <h1 class="h3 fw-bold text-black">My Orders</h1>
+        <p class="text-muted mb-0">Review your order details and the latest store response.</p>
+    </div>
+
+    <div class="row g-4">
+        {% for order in orders %}
+            <div class="col-12">
+                <article class="card border-0 shadow-sm overflow-hidden">
+                    <div class="card-header bg-dark text-white d-flex flex-wrap justify-content-between align-items-center gap-2 py-3">
+                        <div>
+                            <span class="text-warning fw-bold">{{ order.order_number }}</span>
+                            <span class="mx-2 text-white-50">·</span>
+                            <span class="fw-semibold">{{ order.store.name }}</span>
+                        </div>
+                        <span class="badge bg-warning text-dark">{{ order.get_status_display }}</span>
+                    </div>
+
+                    <div class="card-body">
+                        <div class="row g-3">
+                            <div class="col-lg-7">
+                                <h2 class="h6 fw-bold mb-3">Items</h2>
+                                <ul class="list-group list-group-flush mb-3">
+                                    {% for item in order.items.all %}
+                                        <li class="list-group-item px-0 d-flex justify-content-between gap-3">
+                                            <span>{{ item.quantity }} × {{ item.display_name }}</span>
+                                            <span class="fw-semibold text-nowrap">MUR {{ item.line_total }}</span>
+                                        </li>
+                                    {% empty %}
+                                        <li class="list-group-item px-0 text-muted">No item details available.</li>
+                                    {% endfor %}
+                                </ul>
+
+                                <div class="small text-muted">
+                                    <span class="fw-semibold">{{ order.get_fulfilment_method_display }}</span>
+                                    {% if order.fulfilment_method == "delivery" and order.delivery_address %}
+                                        · {{ order.delivery_address }}
+                                    {% elif order.pickup_location %}
+                                        · {{ order.pickup_location }}
+                                    {% endif %}
+                                    <span class="mx-1">|</span>
+                                    {{ order.get_payment_method_display }}
+                                    ({{ order.get_payment_status_display }})
+                                </div>
+
+                                {% if order.cancel_reason %}
+                                    <div class="alert alert-secondary small mt-3 mb-0">
+                                        {{ order.cancel_reason }}
+                                    </div>
+                                {% endif %}
+                            </div>
+
+                            <div class="col-lg-5">
+                                <div class="row g-3 small">
+                                    <div class="col-12">
+                                        <div class="text-muted">Vendor contact</div>
+                                        <div class="d-flex flex-column">
+                                            {% with vendor_email=order.store.contact_email|default:order.store.owner.email %}
+                                                {% if vendor_email %}
+                                                    <a class="fw-semibold text-dark text-break"
+                                                       href="mailto:{{ vendor_email }}">
+                                                        <i class="bi bi-envelope me-1" aria-hidden="true"></i>{{ vendor_email }}
+                                                    </a>
+                                                {% endif %}
+                                            {% endwith %}
+                                            {% if order.store.contact_phone %}
+                                                <a class="fw-semibold text-dark"
+                                                   href="tel:{{ order.store.contact_phone }}">
+                                                    <i class="bi bi-telephone me-1" aria-hidden="true"></i>{{ order.store.contact_phone }}
+                                                </a>
+                                            {% endif %}
+                                            {% if not order.store.contact_email and not order.store.owner.email and not order.store.contact_phone %}
+                                                <span class="text-muted">No contact details listed</span>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                    <div class="col-12">
+                                        <div class="text-muted">Order placed</div>
+                                        <div class="fw-semibold text-dark">{{ order.created_at|date:"D, d M Y · H:i" }}</div>
+                                    </div>
+                                    <div class="col-12">
+                                        <div class="text-muted">Order total</div>
+                                        <div class="fw-bold fs-5 text-dark">MUR {{ order.total }}</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="border-top mt-3 pt-3 d-flex flex-wrap gap-2">
+                            {% if order.edit_request_url %}
+                                <a href="{{ order.edit_request_url }}" class="btn btn-outline-primary btn-sm">
+                                    <i class="bi bi-pencil me-1" aria-hidden="true"></i>Request edit
+                                </a>
+                            {% endif %}
+                            {% if order.can_customer_cancel %}
+                                <form method="post"
+                                      action="{% url 'transactions:customer-cancel-order' order.pk %}"
+                                      onsubmit="return confirm('Cancel this order?');">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn btn-outline-warning btn-sm">
+                                        <i class="bi bi-x-circle me-1" aria-hidden="true"></i>Cancel order
+                                    </button>
+                                </form>
+                            {% endif %}
+                            {% if order.status == "cancelled" %}
+                                <form method="post"
+                                      action="{% url 'transactions:customer-delete-order' order.pk %}"
+                                      onsubmit="return confirm('Permanently delete this cancelled order?');">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn btn-outline-danger btn-sm">
+                                        <i class="bi bi-trash me-1" aria-hidden="true"></i>Delete
+                                    </button>
+                                </form>
+                            {% endif %}
+                            <a href="{{ order.report_url }}" class="btn btn-outline-secondary btn-sm">
+                                <i class="bi bi-flag me-1" aria-hidden="true"></i>Report issue
+                            </a>
+                        </div>
+                    </div>
+                </article>
+            </div>
+        {% empty %}
+            <div class="col-12">
+                <div class="empty-state p-4 text-center">
+                    <h2 class="h5 text-black">No orders yet</h2>
+                    <p class="text-muted mb-0">Your product orders will appear here.</p>
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+</main>
+{% endblock %}
