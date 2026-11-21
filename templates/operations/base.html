@@ -1,0 +1,240 @@
+{% load static %}
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{% block title %}Operations | The Spotlight{% endblock %}</title>
+    <link rel="icon" href="{% static 'img/favicon.png' %}" type="image/png">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="{% static 'css/portal.css' %}">
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+    <div class="ops-shell d-lg-flex">
+        <aside class="offcanvas-lg offcanvas-start ops-sidebar"
+               tabindex="-1"
+               id="operationsSidebar"
+               aria-labelledby="operationsSidebarLabel">
+            <div class="offcanvas-header d-lg-none border-bottom border-secondary-subtle">
+                <span class="ops-brand-name" id="operationsSidebarLabel">Operations menu</span>
+                <button type="button"
+                        class="btn-close btn-close-white"
+                        data-bs-dismiss="offcanvas"
+                        data-bs-target="#operationsSidebar"
+                        aria-label="Close menu"></button>
+            </div>
+            <div class="offcanvas-body d-flex flex-column p-0">
+                <a class="ops-brand d-flex align-items-center gap-3 px-3 text-decoration-none text-white"
+                   href="{% url 'operations:admin-home' %}">
+                    <img src="{% static 'img/Icon-removebg.png' %}" alt="">
+                    <span>
+                        <span class="ops-brand-name d-block">The Spotlight</span>
+                        <span class="ops-brand-caption">Operations console</span>
+                    </span>
+                </a>
+
+                <nav aria-label="Operations navigation" class="pb-3">
+                    {# Workspace #}
+                    <div class="ops-sidebar-caption">Workspace</div>
+                    <a class="ops-nav-link {% block overview_nav_class %}{% endblock %}"
+                       href="{% url 'operations:admin-home' %}">
+                        <i class="bi bi-grid-1x2" aria-hidden="true"></i>
+                        <span>Overview</span>
+                    </a>
+
+                    {# Approvals & Moderation #}
+                    <div class="ops-sidebar-caption">Approvals &amp; Moderation</div>
+                    <a class="ops-nav-link {% block authorize_stores_nav_class %}{% endblock %}"
+                       href="{% url 'operations:authorize-stores' %}">
+                        <i class="bi bi-patch-check" aria-hidden="true"></i>
+                        <span>Authorize stores</span>
+                        {% if pending_store_approvals %}
+                            <span class="ops-nav-badge">{{ pending_store_approvals }}</span>
+                        {% endif %}
+                    </a>
+                    <a class="ops-nav-link {% block authorize_ads_nav_class %}{% endblock %}"
+                       href="{% url 'operations:authorize-ads' %}">
+                        <i class="bi bi-megaphone" aria-hidden="true"></i>
+                        <span>Ads &amp; announcements</span>
+                        {% if pending_ad_approvals %}
+                            <span class="ops-nav-badge">{{ pending_ad_approvals }}</span>
+                        {% endif %}
+                    </a>
+                    <a class="ops-nav-link {% block complaints_nav_class %}{% endblock %}"
+                       href="{% url 'operations:complaints' %}">
+                        <i class="bi bi-flag" aria-hidden="true"></i>
+                        <span>Complaints &amp; disputes</span>
+                        {% if open_complaints_count %}
+                            <span class="ops-nav-badge">{{ open_complaints_count }}</span>
+                        {% endif %}
+                    </a>
+
+                    {# Catalog & Directory #}
+                    <div class="ops-sidebar-caption">Marketplace &amp; Directory</div>
+                    <a class="ops-nav-link {% block stores_nav_class %}{% endblock %}"
+                       href="{% url 'operations:manage-stores' %}">
+                        <i class="bi bi-shop" aria-hidden="true"></i>
+                        <span>Manage stores</span>
+                    </a>
+                    <a class="ops-nav-link {% block categories_nav_class %}{% endblock %}"
+                       href="{% url 'operations:categories' %}">
+                        <i class="bi bi-tags" aria-hidden="true"></i>
+                        <span>Categories</span>
+                    </a>
+                    <a class="ops-nav-link {% block products_services_nav_class %}{% endblock %}"
+                       href="{% url 'operations:catalog' %}">
+                        <i class="bi bi-box-seam" aria-hidden="true"></i>
+                        <span>Products &amp; services</span>
+                    </a>
+                    <a class="ops-nav-link {% block users_nav_class %}{% endblock %}"
+                       href="{% url 'operations:manage-users' %}">
+                        <i class="bi bi-people" aria-hidden="true"></i>
+                        <span>Manage users</span>
+                    </a>
+
+                    {# Transactions #}
+                    <div class="ops-sidebar-caption">Transactions</div>
+                    <a class="ops-nav-link {% block orders_nav_class %}{% endblock %}"
+                       href="{% url 'operations:orders' %}">
+                        <i class="bi bi-bag-check" aria-hidden="true"></i>
+                        <span>Manage orders</span>
+                        {% if pending_order_count %}
+                            <span class="ops-nav-badge">{{ pending_order_count }}</span>
+                        {% endif %}
+                    </a>
+                    <a class="ops-nav-link {% block bookings_nav_class %}{% endblock %}"
+                       href="{% url 'operations:bookings' %}">
+                        <i class="bi bi-calendar2-check" aria-hidden="true"></i>
+                        <span>Manage bookings</span>
+                        {% if pending_booking_count %}
+                            <span class="ops-nav-badge">{{ pending_booking_count }}</span>
+                        {% endif %}
+                    </a>
+                    <a class="ops-nav-link {% block payouts_nav_class %}{% endblock %}"
+                       href="{% url 'operations:payouts' %}">
+                        <i class="bi bi-wallet2" aria-hidden="true"></i>
+                        <span>Payouts &amp; commissions</span>
+                    </a>
+
+                    {# System & Communications #}
+                    <div class="ops-sidebar-caption">System &amp; Communications</div>
+                    <a class="ops-nav-link {% block notifications_nav_class %}{% endblock %}"
+                       href="{% url 'operations:notifications' %}">
+                        <i class="bi bi-bell" aria-hidden="true"></i>
+                        <span>Notifications</span>
+                    </a>
+                    <a class="ops-nav-link {% block reviews_nav_class %}{% endblock %}"
+                       href="{% url 'operations:reviews' %}">
+                        <i class="bi bi-star-half" aria-hidden="true"></i>
+                        <span>Reviews &amp; ratings</span>
+                    </a>
+                    <a class="ops-nav-link" href="{% url 'operations:admin-settings' %}">
+                        <i class="bi bi-gear" aria-hidden="true"></i>
+                        <span>Settings</span>
+                    </a>
+                    <a class="ops-nav-link" href="{% url 'admin:index' %}">
+                        <i class="bi bi-sliders" aria-hidden="true"></i>
+                        <span>Django administration</span>
+                    </a>
+
+                    {% block sidebar_navigation %}{% endblock %}
+                </nav>
+
+                <div class="ops-sidebar-footer">
+                    <a class="ops-nav-link" href="{% url 'core:home' %}">
+                        <i class="bi bi-box-arrow-up-right" aria-hidden="true"></i>
+                        <span>View marketplace</span>
+                    </a>
+                </div>
+            </div>
+        </aside>
+
+        <div class="ops-main flex-grow-1">
+            <header class="ops-topbar">
+                <button class="btn btn-outline-secondary d-lg-none"
+                        type="button"
+                        data-bs-toggle="offcanvas"
+                        data-bs-target="#operationsSidebar"
+                        aria-controls="operationsSidebar"
+                        aria-label="Open operations menu">
+                    <i class="bi bi-list fs-5" aria-hidden="true"></i>
+                </button>
+
+                <div class="ops-context">
+                    <span class="d-none d-sm-inline">Operations</span>
+                    <i class="bi bi-chevron-right mx-2 small" aria-hidden="true"></i>
+                    <strong>{% block breadcrumb %}Dashboard{% endblock %}</strong>
+                </div>
+
+                <div class="ms-auto d-flex align-items-center gap-2">
+                    {% block header_actions %}{% endblock %}
+                    {% if request.user.is_authenticated %}
+                        <div class="ops-user">
+                            <span class="ops-user-icon" aria-hidden="true">
+                                {% if request.user.avatar %}
+                                    <img src="{{ request.user.avatar.url }}"
+                                         alt="{{ request.user.get_short_name|default:request.user.email }}"
+                                         class="rounded-circle"
+                                         style="width: 28px; height: 28px; object-fit: cover;">
+                                {% else %}
+                                    <i class="bi bi-person"></i>
+                                {% endif %}
+                            </span>
+                            <span class="d-none d-md-block">
+                                <span class="d-block fw-semibold small">{{ request.user.get_short_name|default:request.user.email }}</span>
+                                <span class="d-block text-secondary small">{{ request.user.get_role_display|default:"Administrator" }}</span>
+                            </span>
+                            <a class="btn btn-sm btn-light ms-1"
+                               href="{% url 'accounts:logout' %}"
+                               aria-label="Sign out"
+                               title="Sign out">
+                                <i class="bi bi-box-arrow-right" aria-hidden="true"></i>
+                            </a>
+                        </div>
+                    {% endif %}
+                </div>
+            </header>
+
+            <main class="ops-content">
+                <section class="ops-page-heading ops-card-header p-3 p-lg-4 mb-4">
+                    <div>
+                        <div class="ops-eyebrow">{% block page_kicker %}Administration{% endblock %}</div>
+                        <h1 class="ops-card-title">{% block page_heading %}Operations dashboard{% endblock %}</h1>
+                        <p class="ops-page-description ops-card-subtitle">
+                            {% block page_description %}Manage marketplace operations from one place.{% endblock %}
+                        </p>
+                    </div>
+                    <div class="d-flex flex-wrap gap-2">
+                        {% block page_actions %}{% endblock %}
+                    </div>
+                </section>
+
+                {% if messages %}
+                    <div class="d-grid gap-2 mb-4" aria-live="polite">
+                        {% for message in messages %}
+                            <div class="alert alert-{% if 'error' in message.tags %}danger{% else %}{{ message.tags|default:'info' }}{% endif %} alert-dismissible fade show mb-0"
+                                 role="alert">
+                                {{ message }}
+                                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Dismiss"></button>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+
+                {% block content %}{% endblock %}
+            </main>
+
+            <footer class="border-top bg-white px-4 py-3 text-center small text-secondary">
+                <span>&copy; {% now "Y" %} The Spotlight</span>
+                <span class="mx-2">·</span>
+                <span>Operations console</span>
+            </footer>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    {% block extra_js %}{% endblock %}
+</body>
+</html>
