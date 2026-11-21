@@ -1,5 +1,5 @@
 from django.urls import path
-from .views import admin_home, admin_settings, authorize_ads, authorize_stores, complaints_list, manage_bookings, manage_catalog, manage_categories, manage_orders, manage_payouts, manage_reviews, manage_stores, manage_users, notifications_center
+from .views import admin_home, admin_settings, authorize_ads, authorize_stores, complaints_list, manage_bookings, manage_catalog, manage_categories, manage_orders, manage_payouts, manage_reviews, manage_stores, manage_users, notifications_center, payout_detail
 
 app_name = "operations"
 urlpatterns = [
@@ -21,6 +21,7 @@ urlpatterns = [
     path("orders/", manage_orders, name="orders"),
     path("bookings/", manage_bookings, name="bookings"),
     path("payouts/", manage_payouts, name="payouts"),
+    path("payouts/<int:pk>/", payout_detail, name="payout-detail"),
 
     # System & Communications
     path("notifications/", notifications_center, name="notifications"),

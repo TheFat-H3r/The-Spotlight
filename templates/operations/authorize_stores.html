@@ -1,0 +1,612 @@
+{% extends "operations/base.html" %}
+
+{% block title %}Authorize Stores | The Spotlight{% endblock %}
+{% block breadcrumb %}Authorize stores{% endblock %}
+{% block page_kicker %}Approvals &amp; Moderation{% endblock %}
+{% block page_heading %}Authorize stores{% endblock %}
+{% block page_description %}
+    Review pending vendor applications, verify store details and catalog readiness, and approve stores to go live.
+{% endblock %}
+{% block authorize_stores_nav_class %}active{% endblock %}
+
+{% block extra_css %}
+    <link rel="stylesheet" href="https://cdn.datatables.net/2.1.8/css/dataTables.bootstrap5.min.css">
+    <style>
+        .ops-kpi-card {
+            transition: transform .15s ease, border-color .15s ease;
+        }
+
+        .ops-kpi-card:hover {
+            border-color: var(--ops-gold);
+            transform: translateY(-2px);
+        }
+
+        .ops-kpi-value {
+            color: var(--ops-ink);
+            letter-spacing: -.02em;
+        }
+
+        .ops-kpi-icon {
+            align-items: center;
+            background: var(--ops-black);
+            border-radius: .65rem;
+            color: var(--ops-gold);
+            display: inline-flex;
+            height: 3rem;
+            justify-content: center;
+            width: 3rem;
+        }
+
+        .ops-card-header {
+            background: var(--ops-black);
+            border-bottom: 2px solid var(--ops-gold);
+            border-top-left-radius: calc(.85rem - 1px);
+            border-top-right-radius: calc(.85rem - 1px);
+            color: #fff;
+        }
+
+        .ops-card-header .ops-card-title {
+            color: #fff;
+            font-weight: 700;
+            letter-spacing: -.01em;
+        }
+
+        .ops-card-header .ops-card-title i {
+            color: var(--ops-gold);
+        }
+
+        .ops-card-header .ops-card-subtitle {
+            color: #9ba8ba;
+        }
+
+        .ops-btn-gold {
+            background: var(--ops-gold);
+            border: 1px solid var(--ops-gold);
+            color: var(--ops-black);
+            font-weight: 700;
+        }
+
+        .ops-btn-gold:hover {
+            background: #d49b32;
+            border-color: #d49b32;
+            color: var(--ops-black);
+        }
+
+        .ops-btn-gold-outline {
+            border: 1px solid rgba(228, 173, 67, 0.45);
+            color: var(--ops-gold);
+            font-weight: 600;
+            transition: background-color .15s ease, color .15s ease, border-color .15s ease;
+        }
+
+        .ops-btn-gold-outline:hover {
+            background: var(--ops-gold);
+            border-color: var(--ops-gold);
+            color: var(--ops-black);
+        }
+
+        .ops-store-avatar {
+            align-items: center;
+            background: var(--ops-black);
+            border: 1px solid var(--ops-border);
+            border-radius: .6rem;
+            color: var(--ops-gold);
+            display: inline-flex;
+            flex-shrink: 0;
+            font-weight: 700;
+            height: 2.6rem;
+            justify-content: center;
+            overflow: hidden;
+            width: 2.6rem;
+        }
+
+        .ops-store-avatar img {
+            height: 100%;
+            object-fit: cover;
+            width: 100%;
+        }
+
+        .ops-table thead th {
+            background-color: var(--ops-black-elevated) !important;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+            color: var(--ops-gold) !important;
+            font-size: .74rem;
+            font-weight: 700;
+            letter-spacing: .08em;
+            padding-bottom: .85rem;
+            padding-top: .85rem;
+            text-transform: uppercase;
+            white-space: nowrap;
+        }
+
+        .ops-table thead th span.dt-column-order {
+            opacity: 1 !important;
+        }
+
+        .ops-table thead th span.dt-column-order::before,
+        .ops-table thead th span.dt-column-order::after {
+            color: rgba(255, 255, 255, 0.75) !important;
+            opacity: 1 !important;
+            transition: color .15s ease;
+        }
+
+        .ops-table thead th.dt-orderable-asc:hover span.dt-column-order::before,
+        .ops-table thead th.dt-orderable-desc:hover span.dt-column-order::after,
+        .ops-table thead th.dt-ordering-asc span.dt-column-order::before,
+        .ops-table thead th.dt-ordering-desc span.dt-column-order::after {
+            color: var(--ops-gold) !important;
+        }
+
+        .ops-table tbody td {
+            border-color: var(--ops-border);
+            color: var(--ops-ink);
+            font-size: .9rem;
+            padding-bottom: .8rem;
+            padding-top: .8rem;
+        }
+
+        .ops-table tbody tr:hover td {
+            background-color: rgba(228, 173, 67, 0.07);
+        }
+
+        .dt-container .dt-search label,
+        .dt-container .dt-length label,
+        .dt-container .dt-info {
+            color: var(--ops-muted);
+            font-size: .84rem;
+        }
+
+        .dt-container .form-control:focus,
+        .dt-container .form-select:focus {
+            border-color: var(--ops-gold);
+            box-shadow: 0 0 0 .2rem var(--ops-gold-soft);
+        }
+
+        .dt-container .pagination .page-item.active .page-link {
+            background-color: var(--ops-black);
+            border-color: var(--ops-black);
+            color: var(--ops-gold);
+            font-weight: 600;
+        }
+
+        .dt-container .pagination .page-link {
+            color: var(--ops-ink);
+            font-size: .85rem;
+        }
+
+        .dt-container .pagination .page-link:hover {
+            background-color: var(--ops-gold-soft);
+            border-color: var(--ops-border);
+            color: var(--ops-black);
+        }
+    </style>
+{% endblock %}
+
+{% block page_actions %}
+    <a class="btn ops-btn-gold-outline" href="{% url 'operations:manage-stores' %}">
+        <i class="bi bi-shop me-1" aria-hidden="true"></i>
+        All stores ({{ active_count }})
+    </a>
+    <a class="btn ops-btn-gold-outline" href="{% url 'admin:stores_store_changelist' %}">
+        <i class="bi bi-sliders me-1" aria-hidden="true"></i>
+        Django admin
+    </a>
+{% endblock %}
+
+{% block content %}
+    {# KPI Summary Strip #}
+    <section class="row g-3 mb-4" aria-label="Store authorization summary">
+        <div class="col-sm-4">
+            <article class="ops-card ops-kpi-card h-100 p-3 p-lg-4">
+                <div class="d-flex align-items-start justify-content-between">
+                    <div>
+                        <p class="small text-secondary fw-medium mb-2">Pending authorization</p>
+                        <p class="fs-2 fw-bold ops-kpi-value mb-0">{{ pending_count }}</p>
+                    </div>
+                    <span class="ops-kpi-icon">
+                        <i class="bi bi-hourglass-split fs-5" aria-hidden="true"></i>
+                    </span>
+                </div>
+                <p class="small text-secondary mb-0 mt-3">Draft stores awaiting approval</p>
+            </article>
+        </div>
+        <div class="col-sm-4">
+            <article class="ops-card ops-kpi-card h-100 p-3 p-lg-4">
+                <div class="d-flex align-items-start justify-content-between">
+                    <div>
+                        <p class="small text-secondary fw-medium mb-2">Live marketplace stores</p>
+                        <p class="fs-2 fw-bold ops-kpi-value mb-0">{{ active_count }}</p>
+                    </div>
+                    <span class="ops-kpi-icon">
+                        <i class="bi bi-patch-check fs-5" aria-hidden="true"></i>
+                    </span>
+                </div>
+                <p class="small text-secondary mb-0 mt-3">Currently active and visible</p>
+            </article>
+        </div>
+        <div class="col-sm-4">
+            <article class="ops-card ops-kpi-card h-100 p-3 p-lg-4">
+                <div class="d-flex align-items-start justify-content-between">
+                    <div>
+                        <p class="small text-secondary fw-medium mb-2">Suspended stores</p>
+                        <p class="fs-2 fw-bold ops-kpi-value mb-0">{{ suspended_count }}</p>
+                    </div>
+                    <span class="ops-kpi-icon">
+                        <i class="bi bi-slash-circle fs-5" aria-hidden="true"></i>
+                    </span>
+                </div>
+                <p class="small text-secondary mb-0 mt-3">Held or restricted by admin</p>
+            </article>
+        </div>
+    </section>
+
+    {# Pending Stores Queue #}
+    <section class="ops-card mb-4" aria-labelledby="pending-stores-heading">
+        <div class="ops-card-header d-flex flex-wrap align-items-center justify-content-between gap-2 px-3 px-lg-4 py-3">
+            <div>
+                <h2 class="h5 ops-card-title mb-1" id="pending-stores-heading">
+                    <i class="bi bi-patch-check me-2" aria-hidden="true"></i>Pending store applications
+                </h2>
+                <p class="small ops-card-subtitle mb-0">Verify business details, fulfillment options, and initial catalog items before publishing</p>
+            </div>
+        </div>
+        <div class="p-3 p-lg-4">
+            <div class="table-responsive">
+                <table id="pending-stores-table" class="table ops-table align-middle w-100 mb-0">
+                    <thead>
+                        <tr>
+                            <th scope="col">Store</th>
+                            <th scope="col">Owner</th>
+                            <th scope="col">Business Type</th>
+                            <th scope="col">Categories</th>
+                            <th scope="col">Catalog &amp; Fulfillment</th>
+                            <th scope="col">Submitted</th>
+                            <th class="text-end" scope="col" data-orderable="false">Decision</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for store in pending_stores %}
+                            <tr>
+                                <td>
+                                    <div class="d-flex align-items-center gap-2">
+                                        <span class="ops-store-avatar">
+                                            {% if store.logo %}
+                                                <img src="{{ store.logo.url }}" alt="{{ store.name }}">
+                                            {% else %}
+                                                {{ store.name|slice:":1"|upper }}
+                                            {% endif %}
+                                        </span>
+                                        <div>
+                                            <span class="fw-semibold d-block">{{ store.name }}</span>
+                                            {% if store.tagline %}
+                                                <span class="small text-secondary d-block text-truncate" style="max-width: 200px;">{{ store.tagline }}</span>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>
+                                    <span class="d-block fw-medium">{{ store.owner.get_full_name|default:store.owner.email }}</span>
+                                    <span class="small text-secondary">{{ store.contact_phone|default:store.owner.email }}</span>
+                                </td>
+                                <td>
+                                    <span class="d-block fw-medium">{{ store.business_type.name }}</span>
+                                    <span class="badge rounded-pill bg-dark text-warning">{{ store.get_store_type_display }}</span>
+                                </td>
+                                <td>
+                                    {% for cat in store.categories.all %}
+                                        <span class="badge rounded-pill bg-light text-dark border mb-1">{{ cat.name }}</span>
+                                    {% empty %}
+                                        <span class="small text-secondary">None selected</span>
+                                    {% endfor %}
+                                </td>
+                                <td>
+                                    <div class="small">
+                                        {% if store.accepts_orders %}
+                                            <span class="d-block"><i class="bi bi-box-seam me-1 text-secondary"></i>{{ store.product_count }} product(s)</span>
+                                        {% endif %}
+                                        {% if store.accepts_bookings %}
+                                            <span class="d-block"><i class="bi bi-calendar2-check me-1 text-secondary"></i>{{ store.service_count }} service(s)</span>
+                                        {% endif %}
+                                        <span class="d-block text-secondary">
+                                            {% if store.offers_delivery %}
+                                                <i class="bi bi-truck me-1"></i>Delivery &amp; Pickup
+                                            {% else %}
+                                                <i class="bi bi-geo-alt me-1"></i>Pickup only
+                                            {% endif %}
+                                        </span>
+                                    </div>
+                                </td>
+                                <td class="text-nowrap" data-order="{{ store.created_at|date:'U' }}">
+                                    {{ store.created_at|date:"d M Y" }}
+                                    <span class="d-block small text-secondary">{{ store.created_at|timesince }} ago</span>
+                                </td>
+                                <td class="text-end text-nowrap">
+                                    <button type="button"
+                                            class="btn btn-sm btn-outline-dark me-1 inspect-store-btn"
+                                            data-bs-toggle="modal"
+                                            data-bs-target="#inspectStoreModal"
+                                            data-store-id="{{ store.pk }}"
+                                            data-store-name="{{ store.name }}"
+                                            data-store-tagline="{{ store.tagline }}"
+                                            data-store-description="{{ store.description }}"
+                                            data-store-owner="{{ store.owner.get_full_name|default:store.owner.email }}"
+                                            data-store-owner-email="{{ store.owner.email }}"
+                                            data-store-type="{{ store.business_type.name }} ({{ store.get_store_type_display }})"
+                                            data-store-phone="{{ store.contact_phone|default:'—' }}"
+                                            data-store-whatsapp="{{ store.whatsapp|default:'—' }}"
+                                            data-store-email="{{ store.contact_email|default:'—' }}"
+                                            data-store-pickup="{{ store.pickup_location|default:'Not specified' }}"
+                                            data-store-delivery="{% if store.offers_delivery %}Yes{% else %}No (Pickup only){% endif %}"
+                                            data-store-logo="{% if store.logo %}{{ store.logo.url }}{% endif %}"
+                                            data-store-banner="{% if store.banner %}{{ store.banner.url }}{% endif %}"
+                                            data-admin-url="{% url 'admin:stores_store_change' store.pk %}">
+                                        Inspect
+                                    </button>
+                                    <button type="button"
+                                            class="btn btn-sm ops-btn-gold approve-store-btn"
+                                            data-bs-toggle="modal"
+                                            data-bs-target="#approveStoreModal"
+                                            data-store-id="{{ store.pk }}"
+                                            data-store-name="{{ store.name }}">
+                                        <i class="bi bi-check-lg me-1" aria-hidden="true"></i>Authorize
+                                    </button>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </section>
+
+    {# Suspended Stores Table #}
+    <section class="ops-card" aria-labelledby="suspended-stores-heading">
+        <div class="ops-card-header d-flex flex-wrap align-items-center justify-content-between gap-2 px-3 px-lg-4 py-3">
+            <div>
+                <h2 class="h5 ops-card-title mb-1" id="suspended-stores-heading">
+                    <i class="bi bi-slash-circle me-2" aria-hidden="true"></i>Suspended stores
+                </h2>
+                <p class="small ops-card-subtitle mb-0">Stores currently hidden from public browsing due to admin suspension</p>
+            </div>
+        </div>
+        <div class="p-3 p-lg-4">
+            <div class="table-responsive">
+                <table id="suspended-stores-table" class="table ops-table align-middle w-100 mb-0">
+                    <thead>
+                        <tr>
+                            <th scope="col">Store</th>
+                            <th scope="col">Owner</th>
+                            <th scope="col">Business Type</th>
+                            <th scope="col">Rating</th>
+                            <th scope="col">Last Updated</th>
+                            <th class="text-end" scope="col" data-orderable="false">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for store in suspended_stores %}
+                            <tr>
+                                <td class="fw-semibold">{{ store.name }}</td>
+                                <td>{{ store.owner.get_full_name|default:store.owner.email }}</td>
+                                <td>{{ store.business_type.name }}</td>
+                                <td>{{ store.rating_average }}★ <span class="text-secondary small">({{ store.rating_count }})</span></td>
+                                <td class="text-nowrap" data-order="{{ store.updated_at|date:'U' }}">
+                                    {{ store.updated_at|date:"d M Y, H:i" }}
+                                </td>
+                                <td class="text-end text-nowrap">
+                                    <form method="post" class="d-inline">
+                                        {% csrf_token %}
+                                        <input type="hidden" name="action" value="approve">
+                                        <input type="hidden" name="store_id" value="{{ store.pk }}">
+                                        <button type="submit" class="btn btn-sm btn-outline-success">
+                                            Re-activate
+                                        </button>
+                                    </form>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </section>
+
+    {# Modal 1: Inspect Store Application #}
+    <div class="modal fade" id="inspectStoreModal" tabindex="-1" aria-labelledby="inspectStoreModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+            <div class="modal-content border-0 shadow">
+                <div class="modal-header" style="background: var(--ops-black); color: #fff; border-bottom: 2px solid var(--ops-gold);">
+                    <h5 class="modal-title fw-bold" id="inspectStoreModalLabel">
+                        <i class="bi bi-shop me-2" style="color: var(--ops-gold);" aria-hidden="true"></i>
+                        <span id="inspect-store-name">Store Details</span>
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <div id="inspect-banner-wrapper" class="mb-3 d-none">
+                        <img id="inspect-banner" src="" alt="Store banner" class="w-100 rounded-3 object-fit-cover" style="max-height: 170px;">
+                    </div>
+
+                    <div class="d-flex align-items-center gap-3 mb-3">
+                        <img id="inspect-logo" src="" alt="Store logo" class="rounded-3 border object-fit-cover d-none" style="width: 64px; height: 64px;">
+                        <div>
+                            <p class="fw-bold fs-5 mb-0" id="inspect-store-title"></p>
+                            <p class="text-secondary small mb-0" id="inspect-store-tagline"></p>
+                        </div>
+                    </div>
+
+                    <p class="small bg-light p-3 rounded-3 border mb-4" id="inspect-store-description"></p>
+
+                    <div class="row g-3 small">
+                        <div class="col-md-6">
+                            <span class="text-secondary d-block">Owner</span>
+                            <strong id="inspect-store-owner"></strong> (<span id="inspect-store-owner-email"></span>)
+                        </div>
+                        <div class="col-md-6">
+                            <span class="text-secondary d-block">Classification</span>
+                            <strong id="inspect-store-type"></strong>
+                        </div>
+                        <div class="col-md-4">
+                            <span class="text-secondary d-block">Contact Phone</span>
+                            <strong id="inspect-store-phone"></strong>
+                        </div>
+                        <div class="col-md-4">
+                            <span class="text-secondary d-block">WhatsApp</span>
+                            <strong id="inspect-store-whatsapp"></strong>
+                        </div>
+                        <div class="col-md-4">
+                            <span class="text-secondary d-block">Store Email</span>
+                            <strong id="inspect-store-email"></strong>
+                        </div>
+                        <div class="col-md-6">
+                            <span class="text-secondary d-block">Pickup Location</span>
+                            <strong id="inspect-store-pickup"></strong>
+                        </div>
+                        <div class="col-md-6">
+                            <span class="text-secondary d-block">Offers Delivery</span>
+                            <strong id="inspect-store-delivery"></strong>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer bg-light justify-content-between">
+                    <a id="inspect-admin-link" href="#" class="btn btn-sm btn-outline-secondary">
+                        Edit in Django Admin <i class="bi bi-arrow-up-right ms-1"></i>
+                    </a>
+                    <div class="d-flex gap-2">
+                        <form method="post" class="d-inline">
+                            {% csrf_token %}
+                            <input type="hidden" name="action" value="suspend">
+                            <input type="hidden" name="store_id" id="inspect-suspend-id">
+                            <button type="submit" class="btn btn-outline-danger">Reject / Suspend</button>
+                        </form>
+                        <form method="post" class="d-inline">
+                            {% csrf_token %}
+                            <input type="hidden" name="action" value="approve">
+                            <input type="hidden" name="grant_trial" value="on">
+                            <input type="hidden" name="store_id" id="inspect-approve-id">
+                            <button type="submit" class="btn ops-btn-gold">Authorize Store</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {# Modal 2: Quick Authorize Confirmation #}
+    <div class="modal fade" id="approveStoreModal" tabindex="-1" aria-labelledby="approveStoreModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <form method="post" class="modal-content border-0 shadow">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="approve">
+                <input type="hidden" name="store_id" id="approve-store-id">
+                <div class="modal-header" style="background: var(--ops-black); color: #fff; border-bottom: 2px solid var(--ops-gold);">
+                    <h5 class="modal-title fw-bold" id="approveStoreModalLabel">
+                        <i class="bi bi-patch-check me-2" style="color: var(--ops-gold);" aria-hidden="true"></i>Authorize store
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <p class="mb-3">
+                        Publish <strong id="approve-store-name"></strong> to the public marketplace?
+                    </p>
+                    <div class="form-check mb-2">
+                        <input class="form-check-input" type="checkbox" id="grantTrialCheck" name="grant_trial" checked>
+                        <label class="form-check-label" for="grantTrialCheck">
+                            Start with default free trial
+                            {% if default_plan %}
+                                ({{ default_plan.default_trial_days }} days at 0%, then {{ default_plan.commission_rate }}%)
+                            {% endif %}
+                        </label>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="featureStoreCheck" name="is_featured">
+                        <label class="form-check-label" for="featureStoreCheck">
+                            Highlight as a <strong>Featured</strong> store on launch
+                        </label>
+                    </div>
+                </div>
+                <div class="modal-footer bg-light">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn ops-btn-gold">Confirm &amp; Publish</button>
+                </div>
+            </form>
+        </div>
+    </div>
+{% endblock %}
+
+{% block extra_js %}
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script src="https://cdn.datatables.net/2.1.8/js/dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/2.1.8/js/dataTables.bootstrap5.min.js"></script>
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            const commonConfig = {
+                pageLength: 10,
+                lengthMenu: [5, 10, 25, 50],
+                order: [],
+            };
+
+            new DataTable("#pending-stores-table", {
+                ...commonConfig,
+                language: {
+                    emptyTable: "No pending store applications right now.",
+                    search: "Search applications:",
+                },
+            });
+
+            new DataTable("#suspended-stores-table", {
+                ...commonConfig,
+                language: {
+                    emptyTable: "No suspended stores.",
+                    search: "Search suspended:",
+                },
+            });
+
+            // Populate Approve Modal
+            document.addEventListener("click", function (event) {
+                const btn = event.target.closest(".approve-store-btn");
+                if (!btn) return;
+                document.getElementById("approve-store-id").value = btn.dataset.storeId;
+                document.getElementById("approve-store-name").textContent = btn.dataset.storeName;
+            });
+
+            // Populate Inspect Modal
+            document.addEventListener("click", function (event) {
+                const btn = event.target.closest(".inspect-store-btn");
+                if (!btn) return;
+
+                document.getElementById("inspect-store-name").textContent = btn.dataset.storeName;
+                document.getElementById("inspect-store-title").textContent = btn.dataset.storeName;
+                document.getElementById("inspect-store-tagline").textContent = btn.dataset.storeTagline || "No tagline provided";
+                document.getElementById("inspect-store-description").textContent = btn.dataset.storeDescription || "No description provided.";
+                document.getElementById("inspect-store-owner").textContent = btn.dataset.storeOwner;
+                document.getElementById("inspect-store-owner-email").textContent = btn.dataset.storeOwnerEmail;
+                document.getElementById("inspect-store-type").textContent = btn.dataset.storeType;
+                document.getElementById("inspect-store-phone").textContent = btn.dataset.storePhone;
+                document.getElementById("inspect-store-whatsapp").textContent = btn.dataset.storeWhatsapp;
+                document.getElementById("inspect-store-email").textContent = btn.dataset.storeEmail;
+                document.getElementById("inspect-store-pickup").textContent = btn.dataset.storePickup;
+                document.getElementById("inspect-store-delivery").textContent = btn.dataset.storeDelivery;
+                document.getElementById("inspect-admin-link").href = btn.dataset.adminUrl;
+                document.getElementById("inspect-approve-id").value = btn.dataset.storeId;
+                document.getElementById("inspect-suspend-id").value = btn.dataset.storeId;
+
+                const logoImg = document.getElementById("inspect-logo");
+                if (btn.dataset.storeLogo) {
+                    logoImg.src = btn.dataset.storeLogo;
+                    logoImg.classList.remove("d-none");
+                } else {
+                    logoImg.classList.add("d-none");
+                }
+
+                const bannerWrap = document.getElementById("inspect-banner-wrapper");
+                const bannerImg = document.getElementById("inspect-banner");
+                if (btn.dataset.storeBanner) {
+                    bannerImg.src = btn.dataset.storeBanner;
+                    bannerWrap.classList.remove("d-none");
+                } else {
+                    bannerWrap.classList.add("d-none");
+                }
+            });
+        });
+    </script>
+{% endblock %}
