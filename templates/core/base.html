@@ -42,6 +42,10 @@
           <a class="nav-link" href="{% url 'core:home' %}">Marketplace</a>
           <a class="nav-link" href="{% url 'store:store-products-list' %}">Products</a>
           <a class="nav-link" href="{% url 'store:store-services-list' %}">Services</a>
+          <a class="nav-link" href="{% url 'store:vendor-dashboard' %}">Dashboard (For Vendors Only)</a>  
+          
+        
+
           <!-- stores dropdown -->
           <div class="nav-item dropdown">
             <a class="nav-link dropdown-toggle" href="#" id="storesDropdown" role="button"
@@ -67,7 +71,10 @@
               {% endfor %}
             </ul>
           </div>
+
         </div>
+         
+        
 
         <div class="d-flex align-items-center gap-2 ms-auto">
           <a class="btn btn-header-icon position-relative"

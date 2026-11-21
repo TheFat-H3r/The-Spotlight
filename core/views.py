@@ -4,6 +4,7 @@ from django.db.models import Q
 
 from marketing.models import Advertisement, Announcement, Announcement
 from stores.models import BusinessType, Category, Product, Review, Service, Store
+from accounts.models import User
 
 def home(request):
     query = request.GET.get("q", "").strip()

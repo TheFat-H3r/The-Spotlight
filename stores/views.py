@@ -4,6 +4,7 @@ from django.shortcuts import get_object_or_404, redirect, render
 
 from transactions.models import Order, OrderItem
 from .models import BusinessType, Category, Store, Product, Service, Review
+from accounts.models import User
 
 business_types = BusinessType.objects.all()
 
@@ -269,3 +270,8 @@ def submit_store_review(request, slug):
         "submitted_comment": existing_review.body if existing_review else "",
     }
     return render(request, "stores/review_form.html", context)
+
+
+def vendor_dashboard(request):
+    #vendor  = User.objects.filter(email=email).first(User.is_authenticated and User.is_vendor)
+    return render(request, "stores/vendor_dashboard.html") 
