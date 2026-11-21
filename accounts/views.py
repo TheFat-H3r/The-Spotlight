@@ -479,4 +479,4 @@ def user_settings(request):
     context = {
         'user':request.user,
     }
-    return render(request, 'accounts/settings.html', context)
+    return render(request, 'accounts/user-settings.html', context)
