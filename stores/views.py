@@ -3,7 +3,7 @@ from django.contrib.auth.decorators import login_required
 from django.shortcuts import get_object_or_404, redirect, render
 
 from transactions.models import Order, OrderItem
-from .models import BusinessType, Store, Product, Service, Review
+from .models import BusinessType, Category, Store, Product, Service, Review
 
 business_types = BusinessType.objects.all()
 
@@ -15,6 +15,69 @@ def stores_list(request):
   }
   return render(request, 'stores/store_list.html', context)
 
+def all_services(request):
+  services = Service.objects.filter(
+      store__status="active",
+      is_available=True,
+  ).select_related("store", "category").order_by(
+      "-is_featured",
+      "-store__rating_average",
+      "store__name",
+      "name",
+  )
+
+  selected_category = request.GET.get("category", "").strip()
+  if selected_category:
+      services = services.filter(category__slug=selected_category)
+
+  categories = (
+      Category.objects.filter(
+          services__store__status="active",
+          services__is_available=True,
+      )
+      .distinct()
+      .order_by("name")
+  )
+
+  context = {
+      'services': services,
+      'categories': categories,
+      'selected_category': selected_category,
+      'business_types': business_types,
+  }
+  return render(request, 'stores/service_list.html', context)
+
+def all_products(request):
+  products = Product.objects.filter(
+      store__status="active",
+      is_available=True,
+  ).select_related("store", "category").order_by(
+      "-is_featured",
+      "-store__rating_average",
+      "store__name",
+      "name",
+  )
+
+  selected_category = request.GET.get("category", "").strip()
+  if selected_category:
+      products = products.filter(category__slug=selected_category)
+
+  categories = (
+      Category.objects.filter(
+          products__store__status="active",
+          products__is_available=True,
+      )
+      .distinct()
+      .order_by("name")
+  )
+
+  context = {
+      'products': products,
+      'categories': categories,
+      'selected_category': selected_category,
+      'business_types': business_types,
+  }
+  return render(request, 'stores/product_list.html', context)
 
 def store(request, slug):
   filtered_store = Store.objects.filter(slug=slug).first()

@@ -2,8 +2,6 @@
 {% load static %}
 
 {% block title %}Marketplace | The Spotlight{% endblock %}
-
-
 {% block content %}
 
 <!-- 1. Promotional advertisements -->
@@ -162,6 +160,12 @@
             ›
         </button>
 
+    </div>
+    <!-- View all stores -->
+    <div class="text-center mt-4">
+        <a href="{% url 'store:store-list' %}" class="btn btn-outline-spotlight">
+            View All Stores
+        </a>
     </div>
 </section>
 
@@ -357,6 +361,12 @@
                     {% endfor %}
 
                 </div>
+
+                <div class="text-center mt-4">
+                    <a href="{% url 'store:store-products-list' %}" class="btn btn-outline-spotlight">
+                        View All Products
+                    </a>
+                </div>
             </section>
 
             <section id="services-section" class="mb-5 reveal-section">
@@ -434,6 +444,11 @@
                         </div>
                     {% endfor %}
 
+                </div>
+                <div class="text-center mt-4">
+                    <a href="{% url 'store:store-services-list' %}" class="btn btn-outline-spotlight">
+                        View All Services
+                    </a>
                 </div>
             </section>
 
