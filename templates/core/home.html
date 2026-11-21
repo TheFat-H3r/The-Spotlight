@@ -423,11 +423,24 @@
                                     <p class="fw-bold text-black mt-2">
                                         Starting from MUR {{ service.starting_price }}
                                     </p>
-
-                                    <a href="{% url 'store:service-detail' slug=service.slug|default:'#' %}"
-                                       class="btn btn-spotlight btn-sm w-100">
-                                        View Service
-                                    </a>
+                                    
+                                    <div class="d-flex gap-2 mt-3">
+                                        <button type="button"
+                                                class="btn btn-outline-spotlight btn-sm flex-fill quick-view-button"
+                                                data-name="{{ service.name|escape }}"
+                                                data-description="{{ service.description|default:''|escape }}"
+                                                data-price="Starting from MUR {{ service.starting_price }}"
+                                                data-image="{% if service.image %}{{ service.image.url }}{% endif %}"
+                                                data-url="{% url 'store:service-detail' slug=service.slug|default:'#' %}">
+                                            Details
+                                        </button>
+                                        <!-- View Service Button and booking link -->
+                                        
+                                        <a href="{% url 'transactions:create-booking' store_slug=service.store.slug service_slug=service.slug %}"
+                                        class="btn btn-spotlight btn-sm w-100">
+                                            Book Now
+                                        </a>
+                                    </div>
                                 </div>
 
                             </article>

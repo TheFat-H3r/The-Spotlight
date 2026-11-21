@@ -1,12 +1,12 @@
-{% extends "base.html" %}
+{% extends "core/base.html" %}
 {% load static %}
 
 {% block title %}{{ service.name }} | The Spotlight{% endblock %}
 
 {% block content %}
 <section class="container py-5">
-    <a href="{% url 'marketplace:home' %}" class="text-cyan">
-        ← Back to Marketplace
+    <a href="{% url 'store:store-services-list' %}" class="text-cyan">
+        ← Back to All Services
     </a>
 
     <div class="row g-5 mt-3">
@@ -32,19 +32,20 @@
 
             <p>
                 <strong>Provider:</strong>
-                <a href="{% url 'marketplace:store_detail' service.store.slug %}">
+                <a href="{% url 'store:store-profile' service.store.slug %}">
                     {{ service.store.name }}
                 </a>
             </p>
 
-            {% if service.pricing_tier %}
-                <p><strong>Pricing:</strong> {{ service.pricing_tier }}</p>
+            {% if service.starting_price %}
+                <p><strong>Pricing:</strong> MUR {{ service.starting_price }}</p>
             {% endif %}
 
-            <!-- Connect to the actual booking application -->
-            <button class="btn btn-spotlight" type="button" disabled>
-                Booking integration pending
-            </button>
+            <!-- Create booking -->
+            <a href="{% url 'transactions:create-booking' store_slug=service.store.slug service_slug=service.slug %}"
+               class="btn btn-spotlight">
+                Book Now
+            </a>
         </div>
     </div>
 </section>

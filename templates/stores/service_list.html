@@ -5,9 +5,9 @@
 
 {% block content %}
 <section class="container py-5">
-    <a href="{% url 'core:home' %}" class="text-cyan text-decoration-none">
+    <a href="{% url 'store:store-services-list' %}" class="text-cyan text-decoration-none">
         <i class="bi bi-arrow-left" aria-hidden="true"></i>
-        Back to Marketplace
+        Back to All Services
     </a>
 
     <div class="section-heading mt-4 mb-4">
@@ -78,10 +78,16 @@
                             Starting from MUR {{ service.starting_price }}
                         </p>
 
-                        <a href="{% url 'store:service-detail' service.slug %}"
-                           class="btn btn-spotlight btn-sm w-100">
-                            View Service
-                        </a>
+                        <div class="d-grid mt-3">
+                            <a href="{% url 'store:service-detail' service.slug %}"
+                            class="btn btn-outline-spotlight btn-sm w-100 mt-2">
+                                View Service
+                            </a>
+                            <a href="{% url 'transactions:create-booking' store_slug=service.store.slug service_slug=service.slug %}"
+                               class="btn btn-spotlight btn-sm w-100 mt-2">
+                                Book Now
+                            </a>
+                        </div>
                     </div>
                 </article>
             </div>

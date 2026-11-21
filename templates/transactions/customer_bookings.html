@@ -1,0 +1,107 @@
+{% extends "core/base.html" %}
+{% load static %}
+
+{% block title %}My Bookings | The Spotlight{% endblock %}
+
+{% block content %}
+<main class="container py-5">
+    <div class="mb-4">
+        <span class="section-label">BOOKING TRACKER</span>
+        <h1 class="h3 fw-bold text-black">My Bookings</h1>
+        <p class="text-muted mb-0">
+            Check appointment details and the latest provider response.
+        </p>
+    </div>
+
+    {% if tracking_reference and not bookings %}
+        <div class="alert alert-warning" role="status">
+            No booking with reference <strong>{{ tracking_reference }}</strong> was found on your account.
+        </div>
+    {% endif %}
+
+    <div class="row g-4">
+        {% for booking in bookings %}
+            <div class="col-12">
+                <article class="card border-0 shadow-sm overflow-hidden">
+                    <div class="card-header bg-dark text-white d-flex flex-wrap justify-content-between align-items-center gap-2 py-3">
+                        <div>
+                            <span class="text-warning fw-bold">{{ booking.reference }}</span>
+                            <span class="mx-2 text-white-50">·</span>
+                            <span class="fw-semibold">{{ booking.service.name }}</span>
+                        </div>
+                        <span class="badge bg-warning text-dark">{{ booking.get_status_display }}</span>
+                    </div>
+
+                    <div class="card-body">
+                        <div class="row g-3 align-items-center">
+                            <div class="col-sm-auto">
+                                {% if booking.service.image %}
+                                    <img src="{{ booking.service.image.url }}"
+                                         alt="{{ booking.service.name }}"
+                                         class="rounded"
+                                         style="width: 96px; height: 72px; object-fit: cover;">
+                                {% else %}
+                                    <div class="bg-light rounded d-flex align-items-center justify-content-center"
+                                         style="width: 96px; height: 72px;">
+                                        <i class="bi bi-calendar-check fs-3 text-muted" aria-hidden="true"></i>
+                                    </div>
+                                {% endif %}
+                            </div>
+
+                            <div class="col">
+                                <div class="row g-3 small">
+                                    <div class="col-md-6">
+                                        <div class="text-muted">Provider</div>
+                                        <div class="d-flex align-items-center gap-2">
+                                            {% if booking.service.store.logo %}
+                                                <img src="{{ booking.service.store.logo.url }}"
+                                                     alt=""
+                                                     class="rounded-circle"
+                                                     style="width: 28px; height: 28px; object-fit: cover;">
+                                            {% endif %}
+                                            <a href="{% url 'store:store-profile' booking.service.store.slug %}"
+                                               class="fw-semibold text-dark text-decoration-none">
+                                                {{ booking.service.store.name }}
+                                            </a>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="text-muted">Appointment</div>
+                                        <div class="fw-semibold text-dark">
+                                            {{ booking.start_at|date:"D, d M Y" }},
+                                            {{ booking.start_at|date:"H:i" }}–{{ booking.end_at|date:"H:i" }}
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="text-muted">People</div>
+                                        <div class="fw-semibold text-dark">{{ booking.seats }}</div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="text-muted">Estimated total</div>
+                                        <div class="fw-semibold text-dark">MUR {{ booking.total_price }}</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        {% if booking.status_reason %}
+                            <div class="alert alert-secondary small mt-3 mb-0">
+                                {{ booking.status_reason }}
+                            </div>
+                        {% endif %}
+                    </div>
+                </article>
+            </div>
+        {% empty %}
+            {% if not tracking_reference %}
+                <div class="col-12">
+                    <div class="empty-state p-4 text-center">
+                        <h2 class="h5 text-black">No bookings yet</h2>
+                        <p class="text-muted mb-0">Your service bookings will appear here.</p>
+                    </div>
+                </div>
+            {% endif %}
+        {% endfor %}
+    </div>
+</main>
+{% endblock %}

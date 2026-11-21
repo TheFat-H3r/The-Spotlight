@@ -1,5 +1,6 @@
 from collections import defaultdict
 from decimal import Decimal
+import logging
 import json
 import uuid
 
@@ -7,6 +8,7 @@ from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.mail import send_mail
+from django.core.exceptions import ValidationError
 from urllib.parse import quote
 from django.conf import settings
 from django.core.mail import EmailMultiAlternatives
@@ -15,13 +17,14 @@ from django.urls import reverse
 from django.utils.html import strip_tags
 from django.db import transaction
 from django.db.models import F
-from django.forms import ValidationError
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.http import require_POST
 from accounts.models import User
-from stores.models import Product, Store
-from .models import Booking, Cart, CartItem, Order, OrderItem, OrderStatusHistory, VendorNotification
+from stores.models import Product, Service, Store
+from .models import AvailabilitySlot, Booking, Cart, CartItem, Order, OrderItem, OrderStatusHistory, VendorNotification
+
+logger = logging.getLogger(__name__)
 
 
 # ==========================================
@@ -525,57 +528,180 @@ def customer_orders_list(request):
 
 @login_required
 def customer_bookings_list(request):
-  
-  my_bookings = Booking.objects.filter(user=request.user).order_by('-booking_date')
-  context = {'bookings': my_bookings}
-  return render(request, 'transactions/customer_bookings.html', context)
+    tracking_reference = request.GET.get("ref", "").strip()
+    bookings = Booking.objects.filter(customer=request.user)
+    if tracking_reference:
+        bookings = bookings.filter(reference=tracking_reference)
+
+    my_bookings = (
+        bookings
+        .select_related("service", "service__store", "service__store__owner", "slot")
+        .order_by("-created_at")
+    )
+    return render(
+        request,
+        "transactions/customer_bookings.html",
+        {"bookings": my_bookings, "tracking_reference": tracking_reference},
+    )
+
 
 
 @login_required
-def create_order(request, store_slug):
-  
-  store = Store.objects.filter(slug=store_slug, status=Store.Status.ACTIVE).first()
-  if not store or not store.accepts_orders:
-    return redirect('stores-home')
+def create_booking(request, store_slug, service_slug):
+    store = Store.objects.filter(
+        slug=store_slug,
+        status=Store.Status.ACTIVE,
+    ).first()
+    if not store or not store.accepts_bookings:
+        return redirect("stores-home")
 
-  if request.method == 'POST':
-    # Extract order payload / amount from form submission
-    total_amount = request.POST.get('total_amount', 0.00)
-    
-    Order.objects.create(
-        user=request.user,
+    service = Service.objects.filter(
+        slug=service_slug,
         store=store,
-        total_amount=total_amount,
-        status='Pending'
+        is_available=True,
+    ).first()
+    if not service:
+        return redirect("stores-home")
+
+    slots = AvailabilitySlot.objects.all().filter(
+        service=service,
+        is_active=True,
+    ).order_by("start_at")
+    default_phone = getattr(request.user, "phone", "")
+    form_data = {
+        "customer_phone": default_phone,
+        "seats": 1,
+        "customer_note": "",
+        "slot_id": "",
+    }
+    form_error = ""
+
+    if request.method == "POST":
+        form_data.update({
+            "customer_phone": request.POST.get("customer_phone", "").strip(),
+            "seats": request.POST.get("seats", "1").strip(),
+            "customer_note": request.POST.get("customer_note", "").strip(),
+            "slot_id": request.POST.get("slot_id", "").strip(),
+        })
+
+        try:
+            seats = int(form_data["seats"])
+        except (ValueError, TypeError):
+            seats = 0
+
+        if not form_data["customer_phone"]:
+            form_error = "Enter a phone number so the provider can contact you."
+        elif seats < 1:
+            form_error = "Choose at least one seat."
+        elif not form_data["slot_id"].isdigit():
+            form_error = "Choose an available appointment time."
+        else:
+            slot = slots.filter(pk=form_data["slot_id"]).first()
+            if not slot:
+                form_error = "That time is no longer available. Please choose another."
+            else:
+                try:
+                    with transaction.atomic():
+                        booking = slot.book(
+                            customer=request.user,
+                            seats=seats,
+                            note=form_data["customer_note"],
+                            phone=form_data["customer_phone"],
+                        )
+                        VendorNotification.objects.create(
+                            store=store,
+                            title=f"New booking {booking.reference}",
+                            message=(
+                                f"New booking request from {request.user.get_full_name() or request.user.email}\n"
+                                f"Service: {service.name}\n"
+                                f"Date and time: {booking.start_at:%a, %d %b %Y, %H:%M}\n"
+                                f"People: {booking.seats}\n"
+                                f"Phone/WhatsApp: {booking.customer_phone}\n"
+                                f"Customer email: {request.user.email}\n"
+                                f"Customer note: {booking.customer_note or 'None'}\n"
+                                f"Estimated total: MUR {booking.total_price}"
+                            ),
+                        )
+                except ValidationError as error:
+                    form_error = " ".join(error.messages)
+                else:
+                    _send_booking_notifications(request, booking)
+                    messages.success(request, "Your booking request has been submitted.")
+                    return render(
+                        request,
+                        "transactions/booking_success.html",
+                        {"booking": booking},
+                    )
+
+    context = {
+        "store": store,
+        "service": service,
+        "slots": slots,
+        "default_name": request.user.get_full_name() or request.user.email,
+        "default_email": request.user.email,
+        "form_data": form_data,
+        "form_error": form_error,
+    }
+    return render(request, "transactions/create_booking.html", context)
+
+
+def _send_booking_notifications(request, booking):
+    store = booking.service.store
+    vendor_email = store.contact_email or store.owner.email
+    sender = getattr(settings, "DEFAULT_FROM_EMAIL", "The Spotlight <noreply@example.com>")
+    base_url = request.build_absolute_uri("/").rstrip("/")
+    store_logo_url = _abs_url(base_url, store.logo.url) if store.logo else ""
+    service_image_url = (
+        _abs_url(base_url, booking.service.image.url) if booking.service.image else ""
     )
-    return redirect('customer-orders')
+    common_context = {
+        "booking": booking,
+        "customer": booking.customer,
+        "service": booking.service,
+        "store": store,
+        "store_logo_url": store_logo_url,
+        "service_image_url": service_image_url,
+        "store_url": _abs_url(
+            base_url,
+            reverse("store:store-profile", kwargs={"slug": store.slug}),
+        ),
+        "global_track_url": _abs_url(
+            base_url,
+            reverse("transactions:customer-bookings"),
+        ) + f"?ref={booking.reference}",
+    }
 
-  context = {'store': store}
-  return render(request, 'transactions/create_order.html', context)
+    email_jobs = [
+        (
+            booking.customer.email,
+            f"[The Spotlight] Booking request received — {booking.reference}",
+            "emails/customer_booking_confirmation.html",
+            common_context,
+        ),
+        (
+            vendor_email,
+            f"[The Spotlight] New booking request — {booking.reference}",
+            "emails/vendor_new_booking.html",
+            common_context,
+        ),
+    ]
 
-
-@login_required
-def create_booking(request, store_slug):
-  
-  store = Store.objects.filter(slug=store_slug, status=Store.Status.ACTIVE).first()
-  if not store or not store.accepts_bookings:
-    return redirect('stores-home')
-
-  if request.method == 'POST':
-    service_id = request.POST.get('service_id')
-    booking_date = request.POST.get('booking_date')
-
-    Booking.objects.create(
-        user=request.user,
-        store=store,
-        service_id=service_id,
-        booking_date=booking_date,
-        status='Pending'
-    )
-    return redirect('customer-bookings')
-
-  context = {'store': store}
-  return render(request, 'transactions/create_booking.html', context)
+    for recipient, subject, template_name, context in email_jobs:
+        if not recipient:
+            continue
+        html_body = render_to_string(template_name, context)
+        message = EmailMultiAlternatives(
+            subject=subject,
+            body=strip_tags(html_body),
+            from_email=sender,
+            to=[recipient],
+        )
+        message.attach_alternative(html_body, "text/html")
+        if not message.send(fail_silently=True):
+            logger.warning(
+                "Could not send booking notification email for booking %s.",
+                booking.reference,
+            )
 
 
 # ==========================================
