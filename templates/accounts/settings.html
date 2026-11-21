@@ -1,0 +1,445 @@
+
+{% extends "core/base.html" %}
+{% load static %}
+
+{% block title %}Account Settings | The Spotlight{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/settings.css' %}">
+{% endblock %}
+
+{% block content %}
+
+<main class="settings-page" id="settings-page">
+
+    <!-- Page heading -->
+    <header class="settings-heading">
+        <div>
+            <span class="settings-eyebrow">YOUR ACCOUNT</span>
+            <h1>Account Settings</h1>
+            <p>Manage your profile, security and personal preferences.</p>
+        </div>
+
+        <div class="settings-account-status">
+            <span class="status-indicator"></span>
+            Account settings
+        </div>
+    </header>
+
+    <div class="settings-layout">
+
+        <!-- Sidebar -->
+        <aside class="settings-sidebar">
+
+            <div class="settings-user-card">
+                <div class="settings-avatar">
+                    {% if user.first_name %}
+                        {{ user.first_name|first|upper }}
+                    {% else %}
+                        {{ user.username|first|upper }}
+                    {% endif %}
+                </div>
+
+                <div class="settings-user-details">
+                    <strong>
+                        {% if user.get_full_name %}
+                            {{ user.get_full_name }}
+                        {% else %}
+                            {{ user.username }}
+                        {% endif %}
+                    </strong>
+                    <span>{{ user.email }}</span>
+                </div>
+            </div>
+
+            <nav class="settings-navigation">
+
+                <span class="settings-nav-label">ACCOUNT</span>
+
+                <a href="#profile" class="settings-nav-link active">
+                    <span class="settings-nav-icon">♙</span>
+                    <span>Profile information</span>
+                </a>
+
+                <a href="#security" class="settings-nav-link">
+                    <span class="settings-nav-icon">♧</span>
+                    <span>Security</span>
+                </a>
+
+                <a href="#notifications" class="settings-nav-link">
+                    <span class="settings-nav-icon">♢</span>
+                    <span>Notifications</span>
+                </a>
+
+                <span class="settings-nav-label">PREFERENCES</span>
+
+                <a href="#preferences" class="settings-nav-link">
+                    <span class="settings-nav-icon">⚙</span>
+                    <span>General preferences</span>
+                </a>
+
+                <a href="#privacy" class="settings-nav-link">
+                    <span class="settings-nav-icon">◈</span>
+                    <span>Privacy</span>
+                </a>
+
+                <span class="settings-nav-label">ACCOUNT MANAGEMENT</span>
+
+                <a href="#account-management"
+                   class="settings-nav-link danger-link">
+                    <span class="settings-nav-icon">⌫</span>
+                    <span>Delete account</span>
+                </a>
+
+            </nav>
+
+            <div class="settings-help">
+                <div class="settings-help-icon">?</div>
+                <strong>Need assistance?</strong>
+                <p>Our support team is here to help you.</p>
+                <a href="#">Contact Support <span>→</span></a>
+            </div>
+
+        </aside>
+
+        <!-- Main content -->
+        <div class="settings-content">
+
+            <!-- Profile information -->
+            <section class="settings-section" id="profile">
+
+                <div class="settings-section-heading">
+                    <div>
+                        <span class="section-number">01 / ACCOUNT</span>
+                        <h2>Profile Information</h2>
+                        <p>Update the personal information associated with your account.</p>
+                    </div>
+                </div>
+
+                <div class="settings-profile-picture">
+                    <div class="settings-avatar large">
+                        {% if user.first_name %}
+                            {{ user.first_name|first|upper }}
+                        {% else %}
+                            {{ user.username|first|upper }}
+                        {% endif %}
+                    </div>
+
+                    <div class="profile-picture-info">
+                        <strong>Your profile picture</strong>
+                        <p>Choose a picture that represents you.</p>
+                    </div>
+
+                    <button type="button" class="settings-secondary-button">
+                        Change picture
+                    </button>
+                </div>
+
+                <form class="settings-form" onsubmit="return false;">
+
+                    <div class="settings-form-grid">
+
+                        <div class="settings-field">
+                            <label for="first_name">First name</label>
+                            <input type="text"
+                                   id="first_name"
+                                   name="first_name"
+                                   value="{{ user.first_name|default:'' }}"
+                                   placeholder="Enter your first name">
+                        </div>
+
+                        <div class="settings-field">
+                            <label for="last_name">Last name</label>
+                            <input type="text"
+                                   id="last_name"
+                                   name="last_name"
+                                   value="{{ user.last_name|default:'' }}"
+                                   placeholder="Enter your last name">
+                        </div>
+
+                        <div class="settings-field">
+                            <label for="username">Username</label>
+                            <input type="text"
+                                   id="username"
+                                   name="username"
+                                   value="{{ user.username }}"
+                                   placeholder="Your username">
+                        </div>
+
+                        <div class="settings-field">
+                            <label for="email">Email address</label>
+                            <input type="email"
+                                   id="email"
+                                   name="email"
+                                   value="{{ user.email }}"
+                                   placeholder="Enter your email">
+                        </div>
+
+                        <div class="settings-field">
+                            <label for="phone">Phone number</label>
+                            <input type="tel"
+                                   id="phone"
+                                   name="phone"
+                                   placeholder="+230 5XXXXXXX">
+                        </div>
+
+                        <div class="settings-field">
+                            <label for="account_type">Account type</label>
+                            <input type="text"
+                                   id="account_type"
+                                   value="Customer / Vendor"
+                                   disabled>
+                        </div>
+
+                    </div>
+
+                    <div class="settings-form-actions">
+                        <button type="button" class="settings-primary-button">
+                            Save Changes <span>→</span>
+                        </button>
+                    </div>
+
+                </form>
+
+            </section>
+
+            <!-- Security -->
+            <section class="settings-section" id="security">
+
+                <div class="settings-section-heading">
+                    <div>
+                        <span class="section-number">02 / PROTECTION</span>
+                        <h2>Security</h2>
+                        <p>Keep your account protected and manage how you sign in.</p>
+                    </div>
+                </div>
+
+                <div class="settings-option">
+                    <div class="settings-option-icon">⌑</div>
+                    <div class="settings-option-info">
+                        <strong>Password</strong>
+                        <p>Change your password regularly to keep your account secure.</p>
+                    </div>
+                    <button type="button" class="settings-secondary-button">
+                        Change Password
+                    </button>
+                </div>
+
+                <div class="settings-option">
+                    <div class="settings-option-icon">♙</div>
+                    <div class="settings-option-info">
+                        <strong>Two-factor authentication</strong>
+                        <p>Add an additional verification step when signing in.</p>
+                    </div>
+                    <span class="settings-coming-soon">Coming later</span>
+                </div>
+
+                <div class="settings-option">
+                    <div class="settings-option-icon">▣</div>
+                    <div class="settings-option-info">
+                        <strong>Active sessions</strong>
+                        <p>Review devices and browsers currently signed into your account.</p>
+                    </div>
+                    <button type="button" class="settings-secondary-button">
+                        View Sessions
+                    </button>
+                </div>
+
+            </section>
+
+            <!-- Notifications -->
+            <section class="settings-section" id="notifications">
+
+                <div class="settings-section-heading">
+                    <div>
+                        <span class="section-number">03 / UPDATES</span>
+                        <h2>Notifications</h2>
+                        <p>Choose which updates you would like to receive.</p>
+                    </div>
+                </div>
+
+                <div class="settings-toggle-list">
+
+                    <div class="settings-toggle-item">
+                        <div>
+                            <strong>Order updates</strong>
+                            <p>Receive updates about orders and their status.</p>
+                        </div>
+                        <label class="settings-switch">
+                            <input type="checkbox" name="order_notifications" checked>
+                            <span class="settings-switch-slider"></span>
+                        </label>
+                    </div>
+
+                    <div class="settings-toggle-item">
+                        <div>
+                            <strong>Booking updates</strong>
+                            <p>Receive confirmations, reminders and booking changes.</p>
+                        </div>
+                        <label class="settings-switch">
+                            <input type="checkbox" name="booking_notifications" checked>
+                            <span class="settings-switch-slider"></span>
+                        </label>
+                    </div>
+
+                    <div class="settings-toggle-item">
+                        <div>
+                            <strong>Account and security alerts</strong>
+                            <p>Receive important account and security notifications.</p>
+                        </div>
+                        <label class="settings-switch">
+                            <input type="checkbox" name="security_notifications" checked>
+                            <span class="settings-switch-slider"></span>
+                        </label>
+                    </div>
+
+                    <div class="settings-toggle-item">
+                        <div>
+                            <strong>Promotional updates</strong>
+                            <p>Hear about offers, promotions and marketplace news.</p>
+                        </div>
+                        <label class="settings-switch">
+                            <input type="checkbox" name="marketing_notifications">
+                            <span class="settings-switch-slider"></span>
+                        </label>
+                    </div>
+
+                </div>
+
+                <div class="settings-form-actions">
+                    <button type="button" class="settings-primary-button">
+                        Save Preferences <span>→</span>
+                    </button>
+                </div>
+
+            </section>
+
+            <!-- General preferences -->
+            <section class="settings-section" id="preferences">
+
+                <div class="settings-section-heading">
+                    <div>
+                        <span class="section-number">04 / CUSTOMISATION</span>
+                        <h2>General Preferences</h2>
+                        <p>Customise how The Spotlight looks and behaves.</p>
+                    </div>
+                </div>
+
+                <div class="settings-form-grid">
+
+                    <div class="settings-field">
+                        <label for="language">Language</label>
+                        <select id="language" name="language">
+                            <option value="en">English</option>
+                            <option value="fr">French</option>
+                        </select>
+                    </div>
+
+                    <div class="settings-field">
+                        <label for="currency">Preferred currency</label>
+                        <select id="currency" name="currency">
+                            <option value="MUR">Mauritian Rupee (MUR)</option>
+                            <option value="USD">US Dollar (USD)</option>
+                            <option value="EUR">Euro (EUR)</option>
+                        </select>
+                    </div>
+
+                    <div class="settings-field">
+                        <label for="theme">Appearance</label>
+                        <select id="theme" name="theme">
+                            <option value="system">Use system preference</option>
+                            <option value="light">Light mode</option>
+                            <option value="dark">Dark mode</option>
+                        </select>
+                    </div>
+
+                </div>
+
+                <div class="settings-form-actions">
+                    <button type="button" class="settings-primary-button">
+                        Save Preferences <span>→</span>
+                    </button>
+                </div>
+
+            </section>
+
+            <!-- Privacy -->
+            <section class="settings-section" id="privacy">
+
+                <div class="settings-section-heading">
+                    <div>
+                        <span class="section-number">05 / VISIBILITY</span>
+                        <h2>Privacy</h2>
+                        <p>Manage how your information is displayed and used.</p>
+                    </div>
+                </div>
+
+                <div class="settings-toggle-list">
+
+                    <div class="settings-toggle-item">
+                        <div>
+                            <strong>Public profile</strong>
+                            <p>Allow other marketplace users to view your public profile.</p>
+                        </div>
+                        <label class="settings-switch">
+                            <input type="checkbox" name="public_profile" checked>
+                            <span class="settings-switch-slider"></span>
+                        </label>
+                    </div>
+
+                    <div class="settings-toggle-item">
+                        <div>
+                            <strong>Personalised recommendations</strong>
+                            <p>Allow the marketplace to use your activity to suggest relevant products and services.</p>
+                        </div>
+                        <label class="settings-switch">
+                            <input type="checkbox" name="personalised_recommendations" checked>
+                            <span class="settings-switch-slider"></span>
+                        </label>
+                    </div>
+
+                </div>
+
+            </section>
+
+            <!-- Account management -->
+            <section class="settings-section settings-danger-section"
+                     id="account-management">
+
+                <div class="settings-section-heading">
+                    <div>
+                        <span class="section-number">06 / ACCOUNT MANAGEMENT</span>
+                        <h2>Danger Zone</h2>
+                        <p>Manage the future of your Spotlight account.</p>
+                    </div>
+                </div>
+
+                <div class="settings-danger-card">
+                    <div class="settings-danger-icon">!</div>
+
+                    <div class="settings-danger-info">
+                        <strong>Delete your account</strong>
+                        <p>
+                            Permanently delete your account and associated
+                            information, subject to applicable retention requirements.
+                        </p>
+                    </div>
+
+                    <button type="button" class="settings-danger-button">
+                        Delete Account
+                    </button>
+                </div>
+
+            </section>
+
+            <p class="settings-footer-note">
+                THE SPOTLIGHT <span>·</span> ACCOUNT SETTINGS
+            </p>
+
+        </div>
+
+    </div>
+
+</main>
+
+{% endblock %}
