@@ -1,5 +1,5 @@
 from django.urls import path
-from .views import all_products, all_services, store_create, store_dashboard, store_delete, store_toggle_orders, store_update, store, product_detail, service_detail, stores_list, submit_store_review
+from .views import all_products, all_services, product_info, store_create, store_dashboard, store_delete, store_toggle_orders, store_update, store, product_detail, service_detail, stores_list, submit_store_review
 
 app_name = "store"
 urlpatterns = [
@@ -12,6 +12,7 @@ urlpatterns = [
     path("<slug:slug>/review/", submit_store_review, name="submit-review"),
     path('product/<slug:slug>/', product_detail, name='product-detail'),
     path('service/<slug:slug>/', service_detail, name='service-detail'),
+    path('product/<slug:slug>/info/', product_info, name='product-info'),
 
     # Vendor management CRUD routes
     path('dashboard/', store_dashboard, name='store-dashboard'),
