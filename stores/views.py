@@ -8,9 +8,28 @@ from .models import BusinessType, Category, Store, Product, Service, Review
 business_types = BusinessType.objects.all()
 
 def stores_list(request):
-  stores = Store.objects.filter(status="active").order_by("-rating_average", "name")
+  stores = Store.objects.filter(status="active").select_related("business_type").prefetch_related("categories").order_by(
+      "-is_featured",
+      "-rating_average",
+      "name",
+  )
+
+  selected_category = request.GET.get("category", "").strip()
+  if selected_category:
+      stores = stores.filter(categories__slug=selected_category)
+
+  categories = (
+      Category.objects.filter(
+          stores__status="active",
+      )
+      .distinct()
+      .order_by("name")
+  )
+
   context = {
       'stores': stores,
+      'categories': categories,
+      'selected_category': selected_category,
       'business_types': business_types,
   }
   return render(request, 'stores/store_list.html', context)
