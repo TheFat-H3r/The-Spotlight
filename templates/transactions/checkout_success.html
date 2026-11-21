@@ -1,0 +1,121 @@
+{% extends "core/base.html" %}
+{% load static %}
+
+{% block title %}Order Confirmed — The Spotlight{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+  <div class="row justify-content-center">
+    <div class="col-lg-8">
+      <!-- Confirmation Header -->
+      <div class="card border-0 shadow-sm text-center p-4 p-md-5 mb-4">
+        <div class="card-body">
+          <div class="rounded-circle bg-dark text-warning d-inline-flex align-items-center justify-content-center mb-3"
+               style="width: 68px; height: 68px;">
+            <i class="bi bi-check-lg fs-1"></i>
+          </div>
+          <h1 class="h3 fw-bold mb-2">Order Placed Successfully!</h1>
+          <p class="text-muted mb-1">
+            We've sent a confirmation email to <strong>{{ request.user.email }}</strong> and notified the store(s) in their portal.
+          </p>
+          <p class="small text-muted mb-0">
+            Checkout Reference: <code class="text-dark">{{ checkout_reference }}</code>
+          </p>
+        </div>
+      </div>
+
+      <!-- Individual Store Orders & Business Contact Details -->
+      <h2 class="h6 fw-bold text-uppercase text-muted mb-3">Orders & Store Details</h2>
+      {% for order in orders %}
+        <div class="card border-0 shadow-sm mb-4">
+          <div class="card-header bg-dark text-white d-flex flex-wrap justify-content-between align-items-center py-3 gap-2">
+            <div>
+              <span class="text-warning fw-bold">{{ order.order_number }}</span>
+              <span class="mx-2 text-white-50">•</span>
+              <span class="fw-semibold">{{ order.store.name }}</span>
+            </div>
+            <span class="badge bg-warning text-dark">{{ order.get_status_display }}</span>
+          </div>
+
+          <div class="card-body">
+            <!-- Ordered Items -->
+            <ul class="list-unstyled small mb-3 d-grid gap-1">
+              {% for item in order.items.all %}
+                <li class="d-flex justify-content-between">
+                  <span>{{ item.quantity }} × {{ item.display_name }}</span>
+                  <span class="fw-semibold">MUR {{ item.line_total }}</span>
+                </li>
+              {% endfor %}
+            </ul>
+
+            <div class="border-top border-bottom py-2 mb-3 d-flex justify-content-between align-items-center small">
+              <span class="text-muted">
+                {{ order.get_fulfilment_method_display }} • {{ order.get_payment_method_display }}
+              </span>
+              <span class="fw-bold fs-6">Total: MUR {{ order.total }}</span>
+            </div>
+
+            <!-- Store Contact Details -->
+            <div class="bg-light rounded p-3 mb-3">
+              <div class="small fw-bold text-uppercase text-muted mb-2">
+                <i class="bi bi-shop me-1 text-dark"></i>{{ order.store.name }} — Contact & Location
+              </div>
+              <div class="row g-2 small">
+                <div class="col-md-4">
+                  <div class="text-muted">Email</div>
+                  {% with store_email=order.store.email|default:order.store.owner.email %}
+                    {% if store_email %}
+                      <a href="mailto:{{ store_email }}" class="text-dark fw-semibold text-decoration-none text-break">
+                        <i class="bi bi-envelope me-1 text-warning"></i>{{ store_email }}
+                      </a>
+                    {% else %}
+                      <span class="text-muted">Not listed</span>
+                    {% endif %}
+                  {% endwith %}
+                </div>
+
+                <div class="col-md-4">
+                  <div class="text-muted">Phone / WhatsApp</div>
+                  {% if order.store.contact_phone %}
+                    <a href="tel:{{ order.store.contact_phone }}" class="text-dark fw-semibold text-decoration-none">
+                      <i class="bi bi-telephone me-1 text-warning"></i>{{ order.store.contact_phone }}
+                    </a>
+                  {% else %}
+                    <span class="text-muted">Not listed</span>
+                  {% endif %}
+                </div>
+
+                <div class="col-md-4">
+                  <div class="text-muted">Location</div>
+                  <span class="fw-semibold text-dark">
+                    <i class="bi bi-geo-alt me-1 text-warning"></i>{{ order.store.location|default:order.store.pickup_location|default:"Campus / On-demand" }}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Store Action Links: Visit Store & Give Feedback -->
+            <div class="d-flex flex-wrap gap-2">
+              <a href="{% url 'store:store-profile' order.store.slug %}"
+                 class="btn btn-dark btn-sm px-3">
+                <i class="bi bi-shop-window me-1 text-warning"></i>Visit Store
+              </a>
+              <a href="{% url 'store:submit-review' slug=order.store.slug %}"
+                 class="btn btn-outline-dark btn-sm px-3">
+                <i class="bi bi-star me-1"></i>Give Feedback
+              </a>
+            </div>
+          </div>
+        </div>
+      {% endfor %}
+
+      <!-- Bottom Navigation -->
+      <div class="d-flex flex-wrap justify-content-center gap-2 mt-4">
+        <a href="{% url 'core:home' %}" class="btn btn-spotlight px-4 fw-semibold">
+          <i class="bi bi-arrow-left me-1"></i>Back to Marketplace
+        </a>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

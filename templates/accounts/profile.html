@@ -34,14 +34,16 @@
         <div class="relative shrink-0">
           {% if user_obj.role == 'vendor' and vendor_profile and vendor_profile.logo %}
             <img src="{{ vendor_profile.logo.url }}" alt="{{ vendor_profile.business_name }}" class="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl object-cover border border-spotlight-border shadow-lg" />
+          {% elif user_obj.role == 'customer' or user_obj.role == 'admin' and user_obj.avatar %}
+            <img src="{{ user_obj.avatar.url }}" alt="{{ user_obj.name }}" class="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl object-cover border border-spotlight-border shadow-lg" />
           {% else %}
             <div class="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-gradient-to-br from-spotlight-cyan to-[#0077B6] flex items-center justify-center text-spotlight-bg font-extrabold text-2xl sm:text-3xl shadow-lg">
               {{ user_obj.full_name|default:user_obj.email|slice:":1"|upper }}
             </div>
           {% endif %}
 
-          {% if user_obj.is_email_verified %}
-            <span title="Email Verified" class="absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-spotlight-bg border border-spotlight-border flex items-center justify-center text-emerald-400 text-xs">
+          {% if user_obj.is_email_verified or user_obj.auth_provider == 'google' %}
+            <span title="Email Verified" class="absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-[#000000] border border-[#262626] flex items-center justify-center text-[#f7c18b] text-xs">
               <i class="fa-solid fa-circle-check"></i>
             </span>
           {% endif %}
@@ -57,7 +59,7 @@
             <span class="px-2.5 py-0.5 text-[11px] font-bold uppercase tracking-wider rounded-full 
               {% if user_obj.role == 'vendor' %}bg-amber-500/15 text-amber-400 border border-amber-500/30
               {% elif user_obj.role == 'admin' %}bg-purple-500/15 text-purple-400 border border-purple-500/30
-              {% else %}bg-spotlight-cyan/15 text-spotlight-cyan border border-spotlight-cyan/30{% endif %}">
+              {% else %}bg-spotlight-cyan/15 text-[#f7c18b] border border-spotlight-cyan/30{% endif %}">
               {{ user_obj.get_role_display|default:user_obj.role }}
             </span>
 
@@ -88,7 +90,7 @@
       <!-- Mode Toggle Button -->
       <div class="flex items-center space-x-3 self-start sm:self-center">
         <button type="button" id="toggle-edit-btn" onclick="toggleProfileMode()" class="px-4 py-2.5 rounded-xl bg-spotlight-bg hover:bg-slate-800 border border-spotlight-border text-xs sm:text-sm font-semibold text-white transition-all flex items-center space-x-2 cursor-pointer">
-          <i id="toggle-icon" class="fa-solid {% if edit_mode %}fa-xmark text-slate-400{% else %}fa-pen-to-square text-spotlight-cyan{% endif %}"></i>
+          <i id="toggle-icon" class="fa-solid {% if edit_mode %}fa-xmark text-slate-400{% else %}fa-pen-to-square text-[#f7c18b]{% endif %}"></i>
           <span id="toggle-text">{% if edit_mode %}Cancel Editing{% else %}Edit Profile{% endif %}</span>
         </button>
       </div>
@@ -103,7 +105,7 @@
     <!-- General Information Card -->
     <div class="bg-spotlight-card/90 backdrop-blur-xl border border-spotlight-border rounded-3xl p-6 sm:p-8 shadow-xl">
       <h2 class="text-base sm:text-lg font-bold text-white mb-5 flex items-center space-x-2">
-        <i class="fa-regular fa-id-card text-spotlight-cyan"></i>
+        <i class="fa-regular fa-id-card text-[#f7c18b]"></i>
         <span>Personal Information</span>
       </h2>
 
@@ -126,7 +128,7 @@
         <div class="p-4 rounded-2xl bg-spotlight-bg/60 border border-spotlight-border/60">
           <span class="block text-xs text-slate-500 mb-1">Verification Status</span>
           {% if user_obj.is_email_verified or user_obj.auth_provider == 'google' %}
-            <span class="inline-flex items-center space-x-1.5 text-emerald-400 font-semibold text-xs">
+            <span class="inline-flex items-center space-x-1.5 text-[#f7c18b] font-semibold text-xs">
               <i class="fa-solid fa-shield-check"></i>
               <span>Verified Account</span>
             </span>
@@ -141,32 +143,32 @@
     </div>
 
     <!-- ROLE-SPECIFIC DISPLAY: CUSTOMER -->
-    {% if user_obj.role == 'customer' and customer_profile %}
+    {% if user_obj.role == 'customer' %}
       <div class="bg-spotlight-card/90 backdrop-blur-xl border border-spotlight-border rounded-3xl p-6 sm:p-8 shadow-xl">
         <h2 class="text-base sm:text-lg font-bold text-white mb-5 flex items-center space-x-2">
-          <i class="fa-solid fa-graduation-cap text-spotlight-cyan"></i>
+          <i class="fa-solid fa-graduation-cap text-[#f7c18b]"></i>
           <span>Academic & Campus Residence Details</span>
         </h2>
 
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 text-sm">
           <div class="p-4 rounded-2xl bg-spotlight-bg/60 border border-spotlight-border/60">
             <span class="block text-xs text-slate-500 mb-1">Course</span>
-            <span class="font-semibold text-white">{{ customer_profile.course|default:"Not specified" }}</span>
+            <span class="font-semibold text-white">{{ user_obj.course|default:"Not specified" }}</span>
           </div>
 
           <div class="p-4 rounded-2xl bg-spotlight-bg/60 border border-spotlight-border/60">
             <span class="block text-xs text-slate-500 mb-1">Cohort</span>
-            <span class="font-semibold text-spotlight-cyan">{{ customer_profile.cohort|default:"Not specified" }}</span>
+            <span class="font-semibold text-[#f7c18b]">{{ user_obj.cohort|default:"Not specified" }}</span>
           </div>
 
           <div class="p-4 rounded-2xl bg-spotlight-bg/60 border border-spotlight-border/60">
             <span class="block text-xs text-slate-500 mb-1">Residence</span>
-            <span class="font-semibold text-white">{{ customer_profile.get_residence_display|default:"Not specified" }}</span>
+            <span class="font-semibold text-white">{{ user_obj.get_residence_display|default:"Not specified" }}</span>
           </div>
 
           <div class="p-4 rounded-2xl bg-spotlight-bg/60 border border-spotlight-border/60">
             <span class="block text-xs text-slate-500 mb-1">Room Number</span>
-            <span class="font-semibold text-white">{{ customer_profile.room_number|default:"Not specified" }}</span>
+            <span class="font-semibold text-white">{{ user_obj.room_number|default:"Not specified" }}</span>
           </div>
         </div>
       </div>
@@ -238,13 +240,13 @@
             {% endif %}
             {% if vendor_profile.social_links.tiktok %}
               <a href="{{ vendor_profile.social_links.tiktok }}" target="_blank" rel="noopener" class="px-3.5 py-2 rounded-xl bg-spotlight-bg border border-spotlight-border hover:border-spotlight-cyan text-xs font-semibold text-slate-300 hover:text-white transition-all flex items-center space-x-2">
-                <i class="fa-brands fa-tiktok text-spotlight-cyan"></i>
+                <i class="fa-brands fa-tiktok text-[#f7c18b]"></i>
                 <span>TikTok</span>
               </a>
             {% endif %}
             {% if vendor_profile.social_links.website %}
               <a href="{{ vendor_profile.social_links.website }}" target="_blank" rel="noopener" class="px-3.5 py-2 rounded-xl bg-spotlight-bg border border-spotlight-border hover:border-spotlight-cyan text-xs font-semibold text-slate-300 hover:text-white transition-all flex items-center space-x-2">
-                <i class="fa-solid fa-globe text-spotlight-cyan"></i>
+                <i class="fa-solid fa-globe text-[#f7c18b]"></i>
                 <span>Website</span>
               </a>
             {% endif %}
@@ -257,13 +259,13 @@
     {% if user_obj.role == 'admin' %}
       <div class="bg-spotlight-card/90 backdrop-blur-xl border border-spotlight-border rounded-3xl p-6 sm:p-8 shadow-xl">
         <h2 class="text-base sm:text-lg font-bold text-white mb-3 flex items-center space-x-2">
-          <i class="fa-solid fa-shield-halved text-purple-400"></i>
+          <i class="fa-solid fa-shield-halved text-[#f7c18b]"></i>
           <span>Administrator Privileges</span>
         </h2>
         <p class="text-xs sm:text-sm text-slate-400 mb-4">
           You have elevated platform permissions to manage users, verify vendor storefronts, and moderate listings.
         </p>
-        <a href="/admin/" class="inline-flex items-center space-x-2 px-4 py-2.5 rounded-xl bg-purple-500/15 hover:bg-purple-500/25 border border-purple-500/30 text-purple-300 text-xs sm:text-sm font-semibold transition-all">
+        <a href="/admin/" class="inline-flex items-center space-x-2 px-4 py-2.5 rounded-xl bg-[#f7c18b]/15 hover:bg-[#f7c18b]/25 border border-[#f7c18b]/30 text-[#ffffff] text-xs sm:text-sm font-semibold transition-all">
           <i class="fa-solid fa-sliders"></i>
           <span>Open Django Admin Panel</span>
         </a>
@@ -281,7 +283,7 @@
     <!-- Edit Personal Info -->
     <div class="bg-spotlight-card/90 backdrop-blur-xl border border-spotlight-border rounded-3xl p-6 sm:p-8 shadow-xl space-y-5">
       <h2 class="text-base sm:text-lg font-bold text-white flex items-center space-x-2">
-        <i class="fa-solid fa-user-pen text-spotlight-cyan"></i>
+        <i class="fa-solid fa-user-pen text-[#f7c18b]"></i>
         <span>Edit Personal Information</span>
       </h2>
 
@@ -301,19 +303,32 @@
             class="w-full bg-spotlight-bg border border-spotlight-border rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-spotlight-cyan transition-all" />
         </div>
 
-        <div class="sm:col-span-2">
+        <div>
           <label class="block text-xs font-semibold text-slate-400 mb-1.5">Account Email (Read-Only)</label>
           <input type="email" value="{{ user_obj.email }}" disabled
             class="w-full bg-spotlight-bg/40 border border-spotlight-border/50 rounded-xl px-4 py-2.5 text-sm text-slate-500 cursor-not-allowed" />
+        </div>
+        <div>
+            <label for="id_avatar" class="block text-xs font-semibold text-slate-400 mb-1.5">Avatar</label>
+            
+            {% if user_obj.avatar %}
+                <div class="mb-2 flex items-center gap-3">
+                <img src="{{ user_obj.avatar.url }}" alt="Current avatar" class="w-10 h-10 rounded-full object-cover border border-spotlight-border/50" />
+                <span class="text-xs text-slate-400">Current avatar</span>
+                </div>
+            {% endif %}
+
+            <input id="id_avatar" type="file" name="avatar" accept="image/*"
+                class="w-full bg-spotlight-bg/40 border border-spotlight-border/50 rounded-xl px-4 py-2 text-sm text-slate-300 file:mr-4 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-slate-700 file:text-slate-200 hover:file:bg-slate-600 cursor-pointer" />
         </div>
       </div>
     </div>
 
     <!-- ROLE-SPECIFIC EDIT: CUSTOMER -->
-    {% if user_obj.role == 'customer' and customer_profile %}
+    {% if user_obj.role == 'customer' %}
       <div class="bg-spotlight-card/90 backdrop-blur-xl border border-spotlight-border rounded-3xl p-6 sm:p-8 shadow-xl space-y-5">
         <h2 class="text-base sm:text-lg font-bold text-white flex items-center space-x-2">
-          <i class="fa-solid fa-graduation-cap text-spotlight-cyan"></i>
+          <i class="fa-solid fa-graduation-cap text-[#f7c18b]"></i>
           <span>Edit Academic & Campus Residence Details</span>
         </h2>
 
@@ -324,7 +339,7 @@
               class="w-full bg-spotlight-bg border border-spotlight-border rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-spotlight-cyan transition-all">
               <option value="">-- Select Course --</option>
               {% for val, label in course_choices %}
-                <option value="{{ val }}" {% if form_data.course == val or not form_data.course and customer_profile.course == val %}selected{% endif %}>
+                <option value="{{ val }}" {% if form_data.course == val or not form_data.course and user_obj.course == val %}selected{% endif %}>
                   {{ label }}
                 </option>
               {% endfor %}
@@ -337,7 +352,7 @@
             </label>
             <input type="text" name="cohort" maxlength="4" pattern="[A-Za-z]'[0-9]{2}"
               title="Format must be 1 letter, an apostrophe, and 2 digits (e.g. F'25)"
-              value="{% if form_data.cohort %}{{ form_data.cohort }}{% else %}{{ customer_profile.cohort }}{% endif %}"
+              value="{% if form_data.cohort %}{{ form_data.cohort }}{% else %}{{ user_obj.cohort }}{% endif %}"
               placeholder="F'25"
               class="w-full bg-spotlight-bg border border-spotlight-border rounded-xl px-4 py-2.5 text-sm text-white uppercase focus:outline-none focus:border-spotlight-cyan transition-all" />
           </div>
@@ -348,7 +363,7 @@
               class="w-full bg-spotlight-bg border border-spotlight-border rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-spotlight-cyan transition-all">
               <option value="">-- Select Residence --</option>
               {% for val, label in residence_choices %}
-                <option value="{{ val }}" {% if form_data.residence == val or not form_data.residence and customer_profile.residence == val %}selected{% endif %}>
+                <option value="{{ val }}" {% if form_data.residence == val or not form_data.residence and user_obj.residence == val %}selected{% endif %}>
                   {{ label }}
                 </option>
               {% endfor %}
@@ -361,7 +376,7 @@
             </label>
             <input type="text" name="room_number" maxlength="4" pattern="[A-Za-z][0-9]{3}"
               title="Format must be 1 letter followed by 3 digits (e.g. S101)"
-              value="{% if form_data.room_number %}{{ form_data.room_number }}{% else %}{{ customer_profile.room_number }}{% endif %}"
+              value="{% if form_data.room_number %}{{ form_data.room_number }}{% else %}{{ user_obj.room_number }}{% endif %}"
               placeholder="S101"
               class="w-full bg-spotlight-bg border border-spotlight-border rounded-xl px-4 py-2.5 text-sm text-white uppercase focus:outline-none focus:border-spotlight-cyan transition-all" />
           </div>
@@ -406,13 +421,13 @@
           <div>
             <label class="block text-xs font-semibold text-slate-300 mb-1.5">Store Logo (Square Image)</label>
             <input type="file" name="logo" accept="image/*"
-              class="w-full bg-spotlight-bg border border-spotlight-border rounded-xl px-3 py-2 text-xs text-slate-300 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-spotlight-cyan/15 file:text-spotlight-cyan hover:file:bg-spotlight-cyan/25 cursor-pointer" />
+              class="w-full bg-spotlight-bg border border-spotlight-border rounded-xl px-3 py-2 text-xs text-slate-300 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-spotlight-cyan/15 file:text-[#f7c18b] hover:file:bg-spotlight-cyan/25 cursor-pointer" />
           </div>
 
           <div>
             <label class="block text-xs font-semibold text-slate-300 mb-1.5">Store Banner (Wide Cover)</label>
             <input type="file" name="banner" accept="image/*"
-              class="w-full bg-spotlight-bg border border-spotlight-border rounded-xl px-3 py-2 text-xs text-slate-300 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-spotlight-cyan/15 file:text-spotlight-cyan hover:file:bg-spotlight-cyan/25 cursor-pointer" />
+              class="w-full bg-spotlight-bg border border-spotlight-border rounded-xl px-3 py-2 text-xs text-slate-300 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-spotlight-cyan/15 file:text-[#f7c18b] hover:file:bg-spotlight-cyan/25 cursor-pointer" />
           </div>
         </div>
 
@@ -480,10 +495,10 @@
 
     <!-- Submit / Cancel Actions -->
     <div class="flex items-center justify-end space-x-3">
-      <button type="button" onclick="toggleProfileMode()" class="px-5 py-2.5 rounded-xl bg-spotlight-bg hover:bg-slate-800 border border-spotlight-border text-xs sm:text-sm font-semibold text-slate-300 transition-all cursor-pointer">
+      <button type="button" onclick="toggleProfileMode()" class="inline-flex items-center justify-center px-4 py-2.5 rounded-xl border border-[#f7c18b] text-[#ffffff] hover:bg-[#f7c18b]/10 font-semibold text-sm transition-all">
         Cancel
       </button>
-      <button type="submit" class="px-6 py-2.5 rounded-xl bg-gradient-to-r from-spotlight-cyan via-spotlight-delivery to-[#0077B6] hover:opacity-90 text-spotlight-bg font-bold text-xs sm:text-sm shadow-lg flex items-center space-x-2 transition-all cursor-pointer">
+      <button type="submit" class="px-6 py-2.5 rounded-xl bg-[#f7c18b] hover:bg-[#fad3ab] text-[#000000] font-bold py-3 px-4 rounded-xl transition-all font-bold text-xs sm:text-sm shadow-lg flex items-center space-x-2 transition-all cursor-pointer">
         <i class="fa-solid fa-floppy-disk"></i>
         <span>Save Changes</span>
       </button>
@@ -506,7 +521,7 @@
       editSection.classList.add('hidden');
       displaySection.classList.remove('hidden');
       toggleText.textContent = 'Edit Profile';
-      toggleIcon.className = 'fa-solid fa-pen-to-square text-spotlight-cyan';
+      toggleIcon.className = 'fa-solid fa-pen-to-square text-[#f7c18b]';
     } else {
       displaySection.classList.add('hidden');
       editSection.classList.remove('hidden');

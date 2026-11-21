@@ -1,0 +1,52 @@
+{% extends "core/base.html" %}
+{% load static %}
+
+{% block title %}{{ service.name }} | The Spotlight{% endblock %}
+
+{% block content %}
+<section class="container py-5">
+    <a href="{% url 'store:store-services-list' %}" class="text-cyan">
+        ← Back to All Services
+    </a>
+
+    <div class="row g-5 mt-3">
+        <div class="col-md-6">
+            {% if service.image %}
+                <img src="{{ service.image.url }}"
+                     class="img-fluid rounded-4"
+                     alt="{{ service.name }}">
+            {% else %}
+                <div class="image-placeholder">Service image</div>
+            {% endif %}
+        </div>
+
+        <div class="col-md-6">
+            <span class="section-label">SERVICE DETAILS</span>
+            <h1 class="fw-bold">{{ service.name }}</h1>
+
+            <p>{{ service.description }}</p>
+
+            <h3 class="text-cyan fw-bold">
+                Starting from MUR {{ service.starting_price }}
+            </h3>
+
+            <p>
+                <strong>Provider:</strong>
+                <a href="{% url 'store:store-profile' service.store.slug %}">
+                    {{ service.store.name }}
+                </a>
+            </p>
+
+            {% if service.starting_price %}
+                <p><strong>Pricing:</strong> MUR {{ service.starting_price }}</p>
+            {% endif %}
+
+            <!-- Create booking -->
+            <a href="{% url 'transactions:create-booking' store_slug=service.store.slug service_slug=service.slug %}"
+               class="btn btn-spotlight">
+                Book Now
+            </a>
+        </div>
+    </div>
+</section>
+{% endblock %}

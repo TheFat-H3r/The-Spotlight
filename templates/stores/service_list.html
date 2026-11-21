@@ -1,0 +1,110 @@
+{% extends "core/base.html" %}
+{% load static %}
+
+{% block title %}Services | The Spotlight{% endblock %}
+
+{% block content %}
+<section class="container py-5">
+    <a href="{% url 'store:store-services-list' %}" class="text-cyan text-decoration-none">
+        <i class="bi bi-arrow-left" aria-hidden="true"></i>
+        Back to All Services
+    </a>
+
+    <div class="section-heading mt-4 mb-4">
+        <span class="section-label">FIND A PROFESSIONAL</span>
+        <h1 class="fw-bold text-black">All Services</h1>
+        <p class="text-muted">
+            Explore available services offered by businesses on The Spotlight.
+        </p>
+    </div>
+
+    <div class="d-flex flex-wrap gap-2 mb-4" role="tablist" aria-label="Service categories">
+        <a href="{% url 'store:store-services-list' %}"
+           class="btn btn-sm {% if not selected_category %}btn-spotlight{% else %}btn-outline-spotlight{% endif %}"
+           role="tab"
+           {% if not selected_category %}aria-selected="true"{% endif %}>
+            All
+        </a>
+        {% for category in categories %}
+            <a href="{% url 'store:store-services-list' %}?category={{ category.slug|urlencode }}"
+               class="btn btn-sm {% if selected_category == category.slug %}btn-spotlight{% else %}btn-outline-spotlight{% endif %}"
+               role="tab"
+               {% if selected_category == category.slug %}aria-selected="true"{% endif %}>
+                {{ category.name }}
+            </a>
+        {% endfor %}
+    </div>
+
+    <div class="row g-4">
+        {% for service in services %}
+            <div class="col-12 col-md-6 col-lg-4">
+                <article class="market-card service-card h-100">
+                    {% if service.image %}
+                        <img src="{{ service.image.url }}"
+                             class="card-image"
+                             alt="{{ service.name }}">
+                    {% else %}
+                        <div class="image-placeholder">
+                            Service image
+                        </div>
+                    {% endif %}
+
+                    <div class="card-body p-3">
+                        {% if service.is_featured %}
+                            <span class="featured-badge">Featured</span>
+                        {% endif %}
+
+                        <h5 class="fw-bold text-black">{{ service.name }}</h5>
+
+                        <p class="text-muted small mb-2">
+                            {{ service.category.name|default:"General" }}
+                        </p>
+
+                        <p class="small text-black">
+                            Provider:
+                            <a href="{% url 'store:store-profile' service.store.slug %}"
+                               class="fw-semibold text-gold-link text-decoration-none">
+                                {{ service.store.name }}
+                            </a>
+                        </p>
+
+                        {% if service.description %}
+                            <p class="text-black">
+                                {{ service.description|truncatewords:20 }}
+                            </p>
+                        {% endif %}
+
+                        <p class="fw-bold text-black mt-auto">
+                            Starting from MUR {{ service.starting_price }}
+                        </p>
+
+                        <div class="d-grid mt-3">
+                            <a href="{% url 'store:service-detail' service.slug %}"
+                            class="btn btn-outline-spotlight btn-sm w-100 mt-2">
+                                View Service
+                            </a>
+                            <a href="{% url 'transactions:create-booking' store_slug=service.store.slug service_slug=service.slug %}"
+                               class="btn btn-spotlight btn-sm w-100 mt-2">
+                                Book Now
+                            </a>
+                        </div>
+                    </div>
+                </article>
+            </div>
+        {% empty %}
+            <div class="col-12">
+                <div class="empty-state p-4 text-center">
+                    <h5 class="text-black">No services available</h5>
+                    <p class="text-muted mb-0">
+                        {% if selected_category %}
+                            No active services are listed in this category yet.
+                        {% else %}
+                            Services from our vendors will appear here.
+                        {% endif %}
+                    </p>
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+</section>
+{% endblock %}

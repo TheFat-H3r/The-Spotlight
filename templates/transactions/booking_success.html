@@ -1,0 +1,160 @@
+{% extends "core/base.html" %}
+{% load static %}
+
+{% block title %}Booking Received — The Spotlight{% endblock %}
+
+{% block content %}
+<main class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <section class="card border-0 shadow-sm text-center p-4 p-md-5 mb-4">
+                <div class="card-body">
+                    <div class="rounded-circle bg-dark text-warning d-inline-flex align-items-center justify-content-center mb-3"
+                         style="width: 68px; height: 68px;">
+                        <i class="bi bi-check-lg fs-1" aria-hidden="true"></i>
+                    </div>
+                    <h1 class="h3 fw-bold mb-2">Booking Request Received</h1>
+                    <p class="text-muted mb-2">
+                        A confirmation has been sent to <strong>{{ booking.customer.email }}</strong>.
+                        The provider has also been notified and will contact you about your appointment.
+                    </p>
+                    <p class="small text-muted mb-0">
+                        Booking reference:
+                        <code class="text-dark">{{ booking.reference }}</code>
+                    </p>
+                </div>
+            </section>
+
+            <h2 class="h6 fw-bold text-uppercase text-muted mb-3">Booking details</h2>
+            <section class="card border-0 shadow-sm mb-4">
+                <div class="card-header bg-dark text-white d-flex flex-wrap justify-content-between align-items-center py-3 gap-2">
+                    <div>
+                        <span class="text-warning fw-bold">{{ booking.reference }}</span>
+                        <span class="mx-2 text-white-50">•</span>
+                        <span class="fw-semibold">{{ booking.service.name }}</span>
+                    </div>
+                    <span class="badge bg-warning text-dark">{{ booking.get_status_display }}</span>
+                </div>
+
+                <div class="card-body">
+                    <div class="row g-3 align-items-center mb-4">
+                        {% if booking.service.image %}
+                            <div class="col-sm-auto">
+                                <img src="{{ booking.service.image.url }}"
+                                     alt="{{ booking.service.name }}"
+                                     class="rounded"
+                                     style="width: 120px; height: 90px; object-fit: cover;">
+                            </div>
+                        {% endif %}
+                        <div class="col">
+                            <div class="d-flex align-items-center gap-2">
+                                {% if booking.service.store.logo %}
+                                    <img src="{{ booking.service.store.logo.url }}"
+                                         alt=""
+                                         class="rounded-circle"
+                                         style="width: 40px; height: 40px; object-fit: cover;">
+                                {% endif %}
+                                <div>
+                                    <div class="small text-muted">Provided by</div>
+                                    <a class="fw-semibold text-dark text-decoration-none"
+                                       href="{% url 'store:store-profile' booking.service.store.slug %}">
+                                        {{ booking.service.store.name }}
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row g-3 small mb-3">
+                        <div class="col-sm-6">
+                            <div class="text-muted">Provider</div>
+                            <a class="fw-semibold text-dark text-decoration-none"
+                               href="{% url 'store:store-profile' booking.service.store.slug %}">
+                                {{ booking.service.store.name }}
+                            </a>
+                        </div>
+                        <div class="col-sm-6">
+                            <div class="text-muted">Appointment</div>
+                            <span class="fw-semibold text-dark">
+                                {{ booking.start_at|date:"D, d M Y" }},
+                                {{ booking.start_at|date:"H:i" }}–{{ booking.end_at|date:"H:i" }}
+                            </span>
+                        </div>
+                        <div class="col-sm-6">
+                            <div class="text-muted">People</div>
+                            <span class="fw-semibold text-dark">{{ booking.seats }}</span>
+                        </div>
+                        <div class="col-sm-6">
+                            <div class="text-muted">Phone / WhatsApp</div>
+                            <a class="fw-semibold text-dark text-decoration-none"
+                               href="tel:{{ booking.customer_phone }}">
+                                {{ booking.customer_phone }}
+                            </a>
+                        </div>
+                    </div>
+
+                    {% if booking.customer_note %}
+                        <div class="bg-light rounded p-3 mb-3">
+                            <div class="small fw-bold text-uppercase text-muted mb-1">Your note</div>
+                            <p class="small mb-0">{{ booking.customer_note }}</p>
+                        </div>
+                    {% endif %}
+
+                    <div class="border-top border-bottom py-3 mb-3 d-flex justify-content-between align-items-center">
+                        <span class="text-muted small">Estimated total</span>
+                        <span class="fw-bold fs-5">MUR {{ booking.total_price }}</span>
+                    </div>
+                    <p class="small text-muted mb-3">
+                        Payment has not been collected. Please coordinate payment directly with the provider.
+                    </p>
+
+                    <div class="bg-light rounded p-3">
+                        <div class="small fw-bold text-uppercase text-muted mb-2">Provider contact</div>
+                        <div class="row g-2 small">
+                            <div class="col-md-6">
+                                <span class="text-muted">Email: </span>
+                                {% with provider_email=booking.service.store.contact_email|default:booking.service.store.owner.email %}
+                                    {% if provider_email %}
+                                        <a class="fw-semibold text-dark text-break"
+                                           href="mailto:{{ provider_email }}">{{ provider_email }}</a>
+                                    {% else %}
+                                        <span class="text-muted">Not listed</span>
+                                    {% endif %}
+                                {% endwith %}
+                            </div>
+                            <div class="col-md-6">
+                                <span class="text-muted">Phone: </span>
+                                {% if booking.service.store.contact_phone %}
+                                    <a class="fw-semibold text-dark"
+                                       href="tel:{{ booking.service.store.contact_phone }}">
+                                        {{ booking.service.store.contact_phone }}
+                                    </a>
+                                {% else %}
+                                    <span class="text-muted">Not listed</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <div class="d-flex flex-wrap justify-content-center gap-2 mt-4">
+                <a href="{% url 'transactions:customer-bookings' %}?ref={{ booking.reference|urlencode }}"
+                   class="btn btn-dark px-4">
+                    <i class="bi bi-calendar-check me-1" aria-hidden="true"></i>
+                    Track this booking
+                </a>
+                <a href="{% url 'store:store-profile' booking.service.store.slug %}"
+                   class="btn btn-outline-dark px-4">
+                    <i class="bi bi-shop me-1" aria-hidden="true"></i>
+                    Visit provider
+                </a>
+                <a href="{% url 'core:home' %}" class="btn btn-spotlight px-4 fw-semibold">
+                    <i class="bi bi-arrow-left me-1" aria-hidden="true"></i>
+                    Back to Marketplace
+                </a>
+            </div>
+        </div>
+    </div>
+</main>
+{% endblock %}

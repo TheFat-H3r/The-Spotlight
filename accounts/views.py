@@ -1,16 +1,15 @@
 import re
 
-from django.conf import settings
 from django.contrib import messages
+from django.contrib.auth import logout, authenticate, login
+from django.shortcuts import redirect, render
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.urls import reverse
-from django.shortcuts import render, redirect
-from django.contrib.auth import authenticate, login, logout
-from django.contrib.auth.decorators import login_required
 from django.views import View
-from urllib3 import request
-from .models import User, CustomerProfile, VendorApplication, VendorProfile
-from .utils import redirect_by_role, send_password_reset_email, send_verification_email
+
+from accounts.models import User
+from accounts.utils import redirect_by_role, send_password_reset_email, send_verification_email
+from stores.models import Store
 
 
 class RegisterView(View):
@@ -19,8 +18,8 @@ class RegisterView(View):
     def get(self, request):
         if request.user.is_authenticated:
             if request.user.is_email_verified:
-                return redirect('marketplace:home')
-            return redirect('accounts:verify_email')
+                return redirect('core:home')
+            return redirect('accounts:resend_verification')
         return render(request, self.template_name)
 
     def post(self, request):
@@ -76,7 +75,7 @@ class RegisterView(View):
         # Send Email Verification Link via Brevo API
         if user.auth_provider == User.AuthProvider.EMAIL:
             token = user.generate_email_verification_token()
-            verification_path = reverse('accounts:verify_email_confirm', kwargs={'token': token})
+            verification_path = reverse('accounts:resend_verification')
             verification_url = request.build_absolute_uri(verification_path)
 
             send_verification_email(
@@ -91,12 +90,12 @@ class RegisterView(View):
             if user.role == User.Role.VENDOR:
                 request.session['pending_vendor_id'] = user.pk
                 messages.success(request, "Account created! Please complete your vendor application below. Don't forget to verify your email via the link sent to your inbox.")
-                return redirect('accounts:vendor_application')
+                return redirect('store:store-create')
 
             messages.success(request, "Registration successful! Check your email to activate your account.")
             return redirect('accounts:verify_email')
 
-        return redirect('marketplace:home')
+        return redirect('core:home')
 
 
 class VerifyEmailNoticeView(View):
@@ -105,7 +104,7 @@ class VerifyEmailNoticeView(View):
 
     def get(self, request):
         if request.user.is_authenticated and request.user.is_email_verified:
-            return redirect('marketplace:home')
+            return redirect('core:home')
 
         # Obtain email from logged in user or temporary session key
         email = request.user.email if request.user.is_authenticated else request.session.get('unverified_email', '')
@@ -133,12 +132,12 @@ class VerifyEmailConfirmView(View):
 
 
 class ResendVerificationEmailView(View):
-    """Dedicated form page for users to enter their email and request a new link."""
+    
     template_name = 'accounts/resend_verification.html'
 
     def get(self, request):
         if request.user.is_authenticated and request.user.is_email_verified:
-            return redirect('marketplace:home')
+            return redirect('core:home')
 
         email = request.user.email if request.user.is_authenticated else request.session.get('unverified_email', '')
         return render(request, self.template_name, {'email': email})
@@ -182,8 +181,8 @@ class LoginView(View):
     def get(self, request):
         if request.user.is_authenticated:
             if request.user.is_email_verified:
-                return redirect('marketplace:home')
-            return redirect('accounts:verify_email')
+                return redirect('core:home')
+            return redirect('accounts:resend_verification')
         return render(request, self.template_name)
 
     def post(self, request):
@@ -227,19 +226,20 @@ class ProfileView(LoginRequiredMixin, View):
     login_url = 'accounts:login'
 
     def _get_role_data(self, user):
-        """Fetches or initializes role-specific profile records safely."""
+        
         customer_profile = None
         vendor_profile = None
 
         if user.role == User.Role.CUSTOMER:
-            customer_profile, _ = CustomerProfile.objects.get_or_create(user=user)
-        elif user.role == User.Role.VENDOR:
+            customer_profile = user
+
+        if user.role == User.Role.VENDOR:
             default_name = user.full_name or user.email.split('@')[0]
-            vendor_profile, _ = VendorProfile.objects.get_or_create(
-                user=user,
+            vendor_profile, _ = Store.objects.get_or_create(
+                owner=user,
                 defaults={
-                    'business_name': default_name,
-                    'slug': VendorProfile.generate_unique_slug(default_name),
+                    'name': default_name,
+                    'slug': Store.generate_unique_slug(default_name), # type: ignore
                     'contact_email': user.email,
                     'contact_phone': user.phone or '',
                 }
@@ -256,8 +256,8 @@ class ProfileView(LoginRequiredMixin, View):
             'user_obj': user,
             'customer_profile': customer_profile,
             'vendor_profile': vendor_profile,
-            'residence_choices': CustomerProfile.Residence.choices,
-            'course_choices': CustomerProfile.Course.choices,
+            'residence_choices': User.Residence.choices,
+            'course_choices': User.Course.choices,
             'edit_mode': edit_mode,
         }
         return render(request, self.template_name, context)
@@ -269,6 +269,7 @@ class ProfileView(LoginRequiredMixin, View):
         # 1. Common User Fields
         full_name = request.POST.get('full_name', '').strip()
         phone = request.POST.get('phone', '').strip()
+        avatar = request.FILES.get('avatar')
 
         # 2. Customer Fields
         course = request.POST.get('course', '').strip()
@@ -291,11 +292,12 @@ class ProfileView(LoginRequiredMixin, View):
         logo = request.FILES.get('logo')
         banner = request.FILES.get('banner')
 
+
         error_context = {
             'user_obj': user,
             'customer_profile': customer_profile,
             'vendor_profile': vendor_profile,
-            'residence_choices': CustomerProfile.Residence.choices,
+            'residence_choices': User.Residence.choices,
             'edit_mode': True,
             'form_data': request.POST,
         }
@@ -315,7 +317,7 @@ class ProfileView(LoginRequiredMixin, View):
                 messages.error(request, "Cohort must strictly match the format F'25.")
                 return render(request, self.template_name, error_context)
 
-            if residence and residence not in CustomerProfile.Residence.values:
+            if residence and residence not in User.Residence.values:
                 messages.error(request, "Please select a valid campus residence.")
                 return render(request, self.template_name, error_context)
 
@@ -328,6 +330,7 @@ class ProfileView(LoginRequiredMixin, View):
             customer_profile.cohort = cohort
             customer_profile.residence = residence
             customer_profile.room_number = room_number
+            
             customer_profile.save()
 
         elif user.role == User.Role.VENDOR:
@@ -344,10 +347,10 @@ class ProfileView(LoginRequiredMixin, View):
                 social_links['website'] = website
 
             assert vendor_profile is not None
-            if vendor_profile.business_name != business_name:
-                vendor_profile.slug = VendorProfile.generate_unique_slug(business_name)
+            if Store.name != business_name:
+                vendor_profile.slug = Store.generate_unique_slug(business_name) # type: ignore
 
-            vendor_profile.business_name = business_name
+            vendor_profile.name = business_name
             vendor_profile.tagline = tagline
             vendor_profile.description = description
             vendor_profile.contact_email = contact_email or user.email
@@ -365,106 +368,21 @@ class ProfileView(LoginRequiredMixin, View):
         # 6. Save Base User Updates
         user.full_name = full_name
         user.phone = phone
-        user.save(update_fields=['full_name', 'phone'])
+        if avatar:
+            user.avatar = avatar
+        user.save(update_fields=['full_name', 'phone', 'avatar'])
 
         messages.success(request, "Your profile has been updated successfully.")
         return redirect('accounts:profile')
 
 
-class VendorApplicationView(View):
-    template_name = 'accounts/vendor_application.html'
-
-    def _get_applicant(self, request):
-        """Returns the authenticated VENDOR user or the newly registered pending vendor from session."""
-        if request.user.is_authenticated:
-            return request.user if request.user.role == User.Role.VENDOR else None
-
-        pending_id = request.session.get('pending_vendor_id')
-        if pending_id:
-            return User.objects.filter(pk=pending_id, role=User.Role.VENDOR).first()
-
-        return None
-
-    def get(self, request):
-        applicant = self._get_applicant(request)
-
-        if applicant is None:
-            if request.user.is_authenticated:
-                messages.info(request, "Vendor applications are only for vendor accounts.")
-                return redirect('marketplace:home')
-            return redirect('accounts:login')
-
-        if hasattr(applicant, 'vendor_profile'):
-            return redirect('accounts:profile')
-
-        existing_app = VendorApplication.objects.filter(applicant=applicant).order_by('-id').first()
-        reapply = request.GET.get('reapply') == 'true'
-
-        context = {
-            'user_obj': applicant,
-            'existing_app': existing_app,
-            'show_form': existing_app is None or (existing_app.status == 'rejected' and reapply),
-        }
-        return render(request, self.template_name, context)
-
-    def post(self, request):
-        applicant = self._get_applicant(request)
-
-        if applicant is None:
-            return redirect('accounts:login')
-
-        existing_app = VendorApplication.objects.filter(applicant=applicant).order_by('-id').first()
-        if existing_app and existing_app.status in ['pending', 'approved']:
-            messages.info(request, "You already have an active or pending vendor application.")
-            return redirect('accounts:vendor_application')
-
-        business_name = request.POST.get('business_name', '').strip()
-        business_type = request.POST.get('business_type', '').strip()
-        contact_phone = request.POST.get('contact_phone', '').strip() or applicant.phone
-        description = request.POST.get('description', '').strip()
-
-        context = {
-            'user_obj': applicant,
-            'existing_app': existing_app,
-            'show_form': True,
-            'form_data': request.POST,
-        }
-
-        if not all([business_name, business_type, contact_phone, description]):
-            messages.error(request, "All fields are required to submit your vendor application.")
-            return render(request, self.template_name, context)
-
-        if len(description) < 20:
-            messages.error(request, "Please provide a brief description of at least 20 characters.")
-            return render(request, self.template_name, context)
-
-        VendorApplication.objects.create(
-            applicant=applicant,
-            business_name=business_name,
-            business_type=business_type,
-            contact_phone=contact_phone,
-            description=description,
-        )
-
-        # Clear temporary registration session key
-        request.session.pop('pending_vendor_id', None)
-
-        # If they just registered and haven't verified their email yet, send them to the verify notice page
-        if not request.user.is_authenticated and not getattr(applicant, 'is_email_verified', False):
-            messages.success(request, "Vendor application submitted! Now check your inbox to verify your email before signing in.")
-            return redirect('accounts:verify_email')
-
-        messages.success(request, "Your vendor application has been submitted for review!")
-        return redirect('accounts:vendor_application')
-    
-      
 class PasswordResetRequestView(View):
-    """Handles 'Forgot Password' email submission."""
+    
     template_name = 'accounts/password_reset.html'
 
     def get(self, request):
         if request.user.is_authenticated:
-            return redirect('marketplace:home')
+            return redirect('core:home')
         return render(request, self.template_name)
 
     def post(self, request):
@@ -561,4 +479,4 @@ class PasswordResetConfirmView(View):
 
 def logout_view(request):
     logout(request)
-    return redirect("users:login")
+    return redirect("accounts:login")

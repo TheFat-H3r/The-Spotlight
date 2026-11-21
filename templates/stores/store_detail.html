@@ -1,0 +1,192 @@
+{% extends "core/base.html" %}
+{% load static %}
+
+{% block title %}{{ store.name }} | The Spotlight{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/marketplace.css' %}">
+{% endblock %}
+
+{% block content %}
+
+<section class="store-hero">
+    <div class="container py-5">
+        <a href="{% url 'core:home' %}"
+           class="text-decoration-none text-cyan">
+            ← Back to Marketplace
+        </a>
+
+        <div class="store-profile mt-4">
+            <div class="store-logo">
+                {% if store.logo %}
+                    <img src="{{ store.logo.url }}" alt="{{ store.name }}">
+                {% else %}
+                    <div class="store-placeholder">
+                        {{ store.name|first|upper }}
+                    </div>
+                {% endif %}
+            </div>
+
+            <div>
+                <h1 class="fw-bold">{{ store.name }}</h1>
+                <p class="mb-2">{{ store.tagline }}</p>
+
+                {% if store.rating_average %}
+                    <span class="rating">
+                        ★ {{ store.rating_average }}
+                        ({{ store.rating_count|default:0 }} reviews)
+                    </span>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="container py-5">
+
+    <!-- Store information -->
+    <div class="row g-4 mb-5">
+        <div class="col-md-8">
+            <h2 class="fw-bold">About This Store</h2>
+            <p>{{ store.description|default:"Store information will be displayed here." }}</p>
+        </div>
+
+        <div class="col-md-4">
+            <div class="sidebar-panel">
+                <h5 class="fw-bold">Store Information</h5>
+                <p><strong>Business type:</strong> {{ store.business_type|default:"Not specified" }}</p>
+                <p><strong>Location:</strong> {{ store.location|default:"Not specified" }}</p>
+                <p><strong>Contact:</strong> {{ store.contact_email|default:"Not provided" }}</p>
+            </div>
+        </div>
+    </div>
+
+    {% if store_products %}
+    <!-- Store products -->
+    <section class="mb-5">
+        <h2 class="fw-bold mb-4">Products</h2>
+
+        <div class="row g-4">
+            {% for product in store_products %}
+                <div class="col-md-6 col-lg-4">
+                    <div class="market-card">
+                        {% if product.image %}
+                            <img src="{{ product.image.url }}"
+                                 class="card-image"
+                                 alt="{{ product.name }}">
+                        {% endif %}
+                        <div class="p-3">
+                            <h5>{{ product.name }}</h5>
+                            <p class="text-cyan fw-bold">
+                                MUR {{ product.price }}
+                            </p>
+                            <a href="{% url 'store:product-detail' product.slug %}"
+                               class="btn btn-outline-spotlight btn-sm">
+                                View Product
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            {% empty %}
+                <p class="text-muted">This store has no published products yet.</p>
+            {% endfor %}
+        </div>
+    </section>
+    {% endif %}
+
+    {% if store_services %}
+    <!-- Store services -->
+    <section class="mb-5">
+        <h2 class="fw-bold mb-4">Services</h2>
+
+        <div class="row g-4">
+            {% for service in store_services %}
+                <div class="col-md-6 col-lg-4">
+                    <div class="market-card">
+                        {% if service.image %}
+                            <img src="{{ service.image.url }}"
+                                 class="card-image"
+                                 alt="{{ service.name }}">
+                        {% endif %}
+                        <div class="p-3">
+                            <h5>{{ service.name }}</h5>
+                            <p class="text-cyan fw-bold">
+                                MUR {{ service.starting_price }}
+                            </p>
+                            <a href="{% url 'store:service-detail' service.slug %}"
+                               class="btn btn-outline-spotlight btn-sm">
+                                View Service
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            {% empty %}
+                <p class="text-muted">This store has no published services yet.</p>
+            {% endfor %}
+        </div>
+    </section>
+    {% endif %}
+
+    <!-- Store reviews -->
+    <section>
+        <h2 class="fw-bold mb-4">Customer Reviews</h2>
+
+        <div class="row g-4">
+            {% for review in store_reviews %}
+                <div class="col-md-6 col-lg-4">
+                    <article class="review-card h-100">
+
+                        <div class="d-flex align-items-center gap-3 mb-3">
+
+                            {% if review.author.avatar %}
+                                <img src="{{ review.author.avatar.url }}"
+                                    class="review-avatar"
+                                    alt="Customer profile">
+                            {% else %}
+                                <div class="review-avatar-placeholder">
+                                    {{ review.author.full_name|first|upper }}
+                                </div>
+                            {% endif %}
+
+                            <div>
+                                <h6 class="fw-bold mb-0 text-black">
+                                    {{ review.author.full_name|default:"Customer" }}
+                                </h6>
+
+                                <small class="text-muted">
+                                    {{ review.created_at|date:"d M Y" }}
+                                </small>
+                            </div>
+
+                        </div>
+
+                        <div class="review-stars" aria-label="{{ review.rating }} out of 5 stars">
+                            {% for star in "12345" %}
+                                {% if forloop.counter <= review.overall_rating %}
+                                    ★
+                                {% else %}
+                                    ☆
+                                {% endif %}
+                            {% endfor %}
+                        </div>
+
+                        <p class="review-text mt-3">
+                            {{ review.body|slice:":180" }}{% if review.body|length > 200 %}...{% endif %}
+                        </p>
+
+                        {% if review.store %}
+                            <small class="text-muted">
+                                Reviewed: {{ review.store.name }}
+                            </small>
+                        {% endif %}
+
+                    </article>
+                </div>
+            {% empty %}
+                <p class="text-muted">No customer reviews are available yet.</p>
+            {% endfor %}
+        </div>
+    </section>
+
+</section>
+{% endblock %}

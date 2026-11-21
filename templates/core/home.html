@@ -1,0 +1,719 @@
+{% extends "core/base.html" %}
+{% load static %}
+
+{% block title %}Marketplace | The Spotlight{% endblock %}
+{% block content %}
+
+<!-- 1. Promotional advertisements -->
+{% if active_ads %}
+<section class="advertisement-section">
+    <div id="advertisementCarousel"
+         class="carousel slide"
+         data-bs-ride="carousel"
+         data-bs-interval="5000">
+
+        <div class="carousel-inner">
+            {% for ad in active_ads %}
+                <div class="carousel-item {% if forloop.first %}active{% endif %}">
+                    <div class="advertisement-banner">
+
+                        {% if ad.image %}
+                            <img src="{{ ad.image.url }}"
+                                 class="advertisement-image"
+                                 alt="{{ ad.title }}">
+                        {% endif %}
+
+                        <div class="advertisement-content">
+                            <span class="sponsored-label">SPONSORED</span>
+                            <h2 class="text-white mt-2">{{ ad.title }}</h2>
+                            <p class="text-white-50">{{ ad.description }}</p>
+
+                            <a href="{{ ad.target_url }}"
+                               class="btn btn-spotlight">
+                                {{ ad.button_text|default:"Explore Offer" }}
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+
+        {% if active_ads|length > 1 %}
+            <button class="carousel-control-prev" type="button"
+                    data-bs-target="#advertisementCarousel"
+                    data-bs-slide="prev"
+                    aria-label="Previous advertisement">
+                <span class="carousel-control-prev-icon"></span>
+            </button>
+
+            <button class="carousel-control-next" type="button"
+                    data-bs-target="#advertisementCarousel"
+                    data-bs-slide="next"
+                    aria-label="Next advertisement">
+                <span class="carousel-control-next-icon"></span>
+            </button>
+        {% endif %}
+    </div>
+</section>
+{% endif %}
+
+<!-- 2. Marketplace introduction (Logo Image instead of text label) -->
+<section class="marketplace-hero py-5">
+    <div class="container">
+        <div class="row align-items-center">
+            <div class="col-lg-8">
+                <h1 class="display-4 fw-bold mt-2 text-white">
+                    Anytime. <span class="text-gold">Anywhere.</span>
+                </h1>
+                <p class="lead">
+                    Discover products, services and trusted businesses
+                    in one marketplace.
+                </p>
+
+                <form method="get" action="{% url 'core:home' %}"
+                      class="marketplace-search d-flex mt-4">
+                    <input type="search" name="q"
+                           value="{{ request.GET.q|default:'' }}"
+                           class="form-control"
+                           placeholder="Search products, services or vendors..."
+                           aria-label="Search marketplace">
+                    <button type="submit" class="btn btn-spotlight px-4">
+                        Search
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- 3. Featured stores -->
+<section class="container py-5 reveal-section">
+    <div class="section-heading d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <span class="section-label">MEET OUR VENDORS</span>
+            <h2 class="fw-bold text-black">Featured Stores</h2>
+        </div>
+        <a href="{% url 'store:store-list' %}" class="btn btn-outline-spotlight">
+            Explore Stores
+        </a>
+    </div>
+
+    <div class="vendor-carousel-wrapper">
+
+        <button class="carousel-arrow" id="vendorPrev"
+                type="button" aria-label="Previous stores">
+            ‹
+        </button>
+
+        <div class="vendor-carousel" id="vendorCarousel">
+
+            {% for store in featured_stores %}
+
+                <article class="vendor-card">
+
+                    <a href="{% url 'store:store-profile' store.slug %}"
+                       class="text-decoration-none text-black">
+
+                        <div class="vendor-logo">
+                            {% if store.logo %}
+                                <img src="{{ store.logo.url }}"
+                                     alt="{{ store.name }}">
+                            {% else %}
+                                <span>{{ store.name|first|upper }}</span>
+                            {% endif %}
+                        </div>
+
+                        <h5 class="text-black fw-bold">{{ store.name }}</h5>
+                        <p class="text-muted small">
+                            {{ store.tagline|default:store.description|truncatewords:12 }}
+                        </p>
+
+                        {% if store.business_type %}
+                            <span class="vendor-type">
+                                {{ store.business_type }}
+                            </span>
+                        {% endif %}
+
+                        {% if store.rating_average %}
+                            <p class="rating mt-2">
+                                ★ {{ store.rating_average }}
+                                ({{ store.rating_count|default:0 }})
+                            </p>
+                        {% endif %}
+
+                        <span class="text-gold-link small fw-bold d-inline-block mt-1">
+                            Visit Store →
+                        </span>
+                    </a>
+                </article>
+
+            {% empty %}
+                <p class="text-muted">
+                    Featured stores will appear here when available.
+                </p>
+            {% endfor %}
+
+        </div>
+
+        <button class="carousel-arrow" id="vendorNext"
+                type="button" aria-label="Next stores">
+            ›
+        </button>
+
+    </div>
+    <!-- View all stores -->
+    <div class="text-center mt-4">
+        <a href="{% url 'store:store-list' %}" class="btn btn-outline-spotlight">
+            View All Stores
+        </a>
+    </div>
+</section>
+
+<!-- 4. Main marketplace layout -->
+<section class="container-fluid marketplace-container py-4 bg-white">
+    <div class="row g-4">
+
+        <!-- LEFT SIDEBAR: FILTERS -->
+        <aside class="col-lg-2">
+            <button class="btn btn-spotlight d-lg-none w-100 mb-3"
+                    type="button"
+                    data-bs-toggle="collapse"
+                    data-bs-target="#marketplaceFilters">
+                Show / Hide Filters
+            </button>
+
+            <div class="collapse d-lg-block" id="marketplaceFilters">
+                <div class="filter-panel p-3">
+
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h5 class="fw-bold mb-0 text-black">Filters</h5>
+                        <a href="{% url 'core:home' %}"
+                           class="small fw-semibold text-gold-link text-decoration-none">
+                            Clear all
+                        </a>
+                    </div>
+
+                    <form method="get" action="{% url 'core:home' %}">
+
+                        <div class="filter-group mb-4">
+                            <label for="vendorType" class="fw-bold mb-2 text-black">
+                                Vendor Type
+                            </label>
+
+                            <select name="vendor_type" id="vendorType" class="form-select">
+                                <option value="">All vendors</option>
+
+                                {% for type in business_types %}
+                                    <option value="{{ type.slug }}"
+                                        {% if request.GET.vendor_type == type.slug %}selected{% endif %}>
+                                        {{ type.name }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <div class="filter-group mb-4">
+                            <label for="category" class="fw-bold mb-2 text-black">
+                                Category
+                            </label>
+
+                            <select name="category" id="category" class="form-select">
+                                <option value="">All categories</option>
+
+                                {% for category in featured_categories %}
+                                    <option value="{{ category.slug }}"
+                                        {% if request.GET.category == category.slug %}selected{% endif %}>
+                                        {{ category.name }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <div class="filter-group mb-4">
+                            <label for="maxPrice" class="fw-bold mb-2 text-black">
+                                Maximum Price (MUR)
+                            </label>
+
+                            <input type="number" id="maxPrice" name="max_price"
+                                   class="form-control" min="0"
+                                   value="{{ request.GET.max_price }}"
+                                   placeholder="Enter maximum price">
+                        </div>
+
+                        <div class="filter-group mb-4">
+                            <label for="location" class="fw-bold mb-2 text-black">
+                                Location
+                            </label>
+
+                            <input type="text" id="location" name="location"
+                                   class="form-control"
+                                   value="{{ request.GET.location }}"
+                                   placeholder="Enter location">
+                        </div>
+
+                        <button type="submit" class="btn btn-spotlight w-100">
+                            Apply Filters
+                        </button>
+
+                    </form>
+                </div>
+            </div>
+        </aside>
+
+        <!-- CENTRE: PRODUCTS AND SERVICES -->
+        <main class="col-lg-7">
+
+            <section id="products-section" class="mb-5 reveal-section">
+                <div class="section-heading mb-4">
+                    <span class="section-label">SHOP FROM OUR VENDORS</span>
+                    <h2 class="fw-bold text-black">Featured Products</h2>
+                    <p class="text-muted">
+                        Explore products offered by businesses on The Spotlight.
+                    </p>
+                </div>
+
+                <div class="row g-4">
+
+                    {% for product in featured_products|slice:":6" %}
+                        <div class="col-12 col-md-6 col-lg-4">
+
+                            <article class="market-card product-card h-100">
+
+                                <div class="product-image-wrapper">
+                                    {% if product.image %}
+                                        <img src="{{ product.image.url }}"
+                                             class="card-image"
+                                             alt="{{ product.name }}">
+                                    {% else %}
+                                        <div class="image-placeholder">
+                                            Product image
+                                        </div>
+                                    {% endif %}
+
+                                    {% if product.is_featured %}
+                                        <span class="featured-badge">Featured</span>
+                                    {% endif %}
+                                </div>
+
+                                <div class="card-body p-3">
+                                    <h5 class="fw-bold text-black">{{ product.name }}</h5>
+
+                                    <p class="text-muted small">
+                                        {{ product.category.name|default:"General" }}
+                                    </p>
+
+                                    <p class="small text-black">
+                                        Vendor:
+                                        {% if product.store %}
+                                            <a href="{% url 'store:store-profile' product.store.slug %}"
+                                               class="fw-semibold text-gold-link text-decoration-none">
+                                                {{ product.store.name }}
+                                            </a>
+                                        {% else %}
+                                            Not specified
+                                        {% endif %}
+                                    </p>
+
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <span class="fw-bold text-black">
+                                            MUR {{ product.price }}
+                                        </span>
+
+                                        {% if product.rating_average %}
+                                            <span class="rating">
+                                                ★ {{ product.rating_average }}
+                                            </span>
+                                        {% endif %}
+                                    </div>
+
+                                    <div class="d-flex gap-2 mt-3">
+                                        <button type="button"
+                                                class="btn btn-outline-spotlight btn-sm flex-fill quick-view-button"
+                                                data-name="{{ product.name|escape }}"
+                                                data-description="{{ product.description|default:''|escape }}"
+                                                data-price="MUR {{ product.price }}"
+                                                data-image="{% if product.image %}{{ product.image.url }}{% endif %}"
+                                                data-url="{% url 'store:product-detail' slug=product.slug|default:'#' %}">
+                                            Details
+                                        </button>
+
+                                        <form method="post" action="{% url 'transactions:add_to_cart' product.id %}" class="flex-fill">
+                                            {% csrf_token %}
+                                            <input type="hidden" name="quantity" value="1">
+                                            <button type="submit" class="btn btn-spotlight btn-sm w-100">
+                                                Add to Cart
+                                            </button>
+                                        </form>
+                                    </div>
+                                </div>
+                            </article>
+                        </div>
+
+                    {% empty %}
+                        <div class="col-12">
+                            <div class="empty-state p-4 text-center">
+                                <h5 class="text-black">No products available yet</h5>
+                                <p class="text-muted mb-0">
+                                    Products from our vendors will appear here.
+                                </p>
+                            </div>
+                        </div>
+                    {% endfor %}
+
+                </div>
+
+                <div class="text-center mt-4">
+                    <a href="{% url 'store:store-products-list' %}" class="btn btn-outline-spotlight">
+                        View All Products
+                    </a>
+                </div>
+            </section>
+
+            <section id="services-section" class="mb-5 reveal-section">
+                <div class="section-heading mb-4">
+                    <span class="section-label">DISCOVER WHAT YOU CAN BOOK</span>
+                    <h2 class="fw-bold text-black">Featured Services</h2>
+                    <p class="text-muted">
+                        Find professionals offering services that meet your needs.
+                    </p>
+                </div>
+
+                <div class="row g-4">
+
+                    {% for service in featured_services|slice:":4" %}
+                        <div class="col-12 col-md-6">
+
+                            <article class="market-card service-card h-100">
+
+                                {% if service.image %}
+                                    <img src="{{ service.image.url }}"
+                                         class="card-image"
+                                         alt="{{ service.name }}">
+                                {% else %}
+                                    <div class="image-placeholder">
+                                        Service image
+                                    </div>
+                                {% endif %}
+
+                                <div class="card-body p-3">
+                                    <h5 class="fw-bold text-black">{{ service.name }}</h5>
+
+                                    <p class="text-muted small">
+                                        {{ service.description|truncatewords:20 }}
+                                    </p>
+
+                                    <p class="small text-black">
+                                        Provider:
+                                        {% if service.store %}
+                                            <a href="{% url 'store:store-profile' service.store.slug %}"
+                                               class="fw-semibold text-gold-link text-decoration-none">
+                                                {{ service.store.name }}
+                                            </a>
+                                        {% else %}
+                                            Not specified
+                                        {% endif %}
+                                    </p>
+
+                                    {% if service.pricing_tier %}
+                                        <span class="pricing-tier">
+                                            {{ service.pricing_tier }}
+                                        </span>
+                                    {% endif %}
+
+                                    <p class="fw-bold text-black mt-2">
+                                        Starting from MUR {{ service.starting_price }}
+                                    </p>
+                                    
+                                    <div class="d-flex gap-2 mt-3">
+                                        <button type="button"
+                                                class="btn btn-outline-spotlight btn-sm flex-fill quick-view-button"
+                                                data-name="{{ service.name|escape }}"
+                                                data-description="{{ service.description|default:''|escape }}"
+                                                data-price="Starting from MUR {{ service.starting_price }}"
+                                                data-image="{% if service.image %}{{ service.image.url }}{% endif %}"
+                                                data-url="{% url 'store:service-detail' slug=service.slug|default:'#' %}">
+                                            Details
+                                        </button>
+                                        <!-- View Service Button and booking link -->
+                                        
+                                        <a href="{% url 'transactions:create-booking' store_slug=service.store.slug service_slug=service.slug %}"
+                                        class="btn btn-spotlight btn-sm w-100">
+                                            Book Now
+                                        </a>
+                                    </div>
+                                </div>
+
+                            </article>
+                        </div>
+
+                    {% empty %}
+                        <div class="col-12">
+                            <div class="empty-state p-4 text-center">
+                                <h5 class="text-black">No services available yet</h5>
+                                <p class="text-muted mb-0">
+                                    Discover services from our vendors soon.
+                                </p>
+                            </div>
+                        </div>
+                    {% endfor %}
+
+                </div>
+                <div class="text-center mt-4">
+                    <a href="{% url 'store:store-services-list' %}" class="btn btn-outline-spotlight">
+                        View All Services
+                    </a>
+                </div>
+            </section>
+
+        </main>
+
+        <!-- RIGHT SIDEBAR: PORTFOLIOS, SUPPORT AND ANNOUNCEMENTS -->
+        <aside class="col-lg-3">
+
+            <section class="sidebar-panel p-3 mb-4" data-slider>
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h5 class="fw-bold mb-0 text-black">Advertisements</h5>
+                    {% if advertisements|length > 1 %}
+                    <div class="sidebar-slider-controls">
+                        <button type="button" class="btn btn-sm btn-light border" data-prev aria-label="Previous">‹</button>
+                        <button type="button" class="btn btn-sm btn-light border" data-next aria-label="Next">›</button>
+                    </div>
+                    {% endif %}
+                </div>
+
+                {% if advertisements %}
+                    <div class="sidebar-slider-viewport">
+                        <div class="sidebar-slider-track">
+                            {% for advertisement in advertisements %}
+                                <div class="sidebar-slide">
+                                    <article class="achievement-card h-100">
+                                        {% if advertisement.banner_image %}
+                                            <img src="{{ advertisement.banner_image.url }}"
+                                                class="achievement-image w-100"
+                                                alt="{{ advertisement.title }}">
+                                        {% endif %}
+
+                                        <div class="p-3">
+                                            <h6 class="fw-bold text-black">{{ advertisement.title }}</h6>
+
+                                            <p class="small text-muted">
+                                                {{ advertisement.description|truncatewords:15 }}
+                                            </p>
+
+                                            {% if advertisement.store %}
+                                                <small class="text-muted d-block mb-1">
+                                                    By <b>{{ advertisement.store.name }}</b>
+                                                </small>
+                                            {% endif %}
+
+                                            <a href="{{ advertisement.target_url }}" target="_blank" class="text-gold-link small fw-bold text-decoration-none">
+                                                Explore advertisement →
+                                            </a>
+                                        </div>
+                                    </article>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                {% else %}
+                    <p class="text-muted small mb-0">
+                        No Advertisement. Advertisements will appear here.
+                    </p>
+                {% endif %}
+            </section>
+
+            <section class="sidebar-panel support-panel p-4 mb-4">
+                <h5 class="fw-bold text-gold">Need Help?</h5>
+                <p class="small text-muted">
+                    Have a question about using The Spotlight?
+                    Contact our support team.
+                </p>
+                <a href="core:contact-support" class="btn btn-spotlight btn-sm w-100">
+                    Contact Support
+                </a>
+            </section>
+
+            <section class="sidebar-panel p-3 mb-4" data-slider>
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h5 class="fw-bold mb-0 text-black">Announcements</h5>
+                    {% if announcements|length > 1 %}
+                    <div class="sidebar-slider-controls">
+                        <button type="button" class="btn btn-sm btn-light border" data-prev aria-label="Previous">‹</button>
+                        <button type="button" class="btn btn-sm btn-light border" data-next aria-label="Next">›</button>
+                    </div>
+                    {% endif %}
+                </div>
+
+                {% if announcements %}
+                    <div class="sidebar-slider-viewport">
+                        <div class="sidebar-slider-track">
+                            {% for announcement in announcements %}
+                                <div class="sidebar-slide">
+                                    <article class="announcement-card p-3 h-100">
+                                        <span class="announcement-label">
+                                            ANNOUNCEMENT
+                                        </span>
+
+                                        <h6 class="fw-bold mt-2 text-black">
+                                            {{ announcement.title }}
+                                        </h6>
+
+                                        <p class="small text-muted">
+                                            {{ announcement.content|truncatewords:20 }}
+                                        </p>
+
+                                        {% if announcement.created_at %}
+                                            <small class="text-muted d-block mb-1">
+                                                {{ announcement.created_at|date:"d M Y" }} | {{ announcement.store.name|default:"The Spotlight" }}
+                                            </small>
+                                        {% endif %}
+
+                                        {% if announcement.target_url %}
+                                            <a href="{{ announcement.target_url }}"
+                                            class="text-gold-link small fw-bold text-decoration-none">
+                                                Read More →
+                                            </a>
+                                        {% endif %}
+                                    </article>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                {% else %}
+                    <p class="text-muted small mb-0">
+                        There are no announcements at the moment.
+                    </p>
+                {% endif %}
+            </section>
+
+        </aside>
+    </div>
+</section>
+
+<!-- 5. Customer reviews -->
+<section class="container py-5 reveal-section">
+    <div class="section-heading mb-4">
+        <span class="section-label">CUSTOMER EXPERIENCES</span>
+        <h2 class="fw-bold text-black">What People Are Saying</h2>
+        <p class="text-muted">
+            Feedback from customers who have used businesses on our platform.
+        </p>
+    </div>
+
+    <div class="row g-4">
+        {% for review in featured_reviews %}
+            <div class="col-md-6 col-lg-4">
+                <article class="review-card p-4 h-100">
+
+                    <div class="d-flex align-items-center gap-3 mb-3">
+
+                        {% if review.author.avatar %}
+                            <img src="{{ review.author.avatar.url }}"
+                                 class="review-avatar"
+                                 alt="Customer profile">
+                        {% else %}
+                            <div class="review-avatar-placeholder">
+                                {{ review.author.full_name|first|upper }}
+                            </div>
+                        {% endif %}
+
+                        <div>
+                            <h6 class="fw-bold mb-0 text-black">
+                                {{ review.author.full_name|default:"Customer" }}
+                            </h6>
+
+                            <small class="text-muted">
+                                {{ review.created_at|date:"d M Y" }}
+                            </small>
+                        </div>
+
+                    </div>
+
+                    <div class="review-stars" aria-label="{{ review.overall_rating }} out of 5 stars">
+                        {% for star in "12345" %}
+                            {% if forloop.counter <= review.overall_rating %}
+                                ★
+                            {% else %}
+                                ☆
+                            {% endif %}
+                        {% endfor %}
+                    </div>
+
+                    <p class="review-text mt-3 text-black">
+                        {{ review.body|slice:":180" }}{% if review.body|length > 200 %}...{% endif %}
+                    </p>
+
+                    {% if review.store %}
+                        <small class="text-muted">
+                            Reviewed: {{ review.store.name }}
+                        </small>
+                    {% endif %}
+
+                </article>
+            </div>
+        {% empty %}
+            <div class="col-12">
+                <div class="empty-state p-4 text-center">
+                    <h5 class="text-black">No reviews yet</h5>
+                    <p class="text-muted mb-0">
+                        Customer reviews will appear here when they become available.
+                    </p>
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+</section>
+
+<!-- 6. Product Quick View Modal -->
+<div class="modal fade" id="quickViewModal" tabindex="-1"
+     aria-labelledby="quickViewTitle" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title fw-bold text-white" id="quickViewTitle">
+                    Product Quick View
+                </h5>
+                <button type="button" class="btn-close"
+                        data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+
+            <div class="modal-body">
+                <div class="row g-4">
+                    <div class="col-md-5">
+                        <img id="quickViewImage" src=""
+                             class="img-fluid rounded"
+                             alt="Product preview">
+                    </div>
+                    <div class="col-md-7">
+                        <h4 id="quickViewName" class="text-black fw-bold"></h4>
+                        <p id="quickViewDescription" class="text-muted"></p>
+                        <p id="quickViewPrice" class="fw-bold text-black fs-5"></p>
+                        <!-- Buy now -->
+                        <a id="quickViewBuyNow" href="#" class="btn btn-spotlight">
+                            Buy Now
+                        </a>
+                        <!-- View product details -->
+                        <a id="quickViewLink" href="{% url 'store:product-detail' slug='placeholder' %}"
+                           class="btn btn-outline-spotlight btn-sm">
+                            More Details
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<button id="backToTop" class="back-to-top"
+        type="button" aria-label="Back to top">
+    ↑
+</button>
+
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'marketplace/js/marketplace.js' %}"></script>
+<script src="{% static 'marketplace/js/carousel.js' %}"></script>
+<script src="{% static 'marketplace/js/filters.js' %}"></script>
+<script src="{% static 'marketplace/js/quick_view.js' %}"></script>
+{% endblock %}

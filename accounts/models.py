@@ -3,12 +3,13 @@ from django.contrib.auth.models import (
     BaseUserManager,
     PermissionsMixin,
 )
-from django.core.validators import RegexValidator
-from django.conf import settings
-from django.db import models, transaction
+from django.db import models
 from django.utils import timezone
-from django.utils.text import slugify
+from django.core.validators import RegexValidator
 from django.core.signing import TimestampSigner, BadSignature, SignatureExpired
+from django.utils.text import slugify
+
+from stores.models import Store
 
 
 class UserManager(BaseUserManager):
@@ -56,6 +57,18 @@ class User(AbstractBaseUser, PermissionsMixin):
         EMAIL = "email", "Email & password"
         GOOGLE = "google", "Google"
 
+    class Residence(models.TextChoices):
+        MAPS = "Maps", "Maps"
+        SONGHAI = "Songhai", "Songhai"
+        KONGO = "Kongo", "Kongo"
+        AKSUM = "Aksum", "Aksum"
+    
+    class Course(models.TextChoices):
+        CS = "CS", "CS"
+        SE = "SE", "SE"
+        EL = "EL", "EL"
+        IBT = "IBT", "IBT"
+
     phone_validator = RegexValidator(
         regex=r"^\+?\d{7,15}$",
         message="Enter a valid phone number (7-15 digits, optional leading +).",
@@ -84,6 +97,37 @@ class User(AbstractBaseUser, PermissionsMixin):
     role = models.CharField(
         max_length=10, choices=Role.choices, default=Role.CUSTOMER, db_index=True
     )
+
+    # Locating
+    course = models.CharField(max_length=4, choices=Course.choices, blank=True, help_text="Your course of study.")
+    cohort = models.CharField(
+            max_length=4,
+            blank=True,
+            validators=[
+                RegexValidator(
+                    regex=r"^[A-Z]'\d{2}$",
+                    message="Cohort must strictly match the format F'25 (uppercase letter, apostrophe, and 2 digits).",
+                )
+            ],
+            help_text="Format: F'25",
+        )
+    residence = models.CharField(
+            max_length=20,
+            choices=Residence.choices,
+            blank=True,
+            help_text="Campus residence hall.",
+        )
+    room_number = models.CharField(
+            max_length=4,
+            blank=True,
+            validators=[
+                RegexValidator(
+                    regex=r"^[A-Z]\d{3}$",
+                    message="Room number must strictly match the format S101 (1 uppercase letter followed by 3 digits).",
+                )
+            ],
+            help_text="Format: S101",
+        )
 
     # Status flags
     is_active = models.BooleanField(default=True)
@@ -165,242 +209,3 @@ class User(AbstractBaseUser, PermissionsMixin):
             return None
         except (BadSignature, SignatureExpired, ValueError, User.DoesNotExist):
             return None
-
-
-# ---------------------------------------------------------------------------
-# Customer profile (every user gets one automatically, see signals.py)
-# ---------------------------------------------------------------------------
-class CustomerProfile(models.Model):
-    class Residence(models.TextChoices):
-        MAPS = "Maps", "Maps"
-        SONGHAI = "Songhai", "Songhai"
-        KONGO = "Kongo", "Kongo"
-        AKSUM = "Aksum", "Aksum"
-
-    class Course(models.TextChoices):
-        CS = "CS", "CS"
-        SE = "SE", "SE"
-        EL = "EL", "EL"
-        IBT = "IBT", "IBT"
-
-    user = models.OneToOneField(
-        settings.AUTH_USER_MODEL,
-        on_delete=models.CASCADE,
-        related_name="customer_profile",
-    )
-    course = models.CharField(max_length=4, choices=Course.choices, blank=True, help_text="Your course of study.")
-    cohort = models.CharField(
-        max_length=4,
-        blank=True,
-        validators=[
-            RegexValidator(
-                regex=r"^[A-Z]'\d{2}$",
-                message="Cohort must strictly match the format F'25 (uppercase letter, apostrophe, and 2 digits).",
-            )
-        ],
-        help_text="Format: F'25",
-    )
-    residence = models.CharField(
-        max_length=20,
-        choices=Residence.choices,
-        blank=True,
-        help_text="Campus residence hall.",
-    )
-    room_number = models.CharField(
-        max_length=4,
-        blank=True,
-        validators=[
-            RegexValidator(
-                regex=r"^[A-Z]\d{3}$",
-                message="Room number must strictly match the format S101 (1 uppercase letter followed by 3 digits).",
-            )
-        ],
-        help_text="Format: S101",
-    )
-    bio = models.TextField(max_length=300, blank=True)
-
-    # Notification preferences
-    receive_promotions = models.BooleanField(default=True)
-    receive_email_notifications = models.BooleanField(default=True)
-
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-
-    def __str__(self):
-        return f"Customer profile: {self.user.email}"
-
-
-# ---------------------------------------------------------------------------
-# Vendor profile (created only when a VendorApplication is approved)
-# ---------------------------------------------------------------------------
-class VendorProfile(models.Model):
-    class Status(models.TextChoices):
-        ACTIVE = "active", "Active"
-        SUSPENDED = "suspended", "Suspended"
-
-    user = models.OneToOneField(
-        settings.AUTH_USER_MODEL,
-        on_delete=models.CASCADE,
-        related_name="vendor_profile",
-    )
-
-    # Business identity
-    business_name = models.CharField(max_length=150)
-    slug = models.SlugField(max_length=160, unique=True)
-    tagline = models.CharField(max_length=160, blank=True)
-    description = models.TextField(blank=True)
-    logo = models.ImageField(upload_to="vendors/logos/", blank=True, null=True)
-    banner = models.ImageField(upload_to="vendors/banners/", blank=True, null=True)
-
-    # Contact (shown publicly on the storefront)
-    contact_email = models.EmailField(blank=True)
-    contact_phone = models.CharField(max_length=16, blank=True)
-    whatsapp = models.CharField(max_length=16, blank=True)
-    social_links = models.JSONField(
-        default=dict, blank=True, help_text='e.g. {"instagram": "https://..."}'
-    )
-
-    # Trust and moderation
-    is_verified = models.BooleanField(default=False)
-    verified_at = models.DateTimeField(null=True, blank=True)
-    status = models.CharField(
-        max_length=10, choices=Status.choices, default=Status.ACTIVE, db_index=True
-    )
-
-    # Denormalised reputation (updated by the reviews app)
-    rating_average = models.DecimalField(max_digits=3, decimal_places=2, default=0) # type: ignore
-    rating_count = models.PositiveIntegerField(default=0)
-
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-
-    class Meta:
-        ordering = ["business_name"]
-
-    def __str__(self):
-        return self.business_name
-
-    @property
-    def is_active_vendor(self):
-        return self.status == self.Status.ACTIVE
-
-    @staticmethod
-    def generate_unique_slug(name):
-        base = slugify(name)[:150] or "vendor"
-        slug, n = base, 2
-        while VendorProfile.objects.filter(slug=slug).exists():
-            slug = f"{base}-{n}"
-            n += 1
-        return slug
-
-
-# ---------------------------------------------------------------------------
-# Vendor application (customer asks to become a vendor; admin reviews it)
-# ---------------------------------------------------------------------------
-class VendorApplication(models.Model):
-    class Status(models.TextChoices):
-        PENDING = "pending", "Pending review"
-        APPROVED = "approved", "Approved"
-        REJECTED = "rejected", "Rejected"
-
-    class BusinessType(models.TextChoices):
-        PRODUCTS = "products", "Sells products"
-        SERVICES = "services", "Offers services"
-        BOTH = "both", "Products and services"
-
-    applicant = models.ForeignKey(
-        settings.AUTH_USER_MODEL,
-        on_delete=models.CASCADE,
-        related_name="vendor_applications",
-    )
-
-    # What the applicant submits
-    business_name = models.CharField(max_length=150)
-    business_type = models.CharField(max_length=10, choices=BusinessType.choices)
-    description = models.TextField(help_text="What do you sell or offer?")
-    contact_phone = models.CharField(max_length=16, blank=True)
-    proof_document = models.FileField(
-        upload_to="vendor_applications/",
-        blank=True,
-        null=True,
-        help_text="Student ID, business registration or similar.",
-    )
-
-    # Review outcome
-    status = models.CharField(
-        max_length=10, choices=Status.choices, default=Status.PENDING, db_index=True
-    )
-    rejection_reason = models.TextField(blank=True)
-    admin_notes = models.TextField(blank=True, help_text="Internal only.")
-    reviewed_by = models.ForeignKey(
-        settings.AUTH_USER_MODEL,
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True,
-        related_name="reviewed_vendor_applications",
-    )
-    reviewed_at = models.DateTimeField(null=True, blank=True)
-
-    submitted_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-
-    class Meta:
-        ordering = ["-submitted_at"]
-        constraints = [
-            # A user can have only one pending application at a time,
-            # but may re-apply after a rejection.
-            models.UniqueConstraint(
-                fields=["applicant"],
-                condition=models.Q(status="pending"),
-                name="unique_pending_application_per_user",
-            )
-        ]
-
-    def __str__(self):
-        return f"{self.business_name} ({self.get_status_display()})" # type: ignore
-
-    def approve(self, admin_user, notes=""):
-        """Approve: promote the applicant to vendor and create their VendorProfile."""
-        if self.status != self.Status.PENDING:
-            raise ValueError("Only pending applications can be approved.")
-
-        with transaction.atomic():
-            now = timezone.now()
-            user = self.applicant
-
-            VendorProfile.objects.get_or_create(
-                user=user,
-                defaults={
-                    "business_name": self.business_name,
-                    "slug": VendorProfile.generate_unique_slug(self.business_name),
-                    "description": self.description,
-                    "contact_email": user.email,
-                    "contact_phone": self.contact_phone,
-                    "is_verified": True,
-                    "verified_at": now,
-                },
-            )
-            user.role = User.Role.VENDOR
-            user.save(update_fields=["role", "updated_at"])
-
-            self.status = self.Status.APPROVED
-            self.reviewed_by = admin_user
-            self.reviewed_at = now
-            if notes:
-                self.admin_notes = notes
-            self.save()
-
-    def reject(self, admin_user, reason, notes=""):
-        """Reject with a reason the applicant can see."""
-        if self.status != self.Status.PENDING:
-            raise ValueError("Only pending applications can be rejected.")
-        if not reason:
-            raise ValueError("A rejection reason is required.")
-
-        self.status = self.Status.REJECTED
-        self.rejection_reason = reason
-        self.reviewed_by = admin_user
-        self.reviewed_at = timezone.now()
-        if notes:
-            self.admin_notes = notes
-        self.save()
