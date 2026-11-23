@@ -112,15 +112,15 @@
                             </span>
                         {% endif %}
                     </a>
-                    <a class="ops-nav-link {% block authorize_ads_nav_class %}{% if request.resolver_match.url_name == 'authorize-ads' %}active{% endif %}{% endblock %}"
-                       href="{% url 'operations:authorize-ads' %}">
-                        <i class="bi bi-megaphone" aria-hidden="true"></i>
-                        <span>Ads &amp; announcements</span>
-                        {% if pending_ad_approvals %}
-                            <span class="ops-nav-badge" aria-label="{{ pending_ad_approvals }} pending ad approvals">
-                                {{ pending_ad_approvals }}
-                            </span>
-                        {% endif %}
+                    <a class="ops-nav-link {% block marketing_nav_class %}{% if 'marketing' in request.resolver_match.url_name %}active{% endif %}{% endblock %}"
+                        href="{% url 'operations:marketing' %}">
+                            <i class="bi bi-megaphone" aria-hidden="true"></i>
+                            <span>Marketing</span>
+                            {% if pending_ad_approvals %}
+                                <span class="ops-nav-badge" aria-label="{{ pending_ad_approvals }} pending marketing approvals">
+                                    {{ pending_ad_approvals }}
+                                </span>
+                            {% endif %}
                     </a>
                     <a class="ops-nav-link {% block complaints_nav_class %}{% if request.resolver_match.url_name == 'complaints' %}active{% endif %}{% endblock %}"
                        href="{% url 'operations:complaints' %}">

@@ -3,16 +3,17 @@ from decimal import Decimal
 
 from django.contrib import messages
 from django.contrib.admin.views.decorators import staff_member_required
+from django.core.exceptions import PermissionDenied
 from django.db.models import Count, Sum
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 from django.utils.dateparse import parse_date
 
 from accounts.models import User
+from marketing.models import Advertisement, Announcement
 from operations.models import CommissionPlan, Payout, StoreSubscription
 from stores.models import Store
 from transactions.models import Booking, Order
-
 
 @staff_member_required
 def admin_home(request):
@@ -143,14 +144,186 @@ def authorize_stores(request):
 
 
 @staff_member_required
-def authorize_ads(request):
-    return _placeholder_view(
-        request,
-        "Ads & announcements",
-        "Moderate promoted listings, banners, and store announcements.",
-        "authorize_ads",
+def marketing(request):
+    if request.method == "POST":
+        item_type = request.POST.get("item_type")  # "ad" or "announcement"
+        action = request.POST.get("action")
+
+        if item_type == "ad":
+            ad = get_object_or_404(Advertisement, pk=request.POST.get("item_id"))
+
+            if action == "approve":
+                ad.status = Advertisement.Status.ACTIVE
+                ad.is_active = True
+                ad.save(update_fields=["status", "is_active", "updated_at"])
+                messages.success(request, f"Approved ad: '{ad.title}'.")
+
+            elif action == "reject":
+                ad.status = Advertisement.Status.REJECTED
+                ad.is_active = False
+                ad.save(update_fields=["status", "is_active", "updated_at"])
+                messages.warning(request, f"Rejected ad: '{ad.title}'.")
+
+            elif action == "toggle":
+                if ad.status == Advertisement.Status.ACTIVE:
+                    ad.status = Advertisement.Status.PAUSED
+                    ad.is_active = False
+                    messages.info(request, f"Paused ad: '{ad.title}'.")
+                else:
+                    ad.status = Advertisement.Status.ACTIVE
+                    ad.is_active = True
+                    messages.success(request, f"Activated ad: '{ad.title}'.")
+                ad.save(update_fields=["status", "is_active", "updated_at"])
+
+            elif action == "delete":
+                title = ad.title
+                ad.delete()
+                messages.warning(request, f"Deleted ad: '{title}'.")
+
+        elif item_type == "announcement":
+            announcement = get_object_or_404(Announcement, pk=request.POST.get("item_id"))
+
+            if action in ("approve", "toggle"):
+                announcement.is_active = not announcement.is_active
+                announcement.save(update_fields=["is_active", "updated_at"])
+                state = "Published" if announcement.is_active else "Unpublished"
+                messages.success(request, f"{state} announcement: '{announcement.title}'.")
+
+            elif action == "delete":
+                title = announcement.title
+                announcement.delete()
+                messages.warning(request, f"Deleted announcement: '{title}'.")
+
+        return redirect("operations:marketing")
+
+    pending_ads = (
+        Advertisement.objects.filter(status=Advertisement.Status.PENDING)
+        .select_related("store", "user")
+        .order_by("created_at")
+    )
+    current_ads = (
+        Advertisement.objects.exclude(status=Advertisement.Status.PENDING)
+        .select_related("store", "user")
+        .order_by("-created_at")
+    )
+    pending_announcements = (
+        Announcement.objects.filter(is_active=False)
+        .select_related("store", "user")
+        .order_by("created_at")
+    )
+    current_announcements = (
+        Announcement.objects.filter(is_active=True)
+        .select_related("store", "user")
+        .order_by("-created_at")
     )
 
+    return render(
+        request,
+        "operations/marketing.html",
+        {
+            "pending_ads": pending_ads,
+            "current_ads": current_ads,
+            "pending_announcements": pending_announcements,
+            "current_announcements": current_announcements,
+            "pending_ad_count": pending_ads.count(),
+            "pending_announcement_count": pending_announcements.count(),
+        },
+    )
+
+
+@staff_member_required
+def marketing_ad_form(request, pk=None):
+    ad = get_object_or_404(Advertisement, pk=pk) if pk else None
+    stores = Store.objects.filter(status=Store.Status.ACTIVE).order_by("name")
+
+    if request.method == "POST":
+        store_id = request.POST.get("store")
+        title = request.POST.get("title", "").strip()
+        description = request.POST.get("description", "").strip()
+        target_url = request.POST.get("target_url", "").strip()
+        start_date = request.POST.get("start_date")
+        end_date = request.POST.get("end_date")
+        budget = request.POST.get("budget") or "0.00"
+        status = request.POST.get("status", Advertisement.Status.ACTIVE)
+        is_active = request.POST.get("is_active") == "on"
+        banner_image = request.FILES.get("banner_image")
+
+        if not (store_id and title and start_date and end_date):
+            messages.error(request, "Store, title, start date, and end date are required.")
+        else:
+            store = get_object_or_404(Store, pk=store_id)
+            if ad is None:
+                ad = Advertisement(user=request.user)
+
+            ad.store = store
+            ad.title = title
+            ad.description = description
+            ad.target_url = target_url
+            ad.start_date = start_date
+            ad.end_date = end_date
+            ad.budget = budget
+            ad.status = status
+            ad.is_active = is_active
+            if banner_image:
+                ad.banner_image = banner_image
+
+            ad.save()
+            messages.success(request, f"Advertisement '{ad.title}' saved.")
+            return redirect("operations:marketing")
+
+    return render(
+        request,
+        "operations/marketing_ad_form.html",
+        {
+            "ad": ad,
+            "stores": stores,
+            "statuses": Advertisement.Status.choices,
+        },
+    )
+
+
+@staff_member_required
+def marketing_announcement_form(request, pk=None):
+    announcement = get_object_or_404(Announcement, pk=pk) if pk else None
+    stores = Store.objects.filter(status=Store.Status.ACTIVE).order_by("name")
+
+    if request.method == "POST":
+        store_id = request.POST.get("store") or None
+        title = request.POST.get("title", "").strip()
+        content = request.POST.get("content", "").strip()
+        start_date = request.POST.get("start_date") or None
+        end_date = request.POST.get("end_date") or None
+        is_active = request.POST.get("is_active") == "on"
+        banner_image = request.FILES.get("banner_image")
+
+        if not (title and content):
+            messages.error(request, "Title and content are required.")
+        else:
+            store = get_object_or_404(Store, pk=store_id) if store_id else None
+            if announcement is None:
+                announcement = Announcement(user=request.user)
+
+            announcement.store = store
+            announcement.title = title
+            announcement.content = content
+            announcement.start_date = start_date
+            announcement.end_date = end_date
+            announcement.is_active = is_active
+            if banner_image:
+                announcement.banner_image = banner_image
+
+            announcement.save()
+            messages.success(request, f"Announcement '{announcement.title}' saved.")
+            return redirect("operations:marketing")
+
+    return render(
+        request,
+        "operations/marketing_announcement_form.html",
+        {
+            "announcement": announcement,
+            "stores": stores,
+        },
+    )
 
 @staff_member_required
 def complaints_list(request):

@@ -1,0 +1,109 @@
+{% extends "operations/base.html" %}
+
+{% block title %}{% if ad %}Edit Ad{% else %}New Ad{% endif %} | The Spotlight{% endblock %}
+{% block breadcrumb %}Marketing{% endblock %}
+{% block page_kicker %}Administration{% endblock %}
+{% block page_heading %}{% if ad %}Edit advertisement{% else %}Create advertisement{% endif %}{% endblock %}
+{% block page_description %}Configure banner creative, campaign schedule, and store link.{% endblock %}
+{% block marketing_nav_class %}active{% endblock %}
+
+{% block page_actions %}
+    <a class="btn ops-btn-gold-outline" href="{% url 'operations:marketing' %}">
+        <i class="bi bi-arrow-left me-1" aria-hidden="true"></i>
+        Back to marketing
+    </a>
+{% endblock %}
+
+{% block content %}
+    <section class="ops-card w-100" aria-labelledby="ad-form-heading">
+        <div class="ops-card-header d-flex flex-wrap align-items-center justify-content-between gap-2 px-3 px-lg-4 py-3">
+            <div>
+                <h2 class="h5 ops-card-title mb-1" id="ad-form-heading">
+                    <i class="bi bi-badge-ad me-2" aria-hidden="true"></i>Advertisement details
+                </h2>
+                <p class="small ops-card-subtitle mb-0">Fields marked with * are required to publish the campaign</p>
+            </div>
+        </div>
+        <div class="p-3 p-lg-4">
+            <form method="post" enctype="multipart/form-data">
+                {% csrf_token %}
+
+                <div class="row g-3 mb-3">
+                    <div class="col-md-6">
+                        <label class="form-label fw-medium" for="store">Store *</label>
+                        <select id="store" name="store" class="form-select" required>
+                            <option value="">Select store...</option>
+                            {% for store in stores %}
+                                <option value="{{ store.pk }}" {% if ad and ad.store_id == store.pk %}selected{% endif %}>
+                                    {{ store.name }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label fw-medium" for="title">Title *</label>
+                        <input type="text" id="title" name="title" maxlength="200" value="{{ ad.title|default:'' }}" class="form-control" required>
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label fw-medium" for="description">Description</label>
+                    <textarea id="description" name="description" rows="3" class="form-control">{{ ad.description|default:'' }}</textarea>
+                </div>
+
+                <div class="row g-3 mb-3">
+                    <div class="col-md-6">
+                        <label class="form-label fw-medium" for="banner_image">Banner image</label>
+                        {% if ad and ad.banner_image %}
+                            <div class="mb-2">
+                                <img src="{{ ad.banner_image.url }}" alt="{{ ad.title }}" class="rounded border" style="height: 68px; object-fit: cover;">
+                            </div>
+                        {% endif %}
+                        <input type="file" id="banner_image" name="banner_image" accept="image/*" class="form-control">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label fw-medium" for="target_url">Target URL</label>
+                        <input type="url" id="target_url" name="target_url" placeholder="https://..." value="{{ ad.target_url|default:'' }}" class="form-control">
+                    </div>
+                </div>
+
+                <div class="row g-3 mb-3">
+                    <div class="col-md-3">
+                        <label class="form-label fw-medium" for="start_date">Start date *</label>
+                        <input type="datetime-local" id="start_date" name="start_date" value="{% if ad and ad.start_date %}{{ ad.start_date|date:'Y-m-d\TH:i' }}{% endif %}" class="form-control" required>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label fw-medium" for="end_date">End date *</label>
+                        <input type="datetime-local" id="end_date" name="end_date" value="{% if ad and ad.end_date %}{{ ad.end_date|date:'Y-m-d\TH:i' }}{% endif %}" class="form-control" required>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label fw-medium" for="budget">Budget (MUR)</label>
+                        <input type="number" step="0.01" min="0" id="budget" name="budget" value="{{ ad.budget|default:'0.00' }}" class="form-control">
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label fw-medium" for="status">Status</label>
+                        <select id="status" name="status" class="form-select">
+                            {% for value, label in statuses %}
+                                <option value="{{ value }}" {% if ad and ad.status == value %}selected{% elif not ad and value == 'active' %}selected{% endif %}>
+                                    {{ label }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-check mb-4">
+                    <input class="form-check-input" type="checkbox" id="is_active" name="is_active" {% if ad %}{% if ad.is_active %}checked{% endif %}{% else %}checked{% endif %}>
+                    <label class="form-check-label fw-medium" for="is_active">Active and visible in marketplace</label>
+                </div>
+
+                <div class="d-flex flex-wrap gap-2 pt-3 border-top">
+                    <button type="submit" class="btn btn-dark">
+                        <i class="bi bi-check2 me-1" aria-hidden="true"></i>Save advertisement
+                    </button>
+                    <a href="{% url 'operations:marketing' %}" class="btn ops-btn-gold-outline">Cancel</a>
+                </div>
+            </form>
+        </div>
+    </section>
+{% endblock %}

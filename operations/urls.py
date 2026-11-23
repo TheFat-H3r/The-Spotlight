@@ -1,5 +1,5 @@
 from django.urls import path
-from .views import admin_home, admin_settings, authorize_ads, authorize_stores, complaints_list, manage_bookings, manage_catalog, manage_categories, manage_orders, manage_payouts, manage_reviews, manage_stores, manage_users, notifications_center, payout_detail
+from .views import admin_home, admin_settings, authorize_stores, complaints_list, manage_bookings, manage_catalog, manage_categories, manage_orders, manage_payouts, manage_reviews, manage_stores, manage_users, marketing, marketing_ad_form, marketing_announcement_form, notifications_center, payout_detail
 
 app_name = "operations"
 urlpatterns = [
@@ -8,8 +8,14 @@ urlpatterns = [
 
     # Approvals & Moderation
     path("stores/authorize/", authorize_stores, name="authorize-stores"),
-    path("ads/authorize/", authorize_ads, name="authorize-ads"),
     path("complaints/", complaints_list, name="complaints"),
+
+    # Marketing
+    path("marketing/", marketing, name="marketing"),
+    path("marketing/ads/add/", marketing_ad_form, name="marketing-ad-add"),
+    path("marketing/ads/<int:pk>/edit/", marketing_ad_form, name="marketing-ad-edit"),
+    path("marketing/announcements/add/", marketing_announcement_form, name="marketing-announcement-add"),
+    path("marketing/announcements/<int:pk>/edit/", marketing_announcement_form, name="marketing-announcement-edit"),
 
     # Marketplace & Directory
     path("stores/", manage_stores, name="manage-stores"),

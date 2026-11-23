@@ -1,0 +1,620 @@
+{% extends "operations/base.html" %}
+
+{% block title %}Marketing | The Spotlight{% endblock %}
+{% block breadcrumb %}Marketing{% endblock %}
+{% block page_kicker %}Administration{% endblock %}
+{% block page_heading %}Marketing &amp; announcements{% endblock %}
+{% block page_description %}
+    Authorize vendor ad submissions, manage active campaigns, and publish platform announcements.
+{% endblock %}
+{% block marketing_nav_class %}active{% endblock %}
+
+{% block extra_css %}
+    <link rel="stylesheet" href="https://cdn.datatables.net/2.1.8/css/dataTables.bootstrap5.min.css">
+{% endblock %}
+
+{% block page_actions %}
+    <a class="btn ops-btn-gold-outline" href="{% url 'operations:marketing-announcement-add' %}">
+        <i class="bi bi-megaphone me-1" aria-hidden="true"></i>
+        New announcement
+    </a>
+    <a class="btn btn-dark" href="{% url 'operations:marketing-ad-add' %}">
+        <i class="bi bi-plus-lg me-1" aria-hidden="true"></i>
+        New ad
+    </a>
+{% endblock %}
+
+{% block content %}
+    {# KPI Summary Row #}
+    <section class="row g-3 mb-4" aria-label="Marketing summary">
+        <div class="col-sm-6 col-xl-3">
+            <article class="ops-card ops-kpi-card h-100 p-3 p-lg-4">
+                <div class="d-flex align-items-start justify-content-between">
+                    <div>
+                        <p class="small text-secondary fw-medium mb-2">Pending ads</p>
+                        <p class="fs-2 fw-bold ops-kpi-value mb-0">{{ pending_ad_count }}</p>
+                    </div>
+                    <span class="ops-kpi-icon">
+                        <i class="bi bi-hourglass-split fs-5" aria-hidden="true"></i>
+                    </span>
+                </div>
+                <p class="small text-secondary mb-0 mt-3">Awaiting admin authorization</p>
+            </article>
+        </div>
+        <div class="col-sm-6 col-xl-3">
+            <article class="ops-card ops-kpi-card h-100 p-3 p-lg-4">
+                <div class="d-flex align-items-start justify-content-between">
+                    <div>
+                        <p class="small text-secondary fw-medium mb-2">Total ads</p>
+                        <p class="fs-2 fw-bold ops-kpi-value mb-0">{{ current_ads|length }}</p>
+                    </div>
+                    <span class="ops-kpi-icon">
+                        <i class="bi bi-badge-ad fs-5" aria-hidden="true"></i>
+                    </span>
+                </div>
+                <p class="small text-secondary mb-0 mt-3">Reviewed store campaigns</p>
+            </article>
+        </div>
+        <div class="col-sm-6 col-xl-3">
+            <article class="ops-card ops-kpi-card h-100 p-3 p-lg-4">
+                <div class="d-flex align-items-start justify-content-between">
+                    <div>
+                        <p class="small text-secondary fw-medium mb-2">Pending announcements</p>
+                        <p class="fs-2 fw-bold ops-kpi-value mb-0">{{ pending_announcement_count }}</p>
+                    </div>
+                    <span class="ops-kpi-icon">
+                        <i class="bi bi-clock-history fs-5" aria-hidden="true"></i>
+                    </span>
+                </div>
+                <p class="small text-secondary mb-0 mt-3">Draft or awaiting publication</p>
+            </article>
+        </div>
+        <div class="col-sm-6 col-xl-3">
+            <article class="ops-card ops-kpi-card h-100 p-3 p-lg-4">
+                <div class="d-flex align-items-start justify-content-between">
+                    <div>
+                        <p class="small text-secondary fw-medium mb-2">Live announcements</p>
+                        <p class="fs-2 fw-bold ops-kpi-value mb-0">{{ current_announcements|length }}</p>
+                    </div>
+                    <span class="ops-kpi-icon">
+                        <i class="bi bi-megaphone fs-5" aria-hidden="true"></i>
+                    </span>
+                </div>
+                <p class="small text-secondary mb-0 mt-3">Visible in sidebar ticker</p>
+            </article>
+        </div>
+    </section>
+
+    {# 1. Pending Advertisements Table #}
+    <section class="ops-card mb-4" aria-labelledby="pending-ads-heading">
+        <div class="ops-card-header d-flex flex-wrap align-items-center justify-content-between gap-2 px-3 px-lg-4 py-3">
+            <div>
+                <h2 class="h5 ops-card-title mb-1" id="pending-ads-heading">
+                    <i class="bi bi-badge-ad me-2" aria-hidden="true"></i>Pending advertisements
+                </h2>
+                <p class="small ops-card-subtitle mb-0">{{ pending_ad_count }} submissions awaiting review</p>
+            </div>
+        </div>
+        <div class="p-3 p-lg-4">
+            <div class="table-responsive">
+                <table id="pending-ads-table" class="table ops-table align-middle w-100 mb-0">
+                    <thead>
+                        <tr>
+                            <th scope="col">Ad title</th>
+                            <th scope="col">Store</th>
+                            <th scope="col">Schedule</th>
+                            <th class="text-end" scope="col">Budget</th>
+                            <th scope="col">Status</th>
+                            <th class="text-end" scope="col" data-orderable="false">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for ad in pending_ads %}
+                            <tr>
+                                <td class="fw-semibold">
+                                    <a href="#"
+                                       class="ops-row-link js-preview-item"
+                                       data-bs-toggle="modal"
+                                       data-bs-target="#marketingPreviewModal"
+                                       data-kind="Advertisement"
+                                       data-title="{{ ad.title }}"
+                                       data-store="{{ ad.store.name }}"
+                                       data-author="{{ ad.user.full_name|default:ad.user.email }}"
+                                       data-status="{{ ad.get_status_display }}"
+                                       data-schedule="{{ ad.start_date|date:'d M Y, H:i' }} – {{ ad.end_date|date:'d M Y, H:i' }}"
+                                       data-budget="MUR {{ ad.budget }}"
+                                       data-metrics="{{ ad.impressions_count }} views · {{ ad.clicks_count }} clicks"
+                                       data-url="{{ ad.target_url }}"
+                                       data-image="{% if ad.banner_image %}{{ ad.banner_image.url }}{% endif %}"
+                                       data-body="{{ ad.description|default:'No description provided.' }}">
+                                        {{ ad.title }}
+                                    </a>
+                                </td>
+                                <td>{{ ad.store.name }} <span class="text-secondary">· {{ ad.user.full_name|default:ad.user.email }}</span></td>
+                                <td class="text-nowrap" data-order="{{ ad.start_date|date:'U' }}">
+                                    {{ ad.start_date|date:"d M Y" }} – {{ ad.end_date|date:"d M Y" }}
+                                </td>
+                                <td class="text-end fw-semibold text-nowrap" data-order="{{ ad.budget }}">MUR {{ ad.budget }}</td>
+                                <td>
+                                    <span class="badge rounded-pill bg-warning-subtle text-warning-emphasis">{{ ad.get_status_display }}</span>
+                                </td>
+                                <td class="text-end text-nowrap">
+                                    <div class="d-inline-flex gap-1">
+                                        <button type="button"
+                                                class="btn btn-sm btn-outline-dark js-preview-item"
+                                                data-bs-toggle="modal"
+                                                data-bs-target="#marketingPreviewModal"
+                                                data-kind="Advertisement"
+                                                data-title="{{ ad.title }}"
+                                                data-store="{{ ad.store.name }}"
+                                                data-author="{{ ad.user.full_name|default:ad.user.email }}"
+                                                data-status="{{ ad.get_status_display }}"
+                                                data-schedule="{{ ad.start_date|date:'d M Y, H:i' }} – {{ ad.end_date|date:'d M Y, H:i' }}"
+                                                data-budget="MUR {{ ad.budget }}"
+                                                data-metrics="{{ ad.impressions_count }} views · {{ ad.clicks_count }} clicks"
+                                                data-url="{{ ad.target_url }}"
+                                                data-image="{% if ad.banner_image %}{{ ad.banner_image.url }}{% endif %}"
+                                                data-body="{{ ad.description|default:'No description provided.' }}">
+                                            View
+                                        </button>
+                                        <form method="post" class="d-inline">
+                                            {% csrf_token %}
+                                            <input type="hidden" name="item_type" value="ad">
+                                            <input type="hidden" name="item_id" value="{{ ad.pk }}">
+                                            <button type="submit" name="action" value="approve" class="btn btn-sm btn-success">Approve</button>
+                                            <button type="submit" name="action" value="reject" class="btn btn-sm btn-outline-danger">Reject</button>
+                                        </form>
+                                    </div>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </section>
+
+    {# 2. Current Advertisements Table #}
+    <section class="ops-card mb-4" aria-labelledby="current-ads-heading">
+        <div class="ops-card-header d-flex flex-wrap align-items-center justify-content-between gap-2 px-3 px-lg-4 py-3">
+            <div>
+                <h2 class="h5 ops-card-title mb-1" id="current-ads-heading">
+                    <i class="bi bi-collection-play me-2" aria-hidden="true"></i>Current advertisements
+                </h2>
+                <p class="small ops-card-subtitle mb-0">Active, paused, expired, and rejected store ads</p>
+            </div>
+            <a class="btn btn-sm ops-btn-gold-outline" href="{% url 'operations:marketing-ad-add' %}">
+                Add ad <i class="bi bi-plus-lg ms-1" aria-hidden="true"></i>
+            </a>
+        </div>
+        <div class="p-3 p-lg-4">
+            <div class="table-responsive">
+                <table id="current-ads-table" class="table ops-table align-middle w-100 mb-0">
+                    <thead>
+                        <tr>
+                            <th scope="col">Ad title</th>
+                            <th scope="col">Store</th>
+                            <th scope="col">Ends</th>
+                            <th scope="col">Performance</th>
+                            <th scope="col">Status</th>
+                            <th class="text-end" scope="col" data-orderable="false">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for ad in current_ads %}
+                            <tr>
+                                <td class="fw-semibold">
+                                    <a href="#"
+                                       class="ops-row-link js-preview-item"
+                                       data-bs-toggle="modal"
+                                       data-bs-target="#marketingPreviewModal"
+                                       data-kind="Advertisement"
+                                       data-title="{{ ad.title }}"
+                                       data-store="{{ ad.store.name }}"
+                                       data-author="{{ ad.user.full_name|default:ad.user.email }}"
+                                       data-status="{{ ad.get_status_display }}"
+                                       data-schedule="{{ ad.start_date|date:'d M Y, H:i' }} – {{ ad.end_date|date:'d M Y, H:i' }}"
+                                       data-budget="MUR {{ ad.budget }}"
+                                       data-metrics="{{ ad.impressions_count }} views · {{ ad.clicks_count }} clicks"
+                                       data-url="{{ ad.target_url }}"
+                                       data-image="{% if ad.banner_image %}{{ ad.banner_image.url }}{% endif %}"
+                                       data-body="{{ ad.description|default:'No description provided.' }}">
+                                        {{ ad.title }}
+                                    </a>
+                                </td>
+                                <td>{{ ad.store.name }}</td>
+                                <td class="text-nowrap" data-order="{{ ad.end_date|date:'U' }}">
+                                    {{ ad.end_date|date:"d M Y, H:i" }}
+                                </td>
+                                <td class="text-secondary small">{{ ad.impressions_count }} views · {{ ad.clicks_count }} clicks</td>
+                                <td>
+                                    {% if ad.status == "active" %}
+                                        <span class="badge rounded-pill bg-success-subtle text-success-emphasis">{{ ad.get_status_display }}</span>
+                                    {% elif ad.status == "paused" %}
+                                        <span class="badge rounded-pill bg-warning-subtle text-warning-emphasis">{{ ad.get_status_display }}</span>
+                                    {% elif ad.status == "rejected" %}
+                                        <span class="badge rounded-pill bg-danger-subtle text-danger-emphasis">{{ ad.get_status_display }}</span>
+                                    {% else %}
+                                        <span class="badge rounded-pill bg-secondary-subtle text-secondary-emphasis">{{ ad.get_status_display }}</span>
+                                    {% endif %}
+                                </td>
+                                <td class="text-end text-nowrap">
+                                    <div class="d-inline-flex gap-1">
+                                        <button type="button"
+                                                class="btn btn-sm btn-outline-dark js-preview-item"
+                                                data-bs-toggle="modal"
+                                                data-bs-target="#marketingPreviewModal"
+                                                data-kind="Advertisement"
+                                                data-title="{{ ad.title }}"
+                                                data-store="{{ ad.store.name }}"
+                                                data-author="{{ ad.user.full_name|default:ad.user.email }}"
+                                                data-status="{{ ad.get_status_display }}"
+                                                data-schedule="{{ ad.start_date|date:'d M Y, H:i' }} – {{ ad.end_date|date:'d M Y, H:i' }}"
+                                                data-budget="MUR {{ ad.budget }}"
+                                                data-metrics="{{ ad.impressions_count }} views · {{ ad.clicks_count }} clicks"
+                                                data-url="{{ ad.target_url }}"
+                                                data-image="{% if ad.banner_image %}{{ ad.banner_image.url }}{% endif %}"
+                                                data-body="{{ ad.description|default:'No description provided.' }}">
+                                            View
+                                        </button>
+                                        <a href="{% url 'operations:marketing-ad-edit' ad.pk %}" class="btn btn-sm btn-outline-dark">Edit</a>
+                                        <form method="post" class="d-inline">
+                                            {% csrf_token %}
+                                            <input type="hidden" name="item_type" value="ad">
+                                            <input type="hidden" name="item_id" value="{{ ad.pk }}">
+                                            <button type="submit" name="action" value="toggle" class="btn btn-sm btn-outline-secondary">
+                                                {% if ad.status == "active" %}Pause{% else %}Activate{% endif %}
+                                            </button>
+                                            <button type="submit" name="action" value="delete" class="btn btn-sm btn-outline-danger" onclick="return confirm('Delete this ad permanently?');">
+                                                Delete
+                                            </button>
+                                        </form>
+                                    </div>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </section>
+
+    {# 3. Pending Announcements Table #}
+    <section class="ops-card mb-4" aria-labelledby="pending-announcements-heading">
+        <div class="ops-card-header d-flex flex-wrap align-items-center justify-content-between gap-2 px-3 px-lg-4 py-3">
+            <div>
+                <h2 class="h5 ops-card-title mb-1" id="pending-announcements-heading">
+                    <i class="bi bi-clock-history me-2" aria-hidden="true"></i>Pending announcements
+                </h2>
+                <p class="small ops-card-subtitle mb-0">{{ pending_announcement_count }} announcements awaiting approval</p>
+            </div>
+        </div>
+        <div class="p-3 p-lg-4">
+            <div class="table-responsive">
+                <table id="pending-announcements-table" class="table ops-table align-middle w-100 mb-0">
+                    <thead>
+                        <tr>
+                            <th scope="col">Title</th>
+                            <th scope="col">Target</th>
+                            <th scope="col">Submitted</th>
+                            <th scope="col">Status</th>
+                            <th class="text-end" scope="col" data-orderable="false">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in pending_announcements %}
+                            <tr>
+                                <td class="fw-semibold">
+                                    <a href="#"
+                                       class="ops-row-link js-preview-item"
+                                       data-bs-toggle="modal"
+                                       data-bs-target="#marketingPreviewModal"
+                                       data-kind="Announcement"
+                                       data-title="{{ item.title }}"
+                                       data-store="{{ item.store.name|default:'Platform-wide' }}"
+                                       data-author="{{ item.user.full_name|default:item.user.email }}"
+                                       data-status="Pending Approval"
+                                       data-schedule="{% if item.start_date %}{{ item.start_date|date:'d M Y, H:i' }}{% else %}Immediate{% endif %} – {% if item.end_date %}{{ item.end_date|date:'d M Y, H:i' }}{% else %}No expiry{% endif %}"
+                                       data-budget=""
+                                       data-metrics=""
+                                       data-url=""
+                                       data-image="{% if item.banner_image %}{{ item.banner_image.url }}{% endif %}"
+                                       data-body="{{ item.content }}">
+                                        {{ item.title }}
+                                    </a>
+                                </td>
+                                <td>{{ item.store.name|default:"Platform-wide" }} <span class="text-secondary">· {{ item.user.full_name|default:item.user.email }}</span></td>
+                                <td class="text-nowrap" data-order="{{ item.created_at|date:'U' }}">
+                                    {{ item.created_at|date:"d M Y, H:i" }}
+                                </td>
+                                <td>
+                                    <span class="badge rounded-pill bg-warning-subtle text-warning-emphasis">Pending</span>
+                                </td>
+                                <td class="text-end text-nowrap">
+                                    <div class="d-inline-flex gap-1">
+                                        <button type="button"
+                                                class="btn btn-sm btn-outline-dark js-preview-item"
+                                                data-bs-toggle="modal"
+                                                data-bs-target="#marketingPreviewModal"
+                                                data-kind="Announcement"
+                                                data-title="{{ item.title }}"
+                                                data-store="{{ item.store.name|default:'Platform-wide' }}"
+                                                data-author="{{ item.user.full_name|default:item.user.email }}"
+                                                data-status="Pending Approval"
+                                                data-schedule="{% if item.start_date %}{{ item.start_date|date:'d M Y, H:i' }}{% else %}Immediate{% endif %} – {% if item.end_date %}{{ item.end_date|date:'d M Y, H:i' }}{% else %}No expiry{% endif %}"
+                                                data-budget=""
+                                                data-metrics=""
+                                                data-url=""
+                                                data-image="{% if item.banner_image %}{{ item.banner_image.url }}{% endif %}"
+                                                data-body="{{ item.content }}">
+                                            View
+                                        </button>
+                                        <a href="{% url 'operations:marketing-announcement-edit' item.pk %}" class="btn btn-sm btn-outline-dark">Edit</a>
+                                        <form method="post" class="d-inline">
+                                            {% csrf_token %}
+                                            <input type="hidden" name="item_type" value="announcement">
+                                            <input type="hidden" name="item_id" value="{{ item.pk }}">
+                                            <button type="submit" name="action" value="approve" class="btn btn-sm btn-success">Publish</button>
+                                            <button type="submit" name="action" value="delete" class="btn btn-sm btn-outline-danger" onclick="return confirm('Delete this announcement?');">Delete</button>
+                                        </form>
+                                    </div>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </section>
+
+    {# 4. Current Active Announcements Table #}
+    <section class="ops-card" aria-labelledby="current-announcements-heading">
+        <div class="ops-card-header d-flex flex-wrap align-items-center justify-content-between gap-2 px-3 px-lg-4 py-3">
+            <div>
+                <h2 class="h5 ops-card-title mb-1" id="current-announcements-heading">
+                    <i class="bi bi-megaphone me-2" aria-hidden="true"></i>Current announcements
+                </h2>
+                <p class="small ops-card-subtitle mb-0">Live announcements displayed across the marketplace</p>
+            </div>
+            <a class="btn btn-sm ops-btn-gold-outline" href="{% url 'operations:marketing-announcement-add' %}">
+                Add announcement <i class="bi bi-plus-lg ms-1" aria-hidden="true"></i>
+            </a>
+        </div>
+        <div class="p-3 p-lg-4">
+            <div class="table-responsive">
+                <table id="current-announcements-table" class="table ops-table align-middle w-100 mb-0">
+                    <thead>
+                        <tr>
+                            <th scope="col">Title</th>
+                            <th scope="col">Target</th>
+                            <th scope="col">Expires</th>
+                            <th scope="col">Status</th>
+                            <th class="text-end" scope="col" data-orderable="false">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in current_announcements %}
+                            <tr>
+                                <td class="fw-semibold">
+                                    <a href="#"
+                                       class="ops-row-link js-preview-item"
+                                       data-bs-toggle="modal"
+                                       data-bs-target="#marketingPreviewModal"
+                                       data-kind="Announcement"
+                                       data-title="{{ item.title }}"
+                                       data-store="{{ item.store.name|default:'Platform-wide' }}"
+                                       data-author="{{ item.user.full_name|default:item.user.email }}"
+                                       data-status="Active"
+                                       data-schedule="{% if item.start_date %}{{ item.start_date|date:'d M Y, H:i' }}{% else %}Immediate{% endif %} – {% if item.end_date %}{{ item.end_date|date:'d M Y, H:i' }}{% else %}No expiry{% endif %}"
+                                       data-budget=""
+                                       data-metrics=""
+                                       data-url=""
+                                       data-image="{% if item.banner_image %}{{ item.banner_image.url }}{% endif %}"
+                                       data-body="{{ item.content }}">
+                                        {{ item.title }}
+                                    </a>
+                                </td>
+                                <td>{{ item.store.name|default:"Platform-wide" }}</td>
+                                <td class="text-nowrap" data-order="{{ item.end_date|date:'U'|default:'9999999999' }}">
+                                    {{ item.end_date|date:"d M Y, H:i"|default:"No expiry" }}
+                                </td>
+                                <td>
+                                    <span class="badge rounded-pill bg-success-subtle text-success-emphasis">Active</span>
+                                </td>
+                                <td class="text-end text-nowrap">
+                                    <div class="d-inline-flex gap-1">
+                                        <button type="button"
+                                                class="btn btn-sm btn-outline-dark js-preview-item"
+                                                data-bs-toggle="modal"
+                                                data-bs-target="#marketingPreviewModal"
+                                                data-kind="Announcement"
+                                                data-title="{{ item.title }}"
+                                                data-store="{{ item.store.name|default:'Platform-wide' }}"
+                                                data-author="{{ item.user.full_name|default:item.user.email }}"
+                                                data-status="Active"
+                                                data-schedule="{% if item.start_date %}{{ item.start_date|date:'d M Y, H:i' }}{% else %}Immediate{% endif %} – {% if item.end_date %}{{ item.end_date|date:'d M Y, H:i' }}{% else %}No expiry{% endif %}"
+                                                data-budget=""
+                                                data-metrics=""
+                                                data-url=""
+                                                data-image="{% if item.banner_image %}{{ item.banner_image.url }}{% endif %}"
+                                                data-body="{{ item.content }}">
+                                            View
+                                        </button>
+                                        <a href="{% url 'operations:marketing-announcement-edit' item.pk %}" class="btn btn-sm btn-outline-dark">Edit</a>
+                                        <form method="post" class="d-inline">
+                                            {% csrf_token %}
+                                            <input type="hidden" name="item_type" value="announcement">
+                                            <input type="hidden" name="item_id" value="{{ item.pk }}">
+                                            <button type="submit" name="action" value="toggle" class="btn btn-sm btn-outline-secondary">Unpublish</button>
+                                            <button type="submit" name="action" value="delete" class="btn btn-sm btn-outline-danger" onclick="return confirm('Delete this announcement permanently?');">Delete</button>
+                                        </form>
+                                    </div>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </section>
+
+    {# Shared Popup Preview Modal #}
+    <div class="modal fade" id="marketingPreviewModal" tabindex="-1" aria-labelledby="previewModalTitle" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content ops-card border-0">
+                <div class="ops-card-header d-flex align-items-start justify-content-between gap-2 px-3 px-lg-4 py-3">
+                    <div>
+                        <span id="previewModalKind" class="badge rounded-pill bg-secondary-subtle text-secondary-emphasis mb-1"></span>
+                        <h3 class="h5 ops-card-title mb-0" id="previewModalTitle"></h3>
+                    </div>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body p-3 p-lg-4">
+                    <div id="previewBannerWrapper" class="mb-3 d-none">
+                        <img id="previewBannerImage" src="" alt="Banner preview" class="img-fluid rounded w-100" style="max-height: 280px; object-fit: cover;">
+                    </div>
+
+                    <div class="row g-3 mb-3 small text-secondary">
+                        <div class="col-sm-6">
+                            <strong class="text-dark d-block">Store / target</strong>
+                            <span id="previewModalStore"></span>
+                        </div>
+                        <div class="col-sm-6">
+                            <strong class="text-dark d-block">Submitted by</strong>
+                            <span id="previewModalAuthor"></span>
+                        </div>
+                        <div class="col-sm-6">
+                            <strong class="text-dark d-block">Schedule</strong>
+                            <span id="previewModalSchedule"></span>
+                        </div>
+                        <div class="col-sm-6">
+                            <strong class="text-dark d-block">Status</strong>
+                            <span id="previewModalStatus"></span>
+                        </div>
+                        <div class="col-sm-6 d-none" id="previewBudgetWrapper">
+                            <strong class="text-dark d-block">Budget</strong>
+                            <span id="previewModalBudget"></span>
+                        </div>
+                        <div class="col-sm-6 d-none" id="previewMetricsWrapper">
+                            <strong class="text-dark d-block">Performance</strong>
+                            <span id="previewModalMetrics"></span>
+                        </div>
+                    </div>
+
+                    <div class="p-3 bg-light rounded">
+                        <strong class="d-block small text-uppercase text-secondary mb-1">Content</strong>
+                        <p id="previewModalBody" class="mb-0" style="white-space: pre-line;"></p>
+                    </div>
+
+                    <div id="previewUrlWrapper" class="mt-3 d-none">
+                        <strong class="d-block small text-secondary">Destination link</strong>
+                        <a id="previewModalUrl" href="#" target="_blank" rel="noopener noreferrer" class="small text-break"></a>
+                    </div>
+                </div>
+                <div class="modal-footer border-top px-3 px-lg-4 py-3">
+                    <button type="button" class="btn btn-sm btn-outline-dark" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block extra_js %}
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script src="https://cdn.datatables.net/2.1.8/js/dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/2.1.8/js/dataTables.bootstrap5.min.js"></script>
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            const commonConfig = {
+                pageLength: 10,
+                lengthMenu: [5, 10, 25, 50],
+                order: [],
+            };
+
+            new DataTable("#pending-ads-table", {
+                ...commonConfig,
+                language: {
+                    emptyTable: "No ads are waiting for approval.",
+                    search: "Search pending ads:",
+                },
+            });
+
+            new DataTable("#current-ads-table", {
+                ...commonConfig,
+                language: {
+                    emptyTable: "No advertisements have been created yet.",
+                    search: "Search ads:",
+                },
+            });
+
+            new DataTable("#pending-announcements-table", {
+                ...commonConfig,
+                language: {
+                    emptyTable: "No announcements are waiting for approval.",
+                    search: "Search pending announcements:",
+                },
+            });
+
+            new DataTable("#current-announcements-table", {
+                ...commonConfig,
+                language: {
+                    emptyTable: "No active announcements right now.",
+                    search: "Search announcements:",
+                },
+            });
+
+            // Populate preview modal when clicking "View" or any title link
+            const previewModal = document.getElementById("marketingPreviewModal");
+            if (previewModal) {
+                previewModal.addEventListener("show.bs.modal", function (event) {
+                    const trigger = event.relatedTarget;
+                    if (!trigger) return;
+
+                    document.getElementById("previewModalKind").textContent = trigger.dataset.kind || "";
+                    document.getElementById("previewModalTitle").textContent = trigger.dataset.title || "";
+                    document.getElementById("previewModalStore").textContent = trigger.dataset.store || "";
+                    document.getElementById("previewModalAuthor").textContent = trigger.dataset.author || "";
+                    document.getElementById("previewModalSchedule").textContent = trigger.dataset.schedule || "";
+                    document.getElementById("previewModalStatus").textContent = trigger.dataset.status || "";
+                    document.getElementById("previewModalBody").textContent = trigger.dataset.body || "";
+
+                    const imgWrapper = document.getElementById("previewBannerWrapper");
+                    const imgEl = document.getElementById("previewBannerImage");
+                    if (trigger.dataset.image) {
+                        imgEl.src = trigger.dataset.image;
+                        imgWrapper.classList.remove("d-none");
+                    } else {
+                        imgEl.src = "";
+                        imgWrapper.classList.add("d-none");
+                    }
+
+                    const budgetWrapper = document.getElementById("previewBudgetWrapper");
+                    if (trigger.dataset.budget) {
+                        document.getElementById("previewModalBudget").textContent = trigger.dataset.budget;
+                        budgetWrapper.classList.remove("d-none");
+                    } else {
+                        budgetWrapper.classList.add("d-none");
+                    }
+
+                    const metricsWrapper = document.getElementById("previewMetricsWrapper");
+                    if (trigger.dataset.metrics) {
+                        document.getElementById("previewModalMetrics").textContent = trigger.dataset.metrics;
+                        metricsWrapper.classList.remove("d-none");
+                    } else {
+                        metricsWrapper.classList.add("d-none");
+                    }
+
+                    const urlWrapper = document.getElementById("previewUrlWrapper");
+                    const urlEl = document.getElementById("previewModalUrl");
+                    if (trigger.dataset.url) {
+                        urlEl.href = trigger.dataset.url;
+                        urlEl.textContent = trigger.dataset.url;
+                        urlWrapper.classList.remove("d-none");
+                    } else {
+                        urlWrapper.classList.add("d-none");
+                    }
+                });
+            }
+        });
+    </script>
+{% endblock %}
