@@ -125,7 +125,7 @@
                     <a class="ops-nav-link {% block complaints_nav_class %}{% if request.resolver_match.url_name == 'complaints' %}active{% endif %}{% endblock %}"
                        href="{% url 'operations:complaints' %}">
                         <i class="bi bi-flag" aria-hidden="true"></i>
-                        <span>Complaints &amp; disputes</span>
+                        <span>Complaints</span>
                         {% if open_complaints_count %}
                             <span class="ops-nav-badge" aria-label="{{ open_complaints_count }} open complaints">
                                 {{ open_complaints_count }}
@@ -243,7 +243,9 @@
                 </button>
 
                 <div class="ops-context">
-                    <span class="d-none d-sm-inline">Operations</span>
+                    <span class="d-none d-sm-inline">
+                        <a class="ops-row-link" href="{% url 'operations:admin-home' %}">Operations</a>
+                    </span>
                     <i class="bi bi-chevron-right mx-2 small" aria-hidden="true"></i>
                     <strong>{% block breadcrumb %}Dashboard{% endblock %}</strong>
                 </div>

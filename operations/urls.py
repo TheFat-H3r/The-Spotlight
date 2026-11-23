@@ -1,5 +1,5 @@
 from django.urls import path
-from .views import admin_home, admin_settings, authorize_stores, complaints_list, manage_bookings, manage_catalog, manage_categories, manage_orders, manage_payouts, manage_reviews, manage_stores, manage_users, marketing, marketing_ad_form, marketing_announcement_form, notifications_center, payout_detail
+from .views import admin_home, admin_settings, authorize_stores, complaint_form, complaints, manage_bookings, manage_catalog, manage_categories, manage_orders, manage_payouts, manage_reviews, manage_stores, manage_users, marketing, marketing_ad_form, marketing_announcement_form, notifications_center, payout_detail
 
 app_name = "operations"
 urlpatterns = [
@@ -8,7 +8,11 @@ urlpatterns = [
 
     # Approvals & Moderation
     path("stores/authorize/", authorize_stores, name="authorize-stores"),
-    path("complaints/", complaints_list, name="complaints"),
+
+    # complaints
+    path("complaints/", complaints, name="complaints"),
+    path("complaints/add/", complaint_form, name="complaint-add"),
+    path("complaints/<int:pk>/edit/", complaint_form, name="complaint-edit"),
 
     # Marketing
     path("marketing/", marketing, name="marketing"),

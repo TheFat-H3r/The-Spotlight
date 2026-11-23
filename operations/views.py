@@ -11,7 +11,7 @@ from django.utils.dateparse import parse_date
 
 from accounts.models import User
 from marketing.models import Advertisement, Announcement
-from operations.models import CommissionPlan, Payout, StoreSubscription
+from operations.models import CommissionPlan, Complaint, Payout, StoreSubscription
 from stores.models import Store
 from transactions.models import Booking, Order
 
@@ -326,12 +326,134 @@ def marketing_announcement_form(request, pk=None):
     )
 
 @staff_member_required
-def complaints_list(request):
-    return _placeholder_view(
+def complaints(request):
+    if request.method == "POST":
+        complaint = get_object_or_404(Complaint, pk=request.POST.get("complaint_id"))
+        action = request.POST.get("action")
+
+        if action == "investigate":
+            complaint.status = Complaint.Status.IN_PROGRESS
+            if not complaint.assigned_to:
+                complaint.assigned_to = request.user
+            complaint.save(update_fields=["status", "assigned_to", "updated_at"])
+            messages.info(request, f"{complaint.reference} marked as Under Investigation.")
+
+        elif action == "assign_me":
+            complaint.assigned_to = request.user
+            if complaint.status == Complaint.Status.OPEN:
+                complaint.status = Complaint.Status.IN_PROGRESS
+            complaint.save(update_fields=["assigned_to", "status", "updated_at"])
+            messages.success(request, f"{complaint.reference} assigned to you.")
+
+        elif action == "resolve":
+            notes = request.POST.get("resolution_notes", "").strip()
+            complaint.mark_resolved(admin_user=request.user, notes=notes, dismissed=False)
+            messages.success(request, f"{complaint.reference} marked as Resolved.")
+
+        elif action == "dismiss":
+            notes = request.POST.get("resolution_notes", "").strip()
+            complaint.mark_resolved(admin_user=request.user, notes=notes, dismissed=True)
+            messages.warning(request, f"{complaint.reference} has been Dismissed.")
+
+        elif action == "reopen":
+            complaint.status = Complaint.Status.OPEN
+            complaint.resolved_by = None
+            complaint.resolved_at = None
+            complaint.save(update_fields=["status", "resolved_by", "resolved_at", "updated_at"])
+            messages.info(request, f"{complaint.reference} reopened.")
+
+        elif action == "delete":
+            ref = complaint.reference
+            complaint.delete()
+            messages.warning(request, f"Deleted complaint {ref}.")
+
+        return redirect("operations:complaints")
+
+    base_qs = Complaint.objects.select_related(
+        "reporter",
+        "assigned_to",
+        "store",
+        "order",
+        "booking",
+        "review",
+        "resolved_by",
+    )
+
+    active_complaints = base_qs.filter(
+        status__in=(Complaint.Status.OPEN, Complaint.Status.IN_PROGRESS)
+    ).order_by("-created_at")
+
+    closed_complaints = base_qs.filter(
+        status__in=(Complaint.Status.RESOLVED, Complaint.Status.DISMISSED)
+    ).order_by("-resolved_at", "-updated_at")
+
+    return render(
         request,
-        "Complaints & disputes",
-        "Investigate and resolve customer or vendor escalations.",
-        "complaints",
+        "operations/complaints.html",
+        {
+            "active_complaints": active_complaints,
+            "closed_complaints": closed_complaints,
+            "open_count": active_complaints.filter(status=Complaint.Status.OPEN).count(),
+            "investigating_count": active_complaints.filter(status=Complaint.Status.IN_PROGRESS).count(),
+            "urgent_count": active_complaints.filter(priority=Complaint.Priority.URGENT).count(),
+            "resolved_count": closed_complaints.filter(status=Complaint.Status.RESOLVED).count(),
+        },
+    )
+
+
+@staff_member_required
+def complaint_form(request, pk=None):
+    complaint = get_object_or_404(Complaint, pk=pk) if pk else None
+    staff_users = User.objects.filter(is_staff=True, is_active=True).order_by("full_name", "email")
+
+    if request.method == "POST":
+        category = request.POST.get("category", Complaint.Category.OTHER)
+        priority = request.POST.get("priority", Complaint.Priority.MEDIUM)
+        status = request.POST.get("status", Complaint.Status.OPEN)
+        subject = request.POST.get("subject", "").strip()
+        description = request.POST.get("description", "").strip()
+        resolution_notes = request.POST.get("resolution_notes", "").strip()
+        assigned_to_id = request.POST.get("assigned_to") or None
+        evidence = request.FILES.get("evidence")
+
+        if not (subject and description):
+            messages.error(request, "Subject and description are required.")
+        else:
+            if complaint is None:
+                complaint = Complaint(reporter=request.user)
+
+            complaint.category = category
+            complaint.priority = priority
+            complaint.status = status
+            complaint.subject = subject
+            complaint.description = description
+            complaint.resolution_notes = resolution_notes
+            complaint.assigned_to_id = assigned_to_id # type: ignore
+            if evidence:
+                complaint.evidence = evidence
+
+            if status in (Complaint.Status.RESOLVED, Complaint.Status.DISMISSED):
+                complaint.mark_resolved(
+                    admin_user=request.user,
+                    notes=resolution_notes,
+                    dismissed=(status == Complaint.Status.DISMISSED),
+                )
+            else:
+                complaint.save()
+
+            messages.success(request, f"Complaint {complaint.reference} saved.")
+            return redirect("operations:complaints")
+
+    return render(
+        request,
+        "operations/complaint_form.html",
+        {
+            "complaint": complaint,
+            "staff_users": staff_users,
+            "categories": Complaint.Category.choices,
+            "priorities": Complaint.Priority.choices,
+            "statuses": Complaint.Status.choices,
+        },
     )
 
 
