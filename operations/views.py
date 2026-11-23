@@ -459,12 +459,7 @@ def complaint_form(request, pk=None):
 
 @staff_member_required
 def manage_stores(request):
-    return _placeholder_view(
-        request,
-        "Manage stores",
-        "Directory of all active, suspended, and archived marketplace stores.",
-        "stores",
-    )
+    return render(request, 'operations/manage_stores.html')
 
 
 @staff_member_required

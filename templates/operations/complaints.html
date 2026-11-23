@@ -138,7 +138,13 @@
                                     <div class="fw-medium">{{ item.subject|truncatechars:48 }}</div>
                                     <small class="text-secondary">{{ item.get_category_display }}</small>
                                 </td>
-                                <td>{{ item.reporter.full_name|default:item.reporter.email|default:"Anonymous" }}</td>
+                                <td>
+                                    {% if item.reporter %}
+                                        {{ item.reporter.full_name|default:item.reporter.email }}
+                                    {% else %}
+                                        Anonymous
+                                    {% endif %}
+                                </td>
                                 <td class="small">
                                     {% if item.store %}<div><span class="text-secondary">Store:</span> {{ item.store.name }}</div>{% endif %}
                                     {% if item.order %}<div><span class="text-secondary">Order:</span> {{ item.order.order_number }}</div>{% endif %}
@@ -251,8 +257,8 @@
                                        data-priority="{{ item.get_priority_display }}"
                                        data-status="{{ item.status }}"
                                        data-status-label="{{ item.get_status_display }}"
-                                       data-reporter="{{ item.reporter.full_name|default:item.reporter.email|default:'Anonymous' }}"
-                                       data-assigned="{{ item.assigned_to.full_name|default:item.assigned_to.email|default:'Unassigned' }}"
+                                       data-reporter="{% if item.reporter %}{{ item.reporter.full_name|default:item.reporter.email }}{% else %}Anonymous{% endif %}"
+                                       data-assigned="{% if item.assigned_to %}{{ item.assigned_to.full_name|default:item.assigned_to.email }}{% else %}Unassigned{% endif %}"
                                        data-store="{{ item.store.name|default:'' }}"
                                        data-order="{{ item.order.order_number|default:'' }}"
                                        data-booking="{{ item.booking.reference|default:'' }}"
@@ -290,8 +296,8 @@
                                                 data-priority="{{ item.get_priority_display }}"
                                                 data-status="{{ item.status }}"
                                                 data-status-label="{{ item.get_status_display }}"
-                                                data-reporter="{{ item.reporter.full_name|default:item.reporter.email|default:'Anonymous' }}"
-                                                data-assigned="{{ item.assigned_to.full_name|default:item.assigned_to.email|default:'Unassigned' }}"
+                                                data-reporter="{% if item.reporter %}{{ item.reporter.full_name|default:item.reporter.email }}{% else %}Anonymous{% endif %}"
+                                                data-assigned="{% if item.assigned_to %}{{ item.assigned_to.full_name|default:item.assigned_to.email }}{% else %}Unassigned{% endif %}"
                                                 data-store="{{ item.store.name|default:'' }}"
                                                 data-order="{{ item.order.order_number|default:'' }}"
                                                 data-booking="{{ item.booking.reference|default:'' }}"
