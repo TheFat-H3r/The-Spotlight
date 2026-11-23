@@ -1,0 +1,140 @@
+{% extends "operations/base.html" %}
+
+{% block title %}{% if target_user %}Edit {{ target_user.full_name }}{% else %}New User{% endif %} | The Spotlight{% endblock %}
+{% block breadcrumb %}Users{% endblock %}
+{% block page_kicker %}Administration{% endblock %}
+{% block page_heading %}{% if target_user %}Edit user: {{ target_user.full_name }}{% else %}Create user{% endif %}{% endblock %}
+{% block page_description %}Configure user identity, platform role, campus location, and account permissions.{% endblock %}
+{% block users_nav_class %}active{% endblock %}
+
+{% block page_actions %}
+    <a class="btn ops-btn-gold-outline" href="{% url 'operations:users' %}">
+        <i class="bi bi-arrow-left me-1" aria-hidden="true"></i>
+        Back to users
+    </a>
+{% endblock %}
+
+{% block content %}
+    <section class="ops-card w-100" aria-labelledby="user-form-heading">
+        <div class="ops-card-header px-3 px-lg-4 py-3">
+            <h2 class="h5 ops-card-title mb-1" id="user-form-heading">
+                <i class="bi bi-person-gear me-2" aria-hidden="true"></i>Account &amp; role details
+            </h2>
+            <p class="small ops-card-subtitle mb-0">
+                {% if target_user %}
+                    Sign-in method: {{ target_user.get_auth_provider_display }}
+                {% else %}
+                    Fields marked with * are required
+                {% endif %}
+            </p>
+        </div>
+        <div class="p-3 p-lg-4">
+            <form method="post" enctype="multipart/form-data">
+                {% csrf_token %}
+
+                <div class="row g-3 mb-3">
+                    <div class="col-md-4">
+                        <label class="form-label fw-medium" for="full_name">Full name *</label>
+                        <input type="text" id="full_name" name="full_name" maxlength="150" value="{{ target_user.full_name|default:'' }}" class="form-control" required>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label fw-medium" for="email">Email address *</label>
+                        <input type="email" id="email" name="email" value="{{ target_user.email|default:'' }}" class="form-control" required>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label fw-medium" for="role">Platform role *</label>
+                        <select id="role" name="role" class="form-select" required>
+                            {% for value, label in roles %}
+                                <option value="{{ value }}" {% if target_user and target_user.role == value %}selected{% elif not target_user and value == 'customer' %}selected{% endif %}>
+                                    {{ label }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+
+                <div class="row g-3 mb-3">
+                    <div class="col-md-4">
+                        <label class="form-label fw-medium" for="phone">Phone number</label>
+                        <input type="text" id="phone" name="phone" maxlength="16" value="{{ target_user.phone|default:'' }}" class="form-control" placeholder="+23051234567">
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label fw-medium" for="student_id">Student ID</label>
+                        <input type="text" id="student_id" name="student_id" maxlength="30" value="{{ target_user.student_id|default:'' }}" class="form-control">
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label fw-medium" for="password">
+                            {% if target_user %}New password (leave blank to keep){% else %}Password *{% endif %}
+                        </label>
+                        <input type="password" id="password" name="password" class="form-control" {% if not target_user %}required{% endif %}>
+                    </div>
+                </div>
+
+                <div class="row g-3 mb-3">
+                    <div class="col-md-3">
+                        <label class="form-label fw-medium" for="course">Course</label>
+                        <select id="course" name="course" class="form-select">
+                            <option value="">None</option>
+                            {% for value, label in courses %}
+                                <option value="{{ value }}" {% if target_user and target_user.course == value %}selected{% endif %}>
+                                    {{ label }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label fw-medium" for="cohort">Cohort</label>
+                        <input type="text" id="cohort" name="cohort" maxlength="4" value="{{ target_user.cohort|default:'' }}" class="form-control" placeholder="e.g. F'25">
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label fw-medium" for="residence">Residence hall</label>
+                        <select id="residence" name="residence" class="form-select">
+                            <option value="">Off-campus / None</option>
+                            {% for value, label in residences %}
+                                <option value="{{ value }}" {% if target_user and target_user.residence == value %}selected{% endif %}>
+                                    {{ label }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label fw-medium" for="room_number">Room number</label>
+                        <input type="text" id="room_number" name="room_number" maxlength="4" value="{{ target_user.room_number|default:'' }}" class="form-control" placeholder="e.g. S101">
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label fw-medium" for="avatar">Profile avatar</label>
+                    {% if target_user and target_user.avatar %}
+                        <div class="mb-2">
+                            <img src="{{ target_user.avatar.url }}" alt="{{ target_user.full_name }}" class="rounded-circle border" style="height: 56px; width: 56px; object-fit: cover;">
+                        </div>
+                    {% endif %}
+                    <input type="file" id="avatar" name="avatar" accept="image/*" class="form-control">
+                </div>
+
+                <div class="d-flex flex-wrap gap-4 mb-4">
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="is_active" name="is_active" {% if target_user %}{% if target_user.is_active %}checked{% endif %}{% else %}checked{% endif %}>
+                        <label class="form-check-label fw-medium" for="is_active">Active account</label>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="is_email_verified" name="is_email_verified" {% if target_user and target_user.is_email_verified %}checked{% endif %}>
+                        <label class="form-check-label fw-medium" for="is_email_verified">Email verified</label>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="is_staff" name="is_staff" {% if target_user and target_user.is_staff %}checked{% endif %}>
+                        <label class="form-check-label fw-medium" for="is_staff">Staff access (Operations &amp; Django admin)</label>
+                    </div>
+                </div>
+
+                <div class="d-flex flex-wrap gap-2 pt-3 border-top">
+                    <button type="submit" class="btn btn-dark">
+                        <i class="bi bi-check2 me-1" aria-hidden="true"></i>Save user
+                    </button>
+                    <a href="{% url 'operations:users' %}" class="btn ops-btn-gold-outline">Cancel</a>
+                </div>
+            </form>
+        </div>
+    </section>
+{% endblock %}

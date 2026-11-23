@@ -1,5 +1,5 @@
 from django.urls import path
-from .views import admin_home, admin_settings, authorize_stores, business_type_form, catalog_management, categories_management, category_form, complaint_form, complaints, manage_bookings, manage_orders, manage_payouts, manage_reviews, manage_users, marketing, marketing_ad_form, marketing_announcement_form, notifications_center, payout_detail, product_form, service_form, store_form, stores_management
+from .views import admin_home, admin_settings, authorize_stores, business_type_form, catalog_management, categories_management, category_form, complaint_form, complaints, manage_bookings, manage_orders, manage_payouts, manage_reviews, marketing, marketing_ad_form, marketing_announcement_form, notifications_center, payout_detail, product_form, service_form, store_form, stores_management, user_form, users_management
 
 app_name = "operations"
 urlpatterns = [
@@ -40,7 +40,10 @@ urlpatterns = [
     path("catalog/services/add/", service_form, name="service-add"),
     path("catalog/services/<int:pk>/edit/", service_form, name="service-edit"),
     
-    path("users/", manage_users, name="manage-users"),
+    # Users
+    path("users/", users_management, name="users"),
+    path("users/add/", user_form, name="user-add"),
+    path("users/<int:pk>/edit/", user_form, name="user-edit"),
 
     # Transactions & Payouts
     path("orders/", manage_orders, name="orders"),

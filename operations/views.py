@@ -6,6 +6,7 @@ from django.contrib.admin.views.decorators import staff_member_required
 from django.core.exceptions import PermissionDenied
 from django.db import IntegrityError
 from django.db.models import Count, ProtectedError, Sum
+from django.forms import ValidationError
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 from django.utils.dateparse import parse_date
@@ -861,12 +862,138 @@ def service_form(request, pk=None):
     )
 
 @staff_member_required
-def manage_users(request):
-    return _placeholder_view(
+def users_management(request):
+    if request.method == "POST":
+        target = get_object_or_404(User, pk=request.POST.get("user_id"))
+        action = request.POST.get("action")
+
+        if action == "set_role":
+            new_role = request.POST.get("role")
+            if new_role in dict(User.Role.choices):
+                if target.pk == request.user.pk and new_role != User.Role.ADMIN:
+                    messages.error(request, "You cannot remove your own Administrator role.")
+                else:
+                    target.role = new_role
+                    update_fields = ["role", "updated_at"]
+                    if new_role == User.Role.ADMIN and not target.is_staff:
+                        target.is_staff = True
+                        update_fields.append("is_staff")
+                    target.save(update_fields=update_fields)
+                    messages.success(request, f"Updated {target.full_name} to {target.get_role_display()}.") # type: ignore
+
+        elif action == "toggle_active":
+            if target.pk == request.user.pk:
+                messages.error(request, "You cannot deactivate your own account.")
+            else:
+                target.is_active = not target.is_active
+                target.save(update_fields=["is_active", "updated_at"])
+                state = "activated" if target.is_active else "suspended"
+                messages.success(request, f"Account for {target.full_name} {state}.")
+
+        elif action == "verify_email":
+            if not target.is_email_verified:
+                target.is_email_verified = True
+                target.save(update_fields=["is_email_verified", "updated_at"])
+                messages.success(request, f"Marked {target.email} as email verified.")
+
+        elif action == "delete":
+            if target.pk == request.user.pk:
+                messages.error(request, "You cannot delete your own account.")
+            else:
+                label = f"{target.full_name} ({target.email})"
+                target.delete()
+                messages.warning(request, f"Deleted user {label}.")
+
+        return redirect("operations:users")
+
+    users_qs = User.objects.annotate(store_count=Count("stores", distinct=True)).order_by("-date_joined")
+
+    return render(
         request,
-        "Manage users",
-        "Manage customer accounts, vendor owners, and staff permissions.",
-        "users",
+        "operations/users.html",
+        {
+            "users": users_qs,
+            "total_user_count": users_qs.count(),
+            "customer_count": users_qs.filter(role=User.Role.CUSTOMER).count(),
+            "vendor_count": users_qs.filter(role=User.Role.VENDOR).count(),
+            "admin_count": users_qs.filter(role=User.Role.ADMIN).count(),
+            "roles": User.Role.choices,
+        },
+    )
+
+
+@staff_member_required
+def user_form(request, pk=None):
+    target = get_object_or_404(User, pk=pk) if pk else None
+
+    if request.method == "POST":
+        email = request.POST.get("email", "").strip().lower()
+        full_name = request.POST.get("full_name", "").strip()
+        phone = request.POST.get("phone", "").strip()
+        student_id = request.POST.get("student_id", "").strip()
+        role = request.POST.get("role", User.Role.CUSTOMER)
+        course = request.POST.get("course", "").strip()
+        cohort = request.POST.get("cohort", "").strip().upper()
+        residence = request.POST.get("residence", "").strip()
+        room_number = request.POST.get("room_number", "").strip().upper()
+        password = request.POST.get("password", "")
+
+        is_active = request.POST.get("is_active") == "on"
+        is_staff = request.POST.get("is_staff") == "on"
+        is_email_verified = request.POST.get("is_email_verified") == "on"
+
+        if not (email and full_name):
+            messages.error(request, "Email and full name are required.")
+        elif target is None and not password:
+            messages.error(request, "A password is required when creating a new user.")
+        elif target and target.pk == request.user.pk and (not is_active or role != User.Role.ADMIN):
+            messages.error(request, "You cannot deactivate your own account or demote your own Admin role.")
+        else:
+            is_new = target is None
+            if is_new:
+                target = User(email=email)
+            else:
+                target.email = email
+
+            target.full_name = full_name
+            target.phone = phone
+            target.student_id = student_id
+            target.role = role
+            target.course = course
+            target.cohort = cohort
+            target.residence = residence
+            target.room_number = room_number
+            target.is_active = is_active
+            target.is_staff = True if role == User.Role.ADMIN else is_staff
+            target.is_email_verified = is_email_verified
+
+            if password:
+                target.set_password(password)
+
+            if request.FILES.get("avatar"):
+                target.avatar = request.FILES["avatar"]
+
+            try:
+                target.full_clean(exclude=["password"] if not password else None)
+                target.save()
+                messages.success(request, f"User '{target.full_name}' saved.")
+                return redirect("operations:users")
+            except ValidationError as exc:
+                for field, errs in exc.message_dict.items():
+                    for err in errs:
+                        messages.error(request, f"{field.replace('_', ' ').title()}: {err}")
+            except IntegrityError:
+                messages.error(request, "A user with this email already exists.")
+
+    return render(
+        request,
+        "operations/user_form.html",
+        {
+            "target_user": target,
+            "roles": User.Role.choices,
+            "courses": User.Course.choices,
+            "residences": User.Residence.choices,
+        },
     )
 
 @staff_member_required

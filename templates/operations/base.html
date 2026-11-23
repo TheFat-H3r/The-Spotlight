@@ -155,8 +155,8 @@
                         <i class="bi bi-box-seam" aria-hidden="true"></i>
                         <span>Products &amp; services</span>
                     </a>
-                    <a class="ops-nav-link {% block users_nav_class %}{% if request.resolver_match.url_name == 'manage-users' %}active{% endif %}{% endblock %}"
-                       href="{% url 'operations:manage-users' %}">
+                    <a class="ops-nav-link {% block users_nav_class %}{% if request.resolver_match.url_name == 'users' %}active{% endif %}{% endblock %}"
+                       href="{% url 'operations:users' %}">
                         <i class="bi bi-people" aria-hidden="true"></i>
                         <span>Manage users</span>
                     </a>
@@ -225,7 +225,7 @@
                 </nav>
 
                 <div class="ops-sidebar-footer">
-                    <a class="ops-nav-link" href="{% url 'core:home' %}">
+                    <a class="ops-nav-link" target="_blank" href="{% url 'core:home' %}">
                         <i class="bi bi-box-arrow-up-right" aria-hidden="true"></i>
                         <span>View marketplace</span>
                     </a>
