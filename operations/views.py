@@ -5,15 +5,15 @@ from django.contrib import messages
 from django.contrib.admin.views.decorators import staff_member_required
 from django.core.exceptions import PermissionDenied
 from django.db import IntegrityError
-from django.db.models import Count, ProtectedError, Sum
+from django.db.models import Q, Count, ProtectedError, Sum
 from django.forms import ValidationError
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
-from django.utils.dateparse import parse_date
+from django.utils.dateparse import parse_date, parse_datetime
 
 from accounts.models import User
 from marketing.models import Advertisement, Announcement
-from operations.models import CommissionPlan, Complaint, Payout, StoreSubscription
+from operations.models import AdminNotification, BroadcastAnnouncement, CommissionPlan, Complaint, Payout, StoreSubscription
 from stores.models import BusinessType, Category, Product, Service, Store, unique_slug
 from transactions.models import Booking, Order
 
@@ -1160,12 +1160,169 @@ def payout_detail(request, pk):
 
 
 @staff_member_required
-def notifications_center(request):
-    return _placeholder_view(
+def notifications_management(request):
+    visible_alerts = AdminNotification.objects.select_related("recipient", "read_by").filter(
+        Q(recipient__isnull=True) | Q(recipient=request.user)
+    )
+
+    if request.method == "POST":
+        item_type = request.POST.get("item_type")
+        action = request.POST.get("action")
+
+        # 1. Incoming AdminNotification actions
+        if item_type == "notification":
+            if action == "mark_all_read":
+                unread_qs = visible_alerts.filter(is_read=False)
+                count = unread_qs.update(
+                    is_read=True,
+                    read_at=timezone.now(),
+                    read_by=request.user,
+                )
+                messages.success(request, f"Marked {count} notification(s) as read.")
+            else:
+                notif = get_object_or_404(visible_alerts, pk=request.POST.get("item_id"))
+                if action == "mark_read":
+                    notif.mark_as_read(user=request.user)
+                    messages.success(request, f"Marked '{notif.title}' as read.")
+                elif action == "delete":
+                    title = notif.title
+                    notif.delete()
+                    messages.warning(request, f"Deleted alert '{title}'.")
+
+        # 2. Outgoing BroadcastAnnouncement actions
+        elif item_type == "broadcast":
+            broadcast = get_object_or_404(BroadcastAnnouncement, pk=request.POST.get("item_id"))
+            if action == "toggle_pin":
+                broadcast.is_pinned = not broadcast.is_pinned
+                broadcast.save(update_fields=["is_pinned"])
+                state = "pinned" if broadcast.is_pinned else "unpinned"
+                messages.info(request, f"Broadcast '{broadcast.title}' {state}.")
+            elif action == "delete":
+                title = broadcast.title
+                broadcast.delete()
+                messages.warning(request, f"Deleted broadcast '{title}'.")
+
+        return redirect("operations:notifications")
+
+    unread_alerts = visible_alerts.filter(is_read=False).order_by("-created_at")
+    read_alerts = visible_alerts.filter(is_read=True).order_by("-read_at", "-created_at")[:50]
+    broadcasts = BroadcastAnnouncement.objects.select_related("sent_by").order_by("-is_pinned", "-published_at")
+
+    now = timezone.now()
+    active_broadcast_count = broadcasts.filter(published_at__lte=now).filter(
+        Q(expires_at__isnull=True) | Q(expires_at__gt=now)
+    ).count()
+
+    return render(
         request,
-        "Notifications",
-        "Send broadcast alerts and view system notification logs.",
-        "notifications",
+        "operations/notifications.html",
+        {
+            "unread_alerts": unread_alerts,
+            "read_alerts": read_alerts,
+            "broadcasts": broadcasts,
+            "unread_count": unread_alerts.count(),
+            "urgent_count": unread_alerts.filter(
+                level__in=(AdminNotification.Level.WARNING, AdminNotification.Level.DANGER)
+            ).count(),
+            "active_broadcast_count": active_broadcast_count,
+            "pinned_broadcast_count": broadcasts.filter(is_pinned=True).count(),
+        },
+    )
+
+
+@staff_member_required
+def broadcast_form(request, pk=None):
+    broadcast = get_object_or_404(BroadcastAnnouncement, pk=pk) if pk else None
+
+    if request.method == "POST":
+        title = request.POST.get("title", "").strip()
+        body = request.POST.get("body", "").strip()
+        audience = request.POST.get("audience", BroadcastAnnouncement.Audience.ALL)
+        is_pinned = request.POST.get("is_pinned") == "on"
+        send_email = request.POST.get("send_email") == "on"
+
+        raw_published = request.POST.get("published_at", "").strip()
+        raw_expires = request.POST.get("expires_at", "").strip()
+
+        published_at = parse_datetime(raw_published) if raw_published else timezone.now()
+        if published_at and timezone.is_naive(published_at):
+            published_at = timezone.make_aware(published_at)
+
+        expires_at = parse_datetime(raw_expires) if raw_expires else None
+        if expires_at and timezone.is_naive(expires_at):
+            expires_at = timezone.make_aware(expires_at)
+
+        if not (title and body):
+            messages.error(request, "Title and announcement message are required.")
+        elif expires_at and published_at and expires_at <= published_at:
+            messages.error(request, "Expiry time must be after the publish time.")
+        else:
+            is_new = broadcast is None
+            if is_new:
+                broadcast = BroadcastAnnouncement(sent_by=request.user)
+
+            broadcast.title = title
+            broadcast.body = body
+            broadcast.audience = audience
+            broadcast.is_pinned = is_pinned
+            broadcast.send_email = send_email
+            broadcast.published_at = published_at or timezone.now()
+            broadcast.expires_at = expires_at
+            broadcast.save()
+
+            messages.success(request, f"Broadcast '{broadcast.title}' saved.")
+            return redirect("operations:notifications")
+
+    return render(
+        request,
+        "operations/broadcast_form.html",
+        {
+            "broadcast": broadcast,
+            "audiences": BroadcastAnnouncement.Audience.choices,
+            "default_published": timezone.localtime(
+                broadcast.published_at if broadcast else timezone.now()
+            ).strftime("%Y-%m-%dT%H:%M"),
+            "default_expires": timezone.localtime(broadcast.expires_at).strftime("%Y-%m-%dT%H:%M")
+            if broadcast and broadcast.expires_at
+            else "",
+        },
+    )
+
+
+@staff_member_required
+def admin_notification_create(request):
+    staff_users = User.objects.filter(is_staff=True, is_active=True).order_by("full_name", "email")
+
+    if request.method == "POST":
+        title = request.POST.get("title", "").strip()
+        message = request.POST.get("message", "").strip()
+        category = request.POST.get("category", AdminNotification.Category.SYSTEM)
+        level = request.POST.get("level", AdminNotification.Level.INFO)
+        action_url = request.POST.get("action_url", "").strip()
+        recipient_id = request.POST.get("recipient") or None
+
+        if not title:
+            messages.error(request, "Notification title is required.")
+        else:
+            AdminNotification.objects.create(
+                recipient_id=recipient_id,
+                category=category,
+                level=level,
+                title=title,
+                message=message,
+                action_url=action_url,
+            )
+            messages.success(request, f"Internal alert '{title}' posted.")
+            return redirect("operations:notifications")
+
+    return render(
+        request,
+        "operations/notification_form.html",
+        {
+            "staff_users": staff_users,
+            "categories": AdminNotification.Category.choices,
+            "levels": AdminNotification.Level.choices,
+        },
     )
 
 

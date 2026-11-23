@@ -1,5 +1,8 @@
 from django.urls import path
-from .views import admin_home, admin_settings, authorize_stores, business_type_form, catalog_management, categories_management, category_form, complaint_form, complaints, manage_bookings, manage_orders, manage_payouts, manage_reviews, marketing, marketing_ad_form, marketing_announcement_form, notifications_center, payout_detail, product_form, service_form, store_form, stores_management, user_form, users_management
+from .views import admin_home, admin_notification_create, admin_settings, authorize_stores, broadcast_form
+from .views import business_type_form, catalog_management, categories_management, category_form, complaint_form, complaints
+from .views import manage_bookings, manage_orders, manage_payouts, manage_reviews, marketing, marketing_ad_form, marketing_announcement_form
+from .views import notifications_management, payout_detail, product_form, service_form, store_form, stores_management, user_form, users_management
 
 app_name = "operations"
 urlpatterns = [
@@ -51,8 +54,13 @@ urlpatterns = [
     path("payouts/", manage_payouts, name="payouts"),
     path("payouts/<int:pk>/", payout_detail, name="payout-detail"),
 
-    # System & Communications
-    path("notifications/", notifications_center, name="notifications"),
+    # System 
     path("reviews/", manage_reviews, name="reviews"),
     path("settings/", admin_settings, name="admin-settings"),
+
+    # Communications
+    path("notifications/", notifications_management, name="notifications"),
+    path("notifications/alerts/add/", admin_notification_create, name="notification-add"),
+    path("notifications/broadcasts/add/", broadcast_form, name="broadcast-add"),
+    path("notifications/broadcasts/<int:pk>/edit/", broadcast_form, name="broadcast-edit"),
 ]
