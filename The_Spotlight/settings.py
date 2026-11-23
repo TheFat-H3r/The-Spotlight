@@ -83,6 +83,7 @@ TEMPLATES = [
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
                 "transactions.context_processors.cart_count",
+                "shopkeeper.context_processors.vendor_dashboard_context",
             ],
         },
     },

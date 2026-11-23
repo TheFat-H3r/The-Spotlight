@@ -1,91 +1,285 @@
 {% extends "shopkeeper/base.html" %}
 
-{% block title %}Dashboard | The Spotlight{% endblock %}
+{% block title %}{{ store.name|default:"Dashboard" }} | The Spotlight{% endblock %}
 {% block header %}Overview{% endblock %}
 
 {% block extra_css %}
-<link href="https://cdn.datatables.net/v/dt/dt-3.1.6/datatables.min.css" rel="stylesheet">
-<script src="https://cdn.datatables.net/v/dt/dt-3.1.6/datatables.min.js" ></script>
+<link rel="stylesheet" href="https://cdn.datatables.net/2.3.4/css/dataTables.bootstrap5.min.css">
+<style>
+  /* DataTables Layout & Alignment */
+  div.dt-container .row {
+    align-items: center;
+    margin-bottom: 0.75rem;
+  }
+
+  div.dt-container .row:last-child {
+    margin-top: 0.75rem;
+    margin-bottom: 0;
+  }
+
+  div.dt-container div.dt-search {
+    text-align: right;
+  }
+
+  div.dt-container div.dt-search input {
+    margin-left: 0.5rem;
+    display: inline-block;
+    width: auto;
+  }
+
+  div.dt-container div.dt-length select {
+    margin: 0 0.4rem;
+    display: inline-block;
+    width: auto;
+  }
+
+  @media (max-width: 767.98px) {
+    div.dt-container div.dt-search,
+    div.dt-container div.dt-length,
+    div.dt-container div.dt-info,
+    div.dt-container div.dt-paging {
+      text-align: left !important;
+      margin-bottom: 0.5rem;
+    }
+  }
+
+  /* Table Header & Cell Alignment */
+  .ops-table thead th {
+    vertical-align: middle;
+    white-space: nowrap;
+    font-weight: 600;
+    border-bottom-width: 2px;
+  }
+
+  .ops-table tbody td {
+    vertical-align: middle;
+  }
+
+  .ops-table thead th.text-end .dt-column-header {
+    justify-content: flex-end;
+  }
+
+  /* Sort Icons: Dark in Light Mode */
+  table.dataTable thead > tr > th.dt-orderable-asc span.dt-column-order,
+  table.dataTable thead > tr > th.dt-orderable-desc span.dt-column-order,
+  table.dataTable thead > tr > th.dt-ordering-asc span.dt-column-order,
+  table.dataTable thead > tr > th.dt-ordering-desc span.dt-column-order {
+    color: #212529 !important;
+  }
+
+  table.dataTable thead > tr > th span.dt-column-order::before,
+  table.dataTable thead > tr > th span.dt-column-order::after {
+    color: #212529 !important;
+    opacity: 0.35;
+  }
+
+  table.dataTable thead > tr > th.dt-ordering-asc span.dt-column-order::before,
+  table.dataTable thead > tr > th.dt-ordering-desc span.dt-column-order::after {
+    opacity: 1 !important;
+  }
+
+  /* Sort Icons: White in Dark Mode */
+  [data-coreui-theme="dark"] table.dataTable thead > tr > th.dt-orderable-asc span.dt-column-order,
+  [data-coreui-theme="dark"] table.dataTable thead > tr > th.dt-orderable-desc span.dt-column-order,
+  [data-coreui-theme="dark"] table.dataTable thead > tr > th.dt-ordering-asc span.dt-column-order,
+  [data-coreui-theme="dark"] table.dataTable thead > tr > th.dt-ordering-desc span.dt-column-order,
+  [data-bs-theme="dark"] table.dataTable thead > tr > th.dt-orderable-asc span.dt-column-order,
+  [data-bs-theme="dark"] table.dataTable thead > tr > th.dt-orderable-desc span.dt-column-order,
+  [data-bs-theme="dark"] table.dataTable thead > tr > th.dt-ordering-asc span.dt-column-order,
+  [data-bs-theme="dark"] table.dataTable thead > tr > th.dt-ordering-desc span.dt-column-order {
+    color: #ffffff !important;
+  }
+
+  [data-coreui-theme="dark"] table.dataTable thead > tr > th span.dt-column-order::before,
+  [data-coreui-theme="dark"] table.dataTable thead > tr > th span.dt-column-order::after,
+  [data-bs-theme="dark"] table.dataTable thead > tr > th span.dt-column-order::before,
+  [data-bs-theme="dark"] table.dataTable thead > tr > th span.dt-column-order::after {
+    color: #ffffff !important;
+    opacity: 0.45;
+  }
+
+  [data-coreui-theme="dark"] table.dataTable thead > tr > th.dt-ordering-asc span.dt-column-order::before,
+  [data-coreui-theme="dark"] table.dataTable thead > tr > th.dt-ordering-desc span.dt-column-order::after,
+  [data-bs-theme="dark"] table.dataTable thead > tr > th.dt-ordering-asc span.dt-column-order::before,
+  [data-bs-theme="dark"] table.dataTable thead > tr > th.dt-ordering-desc span.dt-column-order::after {
+    opacity: 1 !important;
+  }
+</style>
 {% endblock %}
 
 {% block content %}
-<!-- Welcome and account summary -->
+<!-- Welcome and store summary -->
 <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 my-3">
   <div>
-    <h2 class="h4 mb-1">Welcome back, {{ request.user.get_short_name|default:request.user.full_name }}!</h2>
+    <div class="d-flex flex-wrap align-items-center gap-2 mb-1">
+      <h2 class="h4 mb-0">Welcome back, {{ request.user.get_short_name|default:request.user.full_name }}!</h2>
+      {% if store %}
+        {% if store.business_type %}
+          <span class="badge bg-secondary-subtle text-body-emphasis">{{ store.business_type }}</span>
+        {% endif %}
+        {% if store.status == "active" %}
+          <span class="badge text-bg-success">Store Active</span>
+        {% elif store.status == "draft" %}
+          <span class="badge text-bg-warning">Draft</span>
+        {% else %}
+          <span class="badge text-bg-danger">Suspended</span>
+        {% endif %}
+      {% endif %}
+    </div>
     <p class="text-body-secondary mb-0">
-      Here is an overview of your stores and marketplace activity.
+      {% if store %}
+        Managing <strong>{{ store.name }}</strong> ·
+        {% if is_service_business and not is_product_business %}
+          Service &amp; Booking Operations
+        {% else %}
+          Product &amp; Order Operations
+        {% endif %}
+      {% else %}
+        Set up your store profile to start listing on The Spotlight.
+      {% endif %}
     </p>
   </div>
-  <div class="text-end">
+  <div class="text-sm-end">
     <div class="small text-body-secondary">Dashboard date</div>
     <div class="fw-semibold">{{ today|date:"l, d F Y" }}</div>
   </div>
 </div>
 
+{% if not store %}
+  <div class="card border-0 shadow-sm my-4">
+    <div class="card-body p-4 text-center">
+      <h5 class="mb-2">No business configured yet</h5>
+      <p class="text-body-secondary mb-3">Create your store profile to unlock products, services, orders, or booking slots.</p>
+      <a href="#" class="btn btn-primary">Create My Store</a>
+    </div>
+  </div>
+{% else %}
+
 <!-- Main statistics -->
 <div class="row g-3 my-3">
-  <div class="col-sm-6 col-xl-3">
-    <div class="card h-100 border-0 shadow-sm">
-      <div class="card-body p-3">
-        <div class="d-flex justify-content-between align-items-start">
-          <div>
-            <div class="small text-body-secondary mb-1">Completed order value</div>
-            <div class="fs-4 fw-semibold">{{ completed_order_value|floatformat:2 }}</div>
-            <div class="small text-body-secondary mt-2">
-              {{ completed_orders_count }} completed order{{ completed_orders_count|pluralize }}
+  {% if is_service_business and not is_product_business %}
+    <!-- SERVICE BUSINESS KPIs -->
+    <div class="col-sm-6 col-xl-3">
+      <div class="card h-100 border-0 shadow-sm">
+        <div class="card-body p-3 d-flex flex-column justify-content-between">
+          <div class="d-flex justify-content-between align-items-start gap-2">
+            <div>
+              <div class="small text-body-secondary mb-1">Completed booking revenue</div>
+              <div class="fs-4 fw-semibold">{{ completed_booking_value|floatformat:2 }}</div>
+              <div class="small text-body-secondary mt-2">
+                {{ completed_bookings }} completed booking{{ completed_bookings|pluralize }}
+              </div>
             </div>
+            <span class="rounded-3 bg-primary-subtle text-primary p-3 flex-shrink-0">
+              <i class="fa-solid fa-wallet fa-lg" aria-hidden="true"></i>
+            </span>
           </div>
-          <span class="rounded-3 bg-primary-subtle text-primary p-3">
-            <i class="fa-solid fa-wallet fa-lg" aria-hidden="true"></i>
-          </span>
         </div>
       </div>
     </div>
-  </div>
 
-  <div class="col-sm-6 col-xl-3">
-    <div class="card h-100 border-0 shadow-sm">
-      <div class="card-body p-3">
-        <div class="d-flex justify-content-between align-items-start">
-          <div>
-            <div class="small text-body-secondary mb-1">Total orders</div>
-            <div class="fs-4 fw-semibold">{{ total_orders }}</div>
-            <div class="small text-body-secondary mt-2">
-              {{ pending_orders }} awaiting your response
+    <div class="col-sm-6 col-xl-3">
+      <div class="card h-100 border-0 shadow-sm">
+        <div class="card-body p-3 d-flex flex-column justify-content-between">
+          <div class="d-flex justify-content-between align-items-start gap-2">
+            <div>
+              <div class="small text-body-secondary mb-1">Total bookings</div>
+              <div class="fs-4 fw-semibold">{{ total_bookings }}</div>
+              <div class="small text-body-secondary mt-2">
+                {{ pending_bookings }} awaiting approval · {{ confirmed_bookings }} confirmed
+              </div>
             </div>
+            <span class="rounded-3 bg-info-subtle text-info p-3 flex-shrink-0">
+              <i class="fa-solid fa-calendar-check fa-lg" aria-hidden="true"></i>
+            </span>
           </div>
-          <span class="rounded-3 bg-info-subtle text-info p-3">
-            <i class="fa-solid fa-bag-shopping fa-lg" aria-hidden="true"></i>
-          </span>
         </div>
       </div>
     </div>
-  </div>
 
-  <div class="col-sm-6 col-xl-3">
-    <div class="card h-100 border-0 shadow-sm">
-      <div class="card-body p-3">
-        <div class="d-flex justify-content-between align-items-start">
-          <div>
-            <div class="small text-body-secondary mb-1">Products and services</div>
-            <div class="fs-4 fw-semibold">{{ total_products|add:total_services }}</div>
-            <div class="small text-body-secondary mt-2">
-              {{ available_products }} products · {{ available_services }} services available
+    <div class="col-sm-6 col-xl-3">
+      <div class="card h-100 border-0 shadow-sm">
+        <div class="card-body p-3 d-flex flex-column justify-content-between">
+          <div class="d-flex justify-content-between align-items-start gap-2">
+            <div>
+              <div class="small text-body-secondary mb-1">Active services</div>
+              <div class="fs-4 fw-semibold">{{ available_services }} / {{ total_services }}</div>
+              <div class="small text-body-secondary mt-2">
+                {{ upcoming_slots|length }} upcoming time slot{{ upcoming_slots|length|pluralize }}
+              </div>
             </div>
+            <span class="rounded-3 bg-warning-subtle text-warning p-3 flex-shrink-0">
+              <i class="fa-solid fa-concierge-bell fa-lg" aria-hidden="true"></i>
+            </span>
           </div>
-          <span class="rounded-3 bg-warning-subtle text-warning p-3">
-            <i class="fa-solid fa-boxes-stacked fa-lg" aria-hidden="true"></i>
-          </span>
         </div>
       </div>
     </div>
-  </div>
+  {% else %}
+    <!-- PRODUCT BUSINESS KPIs -->
+    <div class="col-sm-6 col-xl-3">
+      <div class="card h-100 border-0 shadow-sm">
+        <div class="card-body p-3 d-flex flex-column justify-content-between">
+          <div class="d-flex justify-content-between align-items-start gap-2">
+            <div>
+              <div class="small text-body-secondary mb-1">Completed order value</div>
+              <div class="fs-4 fw-semibold">{{ completed_order_value|floatformat:2 }}</div>
+              <div class="small text-body-secondary mt-2">
+                {{ completed_orders_count }} completed order{{ completed_orders_count|pluralize }}
+              </div>
+            </div>
+            <span class="rounded-3 bg-primary-subtle text-primary p-3 flex-shrink-0">
+              <i class="fa-solid fa-wallet fa-lg" aria-hidden="true"></i>
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
 
+    <div class="col-sm-6 col-xl-3">
+      <div class="card h-100 border-0 shadow-sm">
+        <div class="card-body p-3 d-flex flex-column justify-content-between">
+          <div class="d-flex justify-content-between align-items-start gap-2">
+            <div>
+              <div class="small text-body-secondary mb-1">Total orders</div>
+              <div class="fs-4 fw-semibold">{{ total_orders }}</div>
+              <div class="small text-body-secondary mt-2">
+                {{ pending_orders }} awaiting response · {{ processing_orders }} in progress
+              </div>
+            </div>
+            <span class="rounded-3 bg-info-subtle text-info p-3 flex-shrink-0">
+              <i class="fa-solid fa-bag-shopping fa-lg" aria-hidden="true"></i>
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-sm-6 col-xl-3">
+      <div class="card h-100 border-0 shadow-sm">
+        <div class="card-body p-3 d-flex flex-column justify-content-between">
+          <div class="d-flex justify-content-between align-items-start gap-2">
+            <div>
+              <div class="small text-body-secondary mb-1">Catalog products</div>
+              <div class="fs-4 fw-semibold">{{ available_products }} / {{ total_products }}</div>
+              <div class="small text-body-secondary mt-2">
+                {{ low_stock_products|length }} item{{ low_stock_products|length|pluralize }} low on stock
+              </div>
+            </div>
+            <span class="rounded-3 bg-warning-subtle text-warning p-3 flex-shrink-0">
+              <i class="fa-solid fa-boxes-stacked fa-lg" aria-hidden="true"></i>
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+  {% endif %}
+
+  <!-- SHARED: Store Rating -->
   <div class="col-sm-6 col-xl-3">
     <div class="card h-100 border-0 shadow-sm">
-      <div class="card-body p-3">
-        <div class="d-flex justify-content-between align-items-start">
+      <div class="card-body p-3 d-flex flex-column justify-content-between">
+        <div class="d-flex justify-content-between align-items-start gap-2">
           <div>
             <div class="small text-body-secondary mb-1">Store rating</div>
             <div class="fs-4 fw-semibold">
@@ -96,7 +290,7 @@
               {{ total_reviews }} published review{{ total_reviews|pluralize }}
             </div>
           </div>
-          <span class="rounded-3 bg-success-subtle text-success p-3">
+          <span class="rounded-3 bg-success-subtle text-success p-3 flex-shrink-0">
             <i class="fa-solid fa-star-half-stroke fa-lg" aria-hidden="true"></i>
           </span>
         </div>
@@ -105,175 +299,242 @@
   </div>
 </div>
 
-<!-- Sales trend and store overview -->
+<!-- Sales trend and single store overview -->
 <div class="row g-3 my-3">
   <div class="col-lg-8">
     <div class="card h-100 border-0 shadow-sm">
-      <div class="card-header bg-transparent p-3">
-        <div class="d-flex justify-content-between align-items-center">
-          <div>
-            <h5 class="mb-1">Sales overview</h5>
-            <div class="small text-body-secondary">Completed order value over the last seven days</div>
+      <div class="card-header bg-transparent p-3 d-flex justify-content-between align-items-center">
+        <div>
+          <h5 class="mb-1">
+            {% if is_service_business and not is_product_business %}Booking revenue overview{% else %}Sales overview{% endif %}
+          </h5>
+          <div class="small text-body-secondary">
+            {% if is_service_business and not is_product_business %}
+              Completed booking value over the last seven days
+            {% else %}
+              Completed order value over the last seven days
+            {% endif %}
           </div>
-          <span class="badge text-bg-light">7 days</span>
         </div>
+        <span class="badge bg-secondary-subtle text-body-emphasis">7 days</span>
       </div>
-      <div class="card-body p-3">
-        <div class="d-flex align-items-end justify-content-around gap-2" style="height: 220px;">
+      <div class="card-body p-3 d-flex flex-column justify-content-between">
+        <div class="d-flex align-items-end justify-content-around gap-2 pt-2" style="height: 220px;">
           {% for day in sales_chart %}
             <div class="d-flex flex-column align-items-center justify-content-end h-100 flex-fill">
               <div class="small text-body-secondary mb-2 text-center">
                 {{ day.value|floatformat:2 }}
               </div>
               <div class="w-100 rounded-top bg-primary"
-                   style="height: {{ day.bar_height }}%; max-width: 42px;"
-                   title="{{ day.date|date:'d M Y' }}: {{ day.value|floatformat:2 }}">
+                   style="height: {{ day.bar_height }}%; max-width: 42px; min-height: 4px;"
+                   title="{{ day.date|date:'d M Y' }}: {{ day.value|floatformat:2 }} ({{ day.count }})">
               </div>
               <div class="small text-body-secondary mt-2">{{ day.label }}</div>
             </div>
           {% endfor %}
         </div>
         <div class="small text-body-secondary mt-3">
-          This chart includes completed orders only. Values use the currency and units stored by your application.
+          Includes completed transactions only. Values reflect your store currency.
         </div>
       </div>
     </div>
   </div>
 
+  <!-- Single Store Card & Quick Actions -->
   <div class="col-lg-4">
     <div class="card h-100 border-0 shadow-sm">
-      <div class="card-header bg-transparent p-3">
-        <h5 class="mb-0">Your stores</h5>
-      </div>
-      <div class="card-body p-3">
-        <div class="d-flex justify-content-between mb-3">
-          <span class="text-body-secondary">Total stores</span>
-          <strong>{{ total_stores }}</strong>
-        </div>
-        <div class="d-flex justify-content-between mb-3">
-          <span><span class="badge bg-success me-2">&nbsp;</span>Active</span>
-          <strong>{{ active_stores }}</strong>
-        </div>
-        <div class="d-flex justify-content-between mb-3">
-          <span><span class="badge bg-warning me-2">&nbsp;</span>Draft</span>
-          <strong>{{ draft_stores }}</strong>
-        </div>
-        <div class="d-flex justify-content-between mb-3">
-          <span><span class="badge bg-danger me-2">&nbsp;</span>Suspended</span>
-          <strong>{{ suspended_stores }}</strong>
-        </div>
-        <hr class="my-3">
-        {% for store in stores %}
-          <div class="d-flex justify-content-between align-items-center gap-2 py-2">
-            <span class="text-truncate">{{ store.name }}</span>
-            {% if store.status == "active" %}
-              <span class="badge text-bg-success">Active</span>
-            {% elif store.status == "draft" %}
-              <span class="badge text-bg-warning">Draft</span>
-            {% else %}
-              <span class="badge text-bg-danger">Suspended</span>
-            {% endif %}
-          </div>
-        {% empty %}
-          <p class="text-body-secondary small mb-0">You have not created a store yet.</p>
-        {% endfor %}
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- Orders and bookings -->
-<div class="row g-3 my-3">
-  <div class="col-xl-8">
-    <div class="card h-100 border-0 shadow-sm">
       <div class="card-header bg-transparent p-3 d-flex justify-content-between align-items-center">
+        <h5 class="mb-0">My business</h5>
+        {% if store.status == "active" %}
+          <span class="badge text-bg-success">Active</span>
+        {% elif store.status == "draft" %}
+          <span class="badge text-bg-warning">Draft</span>
+        {% else %}
+          <span class="badge text-bg-danger">Suspended</span>
+        {% endif %}
+      </div>
+      <div class="card-body p-3 d-flex flex-column justify-content-between">
         <div>
-          <h5 class="mb-1">Recent orders</h5>
-          <div class="small text-body-secondary">The latest orders across your stores</div>
-        </div>
-        <span class="badge text-bg-warning">{{ pending_orders }} pending</span>
-      </div>
-      <div class="card-body p-3">
-        <div class="table-responsive my-2">
-          <table id="recentOrdersTable" class="table ops-table table-hover align-middle w-100 mb-0">
-            <thead>
-              <tr>
-                <th scope="col">Order</th>
-                <th scope="col">Customer</th>
-                <th scope="col">Store</th>
-                <th scope="col">Status</th>
-                <th class="text-end" scope="col" data-orderable="true">Total</th>
-              </tr>
-            </thead>
-            <tbody>
-              {% for order in recent_orders %}
-                <tr>
-                  <td data-order="{{ order.created_at|date:'U' }}">
-                    <div class="fw-semibold">{{ order.order_number }}</div>
-                    <div class="small text-body-secondary">{{ order.created_at|date:"d M, Y" }}</div>
-                  </td>
-                  <td>{{ order.customer_name|default:"Customer" }}</td>
-                  <td>{{ order.store.name }}</td>
-                  <td>
-                    {% if order.status == "completed" %}
-                      <span class="badge text-bg-success">{{ order.get_status_display }}</span>
-                    {% elif order.status == "cancelled" or order.status == "rejected" %}
-                      <span class="badge text-bg-danger">{{ order.get_status_display }}</span>
-                    {% elif order.status == "pending" %}
-                      <span class="badge text-bg-warning">{{ order.get_status_display }}</span>
-                    {% else %}
-                      <span class="badge text-bg-info">{{ order.get_status_display }}</span>
-                    {% endif %}
-                  </td>
-                  <td class="text-end fw-semibold" data-order="{{ order.total }}">{{ order.total|floatformat:2 }}</td>
-                </tr>
-              {% endfor %}
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <div class="col-xl-4">
-    <div class="card h-100 border-0 shadow-sm">
-      <div class="card-header bg-transparent p-3">
-        <h5 class="mb-1">Bookings</h5>
-        <div class="small text-body-secondary">Service booking activity</div>
-      </div>
-      <div class="card-body p-3">
-        <div class="d-flex justify-content-between mb-3">
-          <span class="text-body-secondary">Awaiting approval</span>
-          <strong>{{ pending_bookings }}</strong>
-        </div>
-        <div class="d-flex justify-content-between mb-3">
-          <span class="text-body-secondary">Confirmed</span>
-          <strong>{{ confirmed_bookings }}</strong>
-        </div>
-        <div class="d-flex justify-content-between mb-3">
-          <span class="text-body-secondary">Completed</span>
-          <strong>{{ completed_bookings }}</strong>
-        </div>
-        <hr class="my-3">
-        <h6 class="mb-3">Recent bookings</h6>
-        {% for booking in recent_bookings %}
-          <div class="border-bottom py-2">
-            <div class="d-flex justify-content-between gap-2">
-              <span class="fw-semibold">{{ booking.reference }}</span>
-              <span class="small text-body-secondary">{{ booking.get_status_display }}</span>
+          <div class="fw-semibold fs-5 mb-1">{{ store.name }}</div>
+          {% if store.business_type %}
+            <div class="small text-body-secondary mb-3">
+              <i class="fa-solid fa-tag me-1" aria-hidden="true"></i>{{ store.business_type }}
             </div>
-            <div class="small">{{ booking.service.name }} · {{ booking.seats }} seat{{ booking.seats|pluralize }}</div>
-            <div class="small text-body-secondary">{{ booking.slot.start_at|date:"d M Y, H:i" }}</div>
-          </div>
-        {% empty %}
-          <p class="small text-body-secondary mb-0">No bookings have been received yet.</p>
-        {% endfor %}
+          {% endif %}
+
+          {% if is_service_business and not is_product_business %}
+            <div class="d-flex justify-content-between align-items-center mb-2">
+              <span class="text-body-secondary">Published services</span>
+              <strong>{{ available_services }} of {{ total_services }}</strong>
+            </div>
+            <div class="d-flex justify-content-between align-items-center mb-2">
+              <span class="text-body-secondary">Pending bookings</span>
+              <strong>{{ pending_bookings }}</strong>
+            </div>
+            <div class="d-flex justify-content-between align-items-center mb-2">
+              <span class="text-body-secondary">Confirmed bookings</span>
+              <strong>{{ confirmed_bookings }}</strong>
+            </div>
+            <div class="d-flex justify-content-between align-items-center mb-2">
+              <span class="text-body-secondary">Completed bookings</span>
+              <strong>{{ completed_bookings }}</strong>
+            </div>
+          {% else %}
+            <div class="d-flex justify-content-between align-items-center mb-2">
+              <span class="text-body-secondary">Available products</span>
+              <strong>{{ available_products }} of {{ total_products }}</strong>
+            </div>
+            <div class="d-flex justify-content-between align-items-center mb-2">
+              <span class="text-body-secondary">Pending orders</span>
+              <strong>{{ pending_orders }}</strong>
+            </div>
+            <div class="d-flex justify-content-between align-items-center mb-2">
+              <span class="text-body-secondary">Orders in progress</span>
+              <strong>{{ processing_orders }}</strong>
+            </div>
+            <div class="d-flex justify-content-between align-items-center mb-2">
+              <span class="text-body-secondary">Paid completed value</span>
+              <strong>{{ paid_order_value|floatformat:2 }}</strong>
+            </div>
+          {% endif %}
+        </div>
+
+        <div class="pt-3 border-top d-grid gap-2">
+          {% if is_service_business and not is_product_business %}
+            <a href="#" class="btn btn-primary btn-sm">
+              <i class="fa-solid fa-plus me-1" aria-hidden="true"></i> Add Service
+            </a>
+            <a href="#" class="btn btn-outline-secondary btn-sm">
+              <i class="fa-solid fa-clock me-1" aria-hidden="true"></i> Manage Time Slots
+            </a>
+          {% else %}
+            <a href="#" class="btn btn-primary btn-sm">
+              <i class="fa-solid fa-plus me-1" aria-hidden="true"></i> Add Product
+            </a>
+            <a href="#" class="btn btn-outline-secondary btn-sm">
+              <i class="fa-solid fa-list-check me-1" aria-hidden="true"></i> Manage Orders
+            </a>
+          {% endif %}
+        </div>
       </div>
     </div>
   </div>
 </div>
 
-<!-- Reviews, inventory and notifications -->
+<!-- Primary Operations Table (Orders for Product Business, Bookings for Service Business) -->
+<div class="row g-3 my-3">
+  <div class="col-12">
+    <div class="card border-0 shadow-sm">
+      {% if is_service_business and not is_product_business %}
+        <div class="card-header bg-transparent p-3 d-flex justify-content-between align-items-center">
+          <div>
+            <h5 class="mb-1">Recent bookings</h5>
+            <div class="small text-body-secondary">Latest client appointments and slot reservations</div>
+          </div>
+          <span class="badge text-bg-warning">{{ pending_bookings }} pending</span>
+        </div>
+        <div class="card-body p-3">
+          <div class="table-responsive">
+            <table id="recentActivityTable" data-mode="bookings" class="table ops-table table-hover align-middle w-100 mb-0">
+              <thead>
+                <tr>
+                  <th scope="col">Booking</th>
+                  <th scope="col">Client</th>
+                  <th scope="col">Service</th>
+                  <th scope="col">Slot Time</th>
+                  <th scope="col">Status</th>
+                  <th class="text-end" scope="col">Seats</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for booking in recent_bookings %}
+                  <tr>
+                    <td data-order="{{ booking.created_at|date:'U' }}">
+                      <div class="fw-semibold">{{ booking.reference }}</div>
+                      <div class="small text-body-secondary">Booked {{ booking.created_at|date:"d M, Y" }}</div>
+                    </td>
+                    <td>{{ booking.customer.get_full_name|default:booking.customer.email|default:"Client" }}</td>
+                    <td>{{ booking.service.name }}</td>
+                    <td data-order="{{ booking.slot.start_at|date:'U' }}">
+                      {{ booking.slot.start_at|date:"d M Y, H:i" }}
+                    </td>
+                    <td>
+                      {% if booking.status == "completed" %}
+                        <span class="badge text-bg-success">{{ booking.get_status_display }}</span>
+                      {% elif booking.status == "cancelled" or booking.status == "rejected" %}
+                        <span class="badge text-bg-danger">{{ booking.get_status_display }}</span>
+                      {% elif booking.status == "pending" %}
+                        <span class="badge text-bg-warning">{{ booking.get_status_display }}</span>
+                      {% else %}
+                        <span class="badge text-bg-info">{{ booking.get_status_display }}</span>
+                      {% endif %}
+                    </td>
+                    <td class="text-end fw-semibold" data-order="{{ booking.seats }}">
+                      {{ booking.seats }}
+                    </td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      {% else %}
+        <div class="card-header bg-transparent p-3 d-flex justify-content-between align-items-center">
+          <div>
+            <h5 class="mb-1">Recent orders</h5>
+            <div class="small text-body-secondary">Latest customer orders for {{ store.name }}</div>
+          </div>
+          <span class="badge text-bg-warning">{{ pending_orders }} pending</span>
+        </div>
+        <div class="card-body p-3">
+          <div class="table-responsive">
+            <table id="recentActivityTable" data-mode="orders" class="table ops-table table-hover align-middle w-100 mb-0">
+              <thead>
+                <tr>
+                  <th scope="col">Order</th>
+                  <th scope="col">Customer</th>
+                  <th scope="col">Payment</th>
+                  <th scope="col">Status</th>
+                  <th class="text-end" scope="col">Total</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for order in recent_orders %}
+                  <tr>
+                    <td data-order="{{ order.created_at|date:'U' }}">
+                      <div class="fw-semibold">{{ order.order_number }}</div>
+                      <div class="small text-body-secondary">{{ order.created_at|date:"d M, Y" }}</div>
+                    </td>
+                    <td>{{ order.customer_name|default:"Customer" }}</td>
+                    <td>
+                      <span class="small text-body-secondary">{{ order.get_payment_status_display }}</span>
+                    </td>
+                    <td>
+                      {% if order.status == "completed" %}
+                        <span class="badge text-bg-success">{{ order.get_status_display }}</span>
+                      {% elif order.status == "cancelled" or order.status == "rejected" %}
+                        <span class="badge text-bg-danger">{{ order.get_status_display }}</span>
+                      {% elif order.status == "pending" %}
+                        <span class="badge text-bg-warning">{{ order.get_status_display }}</span>
+                      {% else %}
+                        <span class="badge text-bg-info">{{ order.get_status_display }}</span>
+                      {% endif %}
+                    </td>
+                    <td class="text-end fw-semibold" data-order="{{ order.total }}">
+                      {{ order.total|floatformat:2 }}
+                    </td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+<!-- Reviews, Operational Watchlist (Slots vs Stock), and Notifications -->
 <div class="row g-3 my-3">
   <div class="col-lg-4">
     <div class="card h-100 border-0 shadow-sm">
@@ -282,7 +543,7 @@
       </div>
       <div class="card-body p-3">
         {% for review in recent_reviews %}
-          <div class="border-bottom py-3">
+          <div class="py-3 {% if not forloop.last %}border-bottom{% endif %} {% if forloop.first %}pt-0{% endif %}">
             <div class="d-flex justify-content-between align-items-center gap-2">
               <strong>{{ review.display_author }}</strong>
               <span class="text-warning text-nowrap">
@@ -291,13 +552,14 @@
               </span>
             </div>
             <div class="small text-body-secondary">
-              {{ review.store.name }} · {{ review.created_at|date:"d M Y" }}
+              {% if review.product %}{{ review.product.name }} · {% elif review.service %}{{ review.service.name }} · {% endif %}
+              {{ review.created_at|date:"d M Y" }}
             </div>
             {% if review.title %}
               <div class="fw-semibold mt-2">{{ review.title }}</div>
             {% endif %}
             {% if review.body %}
-              <p class="small mb-1 mt-1">{{ review.body|truncatechars:120 }}</p>
+              <p class="small mb-2 mt-1">{{ review.body|truncatechars:120 }}</p>
             {% endif %}
             {% if review.has_reply %}
               <span class="badge text-bg-success">Replied</span>
@@ -312,31 +574,60 @@
     </div>
   </div>
 
+  <!-- Middle Card: Upcoming Time Slots (Service) vs Low Stock Products (Product) -->
   <div class="col-lg-4">
-    <div class="card h-100 border-0 shadow-sm">
-      <div class="card-header bg-transparent p-3">
-        <h5 class="mb-0">Low stock products</h5>
-      </div>
-      <div class="card-body p-3">
-        {% for product in low_stock_products %}
-          <div class="d-flex justify-content-between align-items-center gap-3 border-bottom py-3">
-            <div class="min-w-0">
-              <div class="fw-semibold text-truncate">{{ product.name }}</div>
-              <div class="small text-body-secondary">{{ product.store.name }}</div>
+    {% if is_service_business and not is_product_business %}
+      <div class="card h-100 border-0 shadow-sm">
+        <div class="card-header bg-transparent p-3 d-flex justify-content-between align-items-center">
+          <h5 class="mb-0">Upcoming time slots</h5>
+          <a href="#" class="small text-decoration-none">Manage</a>
+        </div>
+        <div class="card-body p-3">
+          {% for slot in upcoming_slots %}
+            <div class="d-flex justify-content-between align-items-center gap-3 py-3 {% if not forloop.last %}border-bottom{% endif %} {% if forloop.first %}pt-0{% endif %}">
+              <div class="min-w-0">
+                <div class="fw-semibold text-truncate">{{ slot.service.name }}</div>
+                <div class="small text-body-secondary">{{ slot.start_at|date:"D, d M · H:i" }}</div>
+              </div>
+              {% if slot.is_booked or slot.remaining_capacity == 0 %}
+                <span class="badge text-bg-secondary flex-shrink-0">Full</span>
+              {% else %}
+                <span class="badge text-bg-success flex-shrink-0">Open</span>
+              {% endif %}
             </div>
-            {% if product.stock == 0 %}
-              <span class="badge text-bg-danger">Out of stock</span>
-            {% else %}
-              <span class="badge text-bg-warning">{{ product.stock }} left</span>
-            {% endif %}
-          </div>
-        {% empty %}
-          <p class="text-body-secondary small mb-0">No products currently have five or fewer units in stock.</p>
-        {% endfor %}
+          {% empty %}
+            <p class="text-body-secondary small mb-0">No upcoming time slots scheduled.</p>
+          {% endfor %}
+        </div>
       </div>
-    </div>
+    {% else %}
+      <div class="card h-100 border-0 shadow-sm">
+        <div class="card-header bg-transparent p-3 d-flex justify-content-between align-items-center">
+          <h5 class="mb-0">Low stock products</h5>
+          <a href="#" class="small text-decoration-none">Inventory</a>
+        </div>
+        <div class="card-body p-3">
+          {% for product in low_stock_products %}
+            <div class="d-flex justify-content-between align-items-center gap-3 py-3 {% if not forloop.last %}border-bottom{% endif %} {% if forloop.first %}pt-0{% endif %}">
+              <div class="min-w-0">
+                <div class="fw-semibold text-truncate">{{ product.name }}</div>
+                <div class="small text-body-secondary">SKU / Catalog</div>
+              </div>
+              {% if product.stock == 0 %}
+                <span class="badge text-bg-danger flex-shrink-0">Out of stock</span>
+              {% else %}
+                <span class="badge text-bg-warning flex-shrink-0">{{ product.stock }} left</span>
+              {% endif %}
+            </div>
+          {% empty %}
+            <p class="text-body-secondary small mb-0">No products currently have five or fewer units in stock.</p>
+          {% endfor %}
+        </div>
+      </div>
+    {% endif %}
   </div>
 
+  <!-- Notifications -->
   <div class="col-lg-4">
     <div class="card h-100 border-0 shadow-sm">
       <div class="card-header bg-transparent p-3 d-flex justify-content-between align-items-center">
@@ -349,18 +640,18 @@
       </div>
       <div class="card-body p-3">
         {% for notification in recent_notifications %}
-          <div class="border-bottom py-3">
+          <div class="py-3 {% if not forloop.last %}border-bottom{% endif %} {% if forloop.first %}pt-0{% endif %}">
             <div class="d-flex justify-content-between align-items-start gap-2">
               <strong class="{% if not notification.is_read %}text-primary{% endif %}">
                 {{ notification.title }}
               </strong>
               {% if not notification.is_read %}
-                <span class="badge text-bg-primary">New</span>
+                <span class="badge text-bg-primary flex-shrink-0">New</span>
               {% endif %}
             </div>
             <p class="small mb-1 mt-1">{{ notification.message|truncatechars:110 }}</p>
             <div class="small text-body-secondary">
-              {{ notification.store.name }} · {{ notification.created_at|timesince }} ago
+              {{ notification.created_at|timesince }} ago
             </div>
           </div>
         {% empty %}
@@ -371,39 +662,21 @@
   </div>
 </div>
 
-<!-- Additional operational figures -->
-<div class="card border-0 shadow-sm my-3">
-  <div class="card-body p-3">
-    <div class="row g-3 text-center">
-      <div class="col-6 col-md-3">
-        <div class="small text-body-secondary">Paid completed orders</div>
-        <div class="fs-5 fw-semibold">{{ paid_order_value|floatformat:2 }}</div>
-      </div>
-      <div class="col-6 col-md-3">
-        <div class="small text-body-secondary">Orders in progress</div>
-        <div class="fs-5 fw-semibold">{{ processing_orders }}</div>
-      </div>
-      <div class="col-6 col-md-3">
-        <div class="small text-body-secondary">Available products</div>
-        <div class="fs-5 fw-semibold">{{ available_products }}</div>
-      </div>
-      <div class="col-6 col-md-3">
-        <div class="small text-body-secondary">Available services</div>
-        <div class="fs-5 fw-semibold">{{ available_services }}</div>
-      </div>
-    </div>
-  </div>
-</div>
+{% endif %}
 {% endblock %}
 
 {% block extra_js %}
 <script src="https://cdn.datatables.net/2.3.4/js/dataTables.min.js"></script>
+<script src="https://cdn.datatables.net/2.3.4/js/dataTables.bootstrap5.min.js"></script>
 <script>
   document.addEventListener("DOMContentLoaded", function () {
-    const ordersTable = document.querySelector("#recentOrdersTable");
+    const activityTable = document.querySelector("#recentActivityTable");
 
-    if (ordersTable) {
-      new DataTable(ordersTable, {
+    if (activityTable) {
+      const isBookings = activityTable.dataset.mode === "bookings";
+      const lastColIndex = isBookings ? 5 : 4;
+
+      new DataTable(activityTable, {
         pageLength: 10,
         lengthMenu: [5, 10, 25, 50, 100],
         order: [[0, "desc"]],
@@ -411,21 +684,22 @@
         ordering: true,
         paging: true,
         info: true,
+        autoWidth: false,
         language: {
-          search: "Search orders:",
-          searchPlaceholder: "Order number, customer, store...",
-          emptyTable: "No orders have been placed yet.",
-          zeroRecords: "No matching orders found.",
-          lengthMenu: "Show _MENU_ orders",
-          info: "Showing _START_ to _END_ of _TOTAL_ orders",
-          infoEmpty: "No orders available",
+          search: isBookings ? "Search bookings:" : "Search orders:",
+          searchPlaceholder: isBookings ? "Reference, client, service..." : "Order number, customer...",
+          emptyTable: isBookings ? "No bookings have been received yet." : "No orders have been placed yet.",
+          zeroRecords: isBookings ? "No matching bookings found." : "No matching orders found.",
+          lengthMenu: isBookings ? "Show _MENU_ bookings" : "Show _MENU_ orders",
+          info: isBookings ? "Showing _START_ to _END_ of _TOTAL_ bookings" : "Showing _START_ to _END_ of _TOTAL_ orders",
+          infoEmpty: isBookings ? "No bookings available" : "No orders available",
           paginate: {
             previous: "Previous",
             next: "Next"
           }
         },
         columnDefs: [
-          { targets: 4, className: "text-end" }
+          { targets: lastColIndex, className: "text-end" }
         ]
       });
     }

@@ -7,7 +7,7 @@
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, shrink-to-fit=no">
-    <title>{% block title %}Dashboard{% endblock %}</title>
+    <title>{% block title %}Dashboard | The Spotlight by The Nova{% endblock %}</title>
     <link rel="icon" type="image/png" href="{% static 'shopkeeper/assets/favicon/favicon-16x16.png' %}">
     <link rel="manifest" href="{% static 'shopkeeper/assets/favicon/manifest.json' %}">
     <meta name="msapplication-TileColor" content="#ffffff">
@@ -22,24 +22,86 @@
     />
     <!-- Main styles for this application-->
     <link href="{% static 'shopkeeper/css/style.css' %}" rel="stylesheet">
-    <!-- We use those styles to show code examples, you should remove them in your application.-->
-    <link href="{% static 'shopkeeper/css/examples.css' %}" rel="stylesheet">
     {% block extra_css %}{% endblock %}
+    <style>
+      /* Full-width horizontal logo with fixed height in sidebar header */
+      .sidebar-header {
+        padding: 0.65rem 1rem;
+      }
+
+      .sidebar-brand {
+        width: 100%;
+        display: flex;
+        align-items: center;
+      }
+
+      .sidebar-brand-link {
+        display: flex;
+        align-items: center;
+        width: 100%;
+        text-decoration: none;
+      }
+
+      .sidebar-brand-full {
+        width: 100%;
+        display: flex;
+        align-items: center;
+      }
+
+      .sidebar-brand-full-img {
+        width: 100%;
+        height: 65px;
+        object-fit: contain;
+        object-position: left center;
+        display: block;
+      }
+
+      .sidebar-brand-narrow-img {
+        width: 36px;
+        height: 36px;
+        object-fit: contain;
+        display: block;
+      }
+
+      .header-avatar-initials {
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        background-color: #d4af37;
+        color: #111111;
+        font-weight: 700;
+        font-size: 0.875rem;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        text-transform: uppercase;
+      }
+    </style>
     <script src="{% static 'shopkeeper/js/config.js' %}"></script>
     <script src="{% static 'shopkeeper/js/color-modes.js' %}"></script>
   </head>
   <body>
     <div class="sidebar sidebar-dark sidebar-fixed border-end" id="sidebar">
       <div class="sidebar-header border-bottom">
-        <div class="sidebar-brand me-auto">
-          <h2 class="sidebar-brand-full" width="88" height="32">
-            The Spotlight
-          </h2>
-          <h2 class="sidebar-brand-narrow" width="88" height="32">
-            SP
-          </h2>
+        <div class="sidebar-brand">
+          <a href="{% url 'shopkeeper:home' %}" class="sidebar-brand-link" aria-label="The Spotlight by The Nova">
+            <span class="sidebar-brand-full">
+              <img
+                src="{% static 'img/Logo-Black-removebg.png' %}"
+                alt="The Spotlight"
+                class="sidebar-brand-full-img"
+              >
+            </span>
+            <span class="sidebar-brand-narrow">
+              <img
+                src="{% static 'img/Logo-Black-removebg.png' %}"
+                alt="The Spotlight"
+                class="sidebar-brand-narrow-img"
+              >
+            </span>
+          </a>
         </div>
-        <button class="btn-close d-lg-none" type="button" data-coreui-theme="dark" aria-label="Close" onclick="coreui.Sidebar.getInstance(document.querySelector('#sidebar')).toggle()"></button>
+        <button class="btn-close d-lg-none ms-2" type="button" data-coreui-theme="dark" aria-label="Close" onclick="coreui.Sidebar.getInstance(document.querySelector('#sidebar')).toggle()"></button>
       </div>
       
       <ul class="sidebar-nav" data-coreui="navigation" data-simplebar>
@@ -48,7 +110,7 @@
         <li class="nav-title">Overview</li>
 
         <li class="nav-item">
-          <a class="nav-link active" href="#">
+          <a class="nav-link active" href="{% url 'shopkeeper:home' %}">
             <i class="nav-icon fa-solid fa-gauge-high"></i>
             Dashboard
           </a>
@@ -65,7 +127,9 @@
           <a class="nav-link" href="#">
             <i class="nav-icon fa-solid fa-bell"></i>
             Notifications
-            <span class="badge bg-danger ms-auto">4</span>
+            {% if unread_notifications_count %}
+              <span class="badge bg-danger ms-auto">{{ unread_notifications_count }}</span>
+            {% endif %}
           </a>
         </li>
 
@@ -81,97 +145,214 @@
           <ul class="nav-group-items compact">
             <li class="nav-item">
               <a class="nav-link" href="#">
-                <span class="nav-icon">
-                  <span class="nav-icon-bullet"></span>
-                </span>
+                <span class="nav-icon"><span class="nav-icon-bullet"></span></span>
                 Store Profile
               </a>
             </li>
             <li class="nav-item">
               <a class="nav-link" href="#">
-                <span class="nav-icon">
-                  <span class="nav-icon-bullet"></span>
-                </span>
+                <span class="nav-icon"><span class="nav-icon-bullet"></span></span>
                 Store Settings
               </a>
             </li>
             <li class="nav-item">
               <a class="nav-link" href="#">
-                <span class="nav-icon">
-                  <span class="nav-icon-bullet"></span>
-                </span>
+                <span class="nav-icon"><span class="nav-icon-bullet"></span></span>
                 Business Verification
               </a>
             </li>
           </ul>
         </li>
 
-        <li class="nav-group">
-          <a class="nav-link nav-group-toggle" href="#">
-            <i class="nav-icon fa-solid fa-boxes-stacked"></i>
-            Products & Services
-          </a>
-          <ul class="nav-group-items compact">
-            <li class="nav-item">
-              <a class="nav-link" href="#">
-                <span class="nav-icon"><span class="nav-icon-bullet"></span></span>
-                All Listings
-              </a>
-            </li>
-            <li class="nav-item">
-              <a class="nav-link" href="#">
-                <span class="nav-icon"><span class="nav-icon-bullet"></span></span>
-                Add New Listing
-              </a>
-            </li>
-            <li class="nav-item">
-              <a class="nav-link" href="#">
-                <span class="nav-icon"><span class="nav-icon-bullet"></span></span>
-                Categories
-              </a>
-            </li>
-            <li class="nav-item">
-              <a class="nav-link" href="#">
-                <span class="nav-icon"><span class="nav-icon-bullet"></span></span>
-                Listing Approvals
-                <span class="badge bg-warning ms-auto">3</span>
-              </a>
-            </li>
-          </ul>
-        </li>
+        {% if is_product_business %}
+          <!-- PRODUCT BUSINESS MENU -->
+          <li class="nav-group">
+            <a class="nav-link nav-group-toggle" href="#">
+              <i class="nav-icon fa-solid fa-boxes-stacked"></i>
+              Products
+            </a>
+            <ul class="nav-group-items compact">
+              <li class="nav-item">
+                <a class="nav-link" href="#">
+                  <span class="nav-icon"><span class="nav-icon-bullet"></span></span>
+                  All Products
+                </a>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link" href="#">
+                  <span class="nav-icon"><span class="nav-icon-bullet"></span></span>
+                  Add New Product
+                </a>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link" href="#">
+                  <span class="nav-icon"><span class="nav-icon-bullet"></span></span>
+                  Categories
+                </a>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link" href="#">
+                  <span class="nav-icon"><span class="nav-icon-bullet"></span></span>
+                  Product Approvals
+                  {% if pending_listing_approvals_count %}
+                    <span class="badge bg-warning text-dark ms-auto">{{ pending_listing_approvals_count }}</span>
+                  {% endif %}
+                </a>
+              </li>
+            </ul>
+          </li>
 
-        <li class="nav-group">
-          <a class="nav-link nav-group-toggle" href="#">
-            <i class="nav-icon fa-solid fa-cart-shopping"></i>
-            Orders & Bookings
-          </a>
-          <ul class="nav-group-items compact">
-            <li class="nav-item">
-              <a class="nav-link" href="#">
-                <span class="nav-icon"><span class="nav-icon-bullet"></span></span>
-                All Orders
-              </a>
-            </li>
-            <li class="nav-item">
-              <a class="nav-link" href="#">
-                <span class="nav-icon"><span class="nav-icon-bullet"></span></span>
-                Pending Orders
-              </a>
-            </li>
-            <li class="nav-item">
-              <a class="nav-link" href="#">
-                <span class="nav-icon"><span class="nav-icon-bullet"></span></span>
-                Completed Orders
-              </a>
-            </li>
-            <li class="nav-item">
-              <a class="nav-link" href="#">
-                <span class="nav-icon"><span class="nav-icon-bullet"></span></span>
-                Cancelled Orders
-              </a>
-            </li>
-          </ul>
-        </li>
+          <li class="nav-group">
+            <a class="nav-link nav-group-toggle" href="#">
+              <i class="nav-icon fa-solid fa-cart-shopping"></i>
+              Orders
+            </a>
+            <ul class="nav-group-items compact">
+              <li class="nav-item">
+                <a class="nav-link" href="#">
+                  <span class="nav-icon"><span class="nav-icon-bullet"></span></span>
+                  All Orders
+                </a>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link" href="#">
+                  <span class="nav-icon"><span class="nav-icon-bullet"></span></span>
+                  Pending Orders
+                  {% if pending_orders_count %}
+                    <span class="badge bg-warning text-dark ms-auto">{{ pending_orders_count }}</span>
+                  {% endif %}
+                </a>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link" href="#">
+                  <span class="nav-icon"><span class="nav-icon-bullet"></span></span>
+                  Completed Orders
+                </a>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link" href="#">
+                  <span class="nav-icon"><span class="nav-icon-bullet"></span></span>
+                  Cancelled Orders
+                </a>
+              </li>
+            </ul>
+          </li>
+
+          <li class="nav-item">
+            <a class="nav-link" href="#">
+              <i class="nav-icon fa-solid fa-warehouse"></i>
+              Inventory
+            </a>
+          </li>
+        {% endif %}
+
+        {% if is_service_business %}
+          <!-- SERVICE BUSINESS MENU -->
+          <li class="nav-group">
+            <a class="nav-link nav-group-toggle" href="#">
+              <i class="nav-icon fa-solid fa-concierge-bell"></i>
+              Services
+            </a>
+            <ul class="nav-group-items compact">
+              <li class="nav-item">
+                <a class="nav-link" href="#">
+                  <span class="nav-icon"><span class="nav-icon-bullet"></span></span>
+                  All Services
+                </a>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link" href="#">
+                  <span class="nav-icon"><span class="nav-icon-bullet"></span></span>
+                  Add New Service
+                </a>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link" href="#">
+                  <span class="nav-icon"><span class="nav-icon-bullet"></span></span>
+                  Service Categories
+                </a>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link" href="#">
+                  <span class="nav-icon"><span class="nav-icon-bullet"></span></span>
+                  Service Approvals
+                  {% if pending_listing_approvals_count %}
+                    <span class="badge bg-warning text-dark ms-auto">{{ pending_listing_approvals_count }}</span>
+                  {% endif %}
+                </a>
+              </li>
+            </ul>
+          </li>
+
+          <li class="nav-group">
+            <a class="nav-link nav-group-toggle" href="#">
+              <i class="nav-icon fa-solid fa-calendar-check"></i>
+              Bookings
+            </a>
+            <ul class="nav-group-items compact">
+              <li class="nav-item">
+                <a class="nav-link" href="#">
+                  <span class="nav-icon"><span class="nav-icon-bullet"></span></span>
+                  All Bookings
+                </a>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link" href="#">
+                  <span class="nav-icon"><span class="nav-icon-bullet"></span></span>
+                  Pending Requests
+                  {% if pending_bookings_count %}
+                    <span class="badge bg-warning text-dark ms-auto">{{ pending_bookings_count }}</span>
+                  {% endif %}
+                </a>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link" href="#">
+                  <span class="nav-icon"><span class="nav-icon-bullet"></span></span>
+                  Confirmed Bookings
+                </a>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link" href="#">
+                  <span class="nav-icon"><span class="nav-icon-bullet"></span></span>
+                  Completed Bookings
+                </a>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link" href="#">
+                  <span class="nav-icon"><span class="nav-icon-bullet"></span></span>
+                  Cancelled Bookings
+                </a>
+              </li>
+            </ul>
+          </li>
+
+          <li class="nav-group">
+            <a class="nav-link nav-group-toggle" href="#">
+              <i class="nav-icon fa-solid fa-clock"></i>
+              Slots & Schedule
+            </a>
+            <ul class="nav-group-items compact">
+              <li class="nav-item">
+                <a class="nav-link" href="#">
+                  <span class="nav-icon"><span class="nav-icon-bullet"></span></span>
+                  Manage Time Slots
+                </a>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link" href="#">
+                  <span class="nav-icon"><span class="nav-icon-bullet"></span></span>
+                  Create Slots
+                </a>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link" href="#">
+                  <span class="nav-icon"><span class="nav-icon-bullet"></span></span>
+                  Working Hours
+                </a>
+              </li>
+            </ul>
+          </li>
+        {% endif %}
 
         <li class="nav-item">
           <a class="nav-link" href="#">
@@ -183,14 +364,7 @@
         <li class="nav-item">
           <a class="nav-link" href="#">
             <i class="nav-icon fa-solid fa-users"></i>
-            Customers
-          </a>
-        </li>
-
-        <li class="nav-item">
-          <a class="nav-link" href="#">
-            <i class="nav-icon fa-solid fa-warehouse"></i>
-            Inventory
+            {% if is_service_business and not is_product_business %}Clients{% else %}Customers{% endif %}
           </a>
         </li>
 
@@ -226,6 +400,9 @@
               <a class="nav-link" href="#">
                 <span class="nav-icon"><span class="nav-icon-bullet"></span></span>
                 Ad Approvals
+                {% if pending_ad_approvals_count %}
+                  <span class="badge bg-warning text-dark ms-auto">{{ pending_ad_approvals_count }}</span>
+                {% endif %}
               </a>
             </li>
           </ul>
@@ -249,7 +426,9 @@
           <a class="nav-link" href="#">
             <i class="nav-icon fa-solid fa-bullhorn"></i>
             Announcements
-            <span class="badge bg-info ms-auto">NEW</span>
+            {% if has_new_announcements %}
+              <span class="badge bg-info ms-auto">NEW</span>
+            {% endif %}
           </a>
         </li>
 
@@ -332,7 +511,9 @@
           <a class="nav-link" href="#">
             <i class="nav-icon fa-solid fa-envelope"></i>
             Messages
-            <span class="badge bg-success ms-auto">2</span>
+            {% if unread_messages_count %}
+              <span class="badge bg-success ms-auto">{{ unread_messages_count }}</span>
+            {% endif %}
           </a>
         </li>
 
@@ -356,6 +537,7 @@
         <button class="sidebar-toggler" type="button" data-coreui-toggle="unfoldable"></button>
       </div>
     </div>
+
     <div class="wrapper d-flex flex-column min-vh-100">
       <header class="header header-sticky p-0 mb-4">
         <div class="container-fluid border-bottom px-4">
@@ -364,33 +546,85 @@
               <path fill="var(--ci-primary-color, currentcolor)" d="M80 96h352v32H80zm0 144h352v32H80zm0 144h352v32H80z" class="ci-primary" />
             </svg>
           </button>
+
           <ul class="header-nav ms-auto">
-            <li class="nav-item">
-              <a class="nav-link" href="#">
+            <!-- Notifications Dropdown -->
+            <li class="nav-item dropdown">
+              <a class="nav-link position-relative" data-coreui-toggle="dropdown" href="#" role="button" aria-haspopup="true" aria-expanded="false" aria-label="Notifications">
                 <svg class="icon icon-lg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
                   <path fill="var(--ci-primary-color, currentcolor)" d="m450.27 348.569-43.67-80.624V184c0-83.813-68.187-152-152-152s-152 68.187-152 152v83.945l-43.672 80.623A24 24 0 0 0 80.031 384h86.935a89 89 0 0 0-.367 8 88 88 0 0 0 176 0c0-2.7-.129-5.364-.367-8h86.935a24 24 0 0 0 21.1-35.431ZM310.6 392a56 56 0 1 1-111.419-8h110.837a56 56 0 0 1 .582 8M93.462 352l41.138-75.945V184a120 120 0 0 1 240 0v92.055L415.736 352Z" class="ci-primary" />
                 </svg>
+                {% if unread_notifications_count %}
+                  <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style="font-size: 0.65rem;">
+                    {{ unread_notifications_count }}
+                  </span>
+                {% endif %}
               </a>
+              <div class="dropdown-menu dropdown-menu-end pt-0" style="min-width: 19rem; max-width: 22rem;">
+                <div class="dropdown-header bg-body-tertiary text-body-secondary fw-semibold rounded-top d-flex justify-content-between align-items-center">
+                  <span>Notifications</span>
+                  {% if unread_notifications_count %}
+                    <span class="badge bg-danger">{{ unread_notifications_count }} unread</span>
+                  {% endif %}
+                </div>
+                {% for notification in recent_header_notifications %}
+                  <a class="dropdown-item py-2 border-bottom text-wrap" href="#">
+                    <div class="d-flex justify-content-between align-items-start gap-2">
+                      <span class="small {% if not notification.is_read %}fw-semibold text-primary{% else %}fw-medium{% endif %}">
+                        {{ notification.title }}
+                      </span>
+                      {% if not notification.is_read %}
+                        <span class="badge bg-primary rounded-pill" style="font-size: 0.6rem;">New</span>
+                      {% endif %}
+                    </div>
+                    <div class="small text-body-secondary mt-1">{{ notification.message|truncatechars:75 }}</div>
+                    <div class="text-body-tertiary mt-1" style="font-size: 0.72rem;">{{ notification.created_at|timesince }} ago</div>
+                  </a>
+                {% empty %}
+                  <div class="dropdown-item-text small text-body-secondary py-3 text-center">
+                    No new notifications.
+                  </div>
+                {% endfor %}
+                <a class="dropdown-item text-center small fw-semibold py-2" href="#">
+                  View all notifications
+                </a>
+              </div>
             </li>
+
+            <!-- Pending Orders Quick Link -->
             <li class="nav-item">
-              <a class="nav-link" href="#">
+              <a class="nav-link position-relative" href="#" title="Pending Orders">
                 <svg class="icon icon-lg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
                   <path fill="var(--ci-primary-color, currentcolor)" d="M136 24H16v120h120Zm-32 88H48V56h56Zm32 88H16v120h120Zm-32 88H48v-56h56Zm32 88H16v120h120Zm-32 88H48v-56h56Zm72-440.002h320v32H176zm0 88h256v32H176zm0 88h320v32H176zm0 88h256v32H176zm0 176h256v32H176zm0-88h320v32H176z" class="ci-primary" />
                 </svg>
+                {% if pending_orders_count %}
+                  <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-warning text-dark" style="font-size: 0.65rem;">
+                    {{ pending_orders_count }}
+                  </span>
+                {% endif %}
               </a>
             </li>
+
+            <!-- Messages Quick Link -->
             <li class="nav-item">
-              <a class="nav-link" href="#">
+              <a class="nav-link position-relative" href="#" title="Messages">
                 <svg class="icon icon-lg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
                   <path fill="var(--ci-primary-color, currentcolor)" d="M274.6 25.623a32.01 32.01 0 0 0-37.2 0L16 183.766V496h480V183.766ZM464 402.693 339.97 322.96 464 226.492ZM256 51.662 454.429 193.4 311.434 304.615 256 268.979l-55.434 35.636L57.571 193.4ZM48 226.492l124.03 96.468L48 402.693ZM464 464H48v-23.265l208-133.714 208 133.714Z" class="ci-primary" />
                 </svg>
+                {% if unread_messages_count %}
+                  <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-success" style="font-size: 0.65rem;">
+                    {{ unread_messages_count }}
+                  </span>
+                {% endif %}
               </a>
             </li>
           </ul>
+
           <ul class="header-nav">
             <li class="nav-item py-1">
               <div class="vr h-100 mx-2 text-body text-opacity-75"></div>
             </li>
+            <!-- Color Mode Switcher -->
             <li class="nav-item dropdown">
               <button class="btn btn-link nav-link py-2 px-2 d-flex align-items-center" type="button" aria-expanded="false" data-coreui-toggle="dropdown">
                 <svg class="icon icon-lg theme-icon-active" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
@@ -424,41 +658,59 @@
                 </li>
               </ul>
             </li>
+
             <li class="nav-item py-1">
               <div class="vr h-100 mx-2 text-body text-opacity-75"></div>
             </li>
+
+            <!-- User Profile Dropdown -->
             <li class="nav-item dropdown">
-              <a class="nav-link py-0 pe-0" data-coreui-toggle="dropdown" href="#" role="button" aria-haspopup="true" aria-expanded="false">
-                <div class="avatar avatar-md"><img class="avatar-img" src="{% static 'shopkeeper/assets/img/avatars/8.jpg' %}" alt="user@email.com"></div>
+              <a class="nav-link py-0 pe-0 d-flex align-items-center gap-2" data-coreui-toggle="dropdown" href="#" role="button" aria-haspopup="true" aria-expanded="false">
+                <span class="d-none d-md-inline fw-medium small">
+                  {{ vendor_display_name|default:request.user.email }}
+                </span>
+                {% if vendor_avatar_url %}
+                  <div class="avatar avatar-md">
+                    <img class="avatar-img object-fit-cover" src="{{ vendor_avatar_url }}" alt="{{ vendor_display_name|default:request.user.email }}">
+                  </div>
+                {% else %}
+                  <span class="header-avatar-initials" title="{{ vendor_display_name|default:request.user.email }}">
+                    {{ vendor_display_name|default:request.user.email|slice:":1" }}
+                  </span>
+                {% endif %}
               </a>
-              <div class="dropdown-menu dropdown-menu-end pt-0">
-                <div class="dropdown-header bg-body-tertiary text-body-secondary fw-semibold rounded-top mb-2">Account</div>
+              <div class="dropdown-menu dropdown-menu-end pt-0" style="min-width: 15rem;">
+                <div class="dropdown-header bg-body-tertiary text-body-secondary rounded-top mb-2">
+                  <div class="fw-semibold text-body">{{ vendor_display_name|default:"Vendor Account" }}</div>
+                  <div class="small text-truncate">{{ request.user.email }}</div>
+                </div>
                 <a class="dropdown-item" href="#">
                   <svg class="icon me-2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
                     <path fill="var(--ci-primary-color, currentcolor)" d="m450.27 348.569-43.67-80.624V184c0-83.813-68.187-152-152-152s-152 68.187-152 152v83.945l-43.672 80.623A24 24 0 0 0 80.031 384h86.935a89 89 0 0 0-.367 8 88 88 0 0 0 176 0c0-2.7-.129-5.364-.367-8h86.935a24 24 0 0 0 21.1-35.431ZM310.6 392a56 56 0 1 1-111.419-8h110.837a56 56 0 0 1 .582 8M93.462 352l41.138-75.945V184a120 120 0 0 1 240 0v92.055L415.736 352Z" class="ci-primary" />
                   </svg>
-                  Updates
-                  <span class="badge badge-sm bg-info ms-2">8</span>
+                  Notifications
+                  {% if unread_notifications_count %}
+                    <span class="badge badge-sm bg-danger ms-auto">{{ unread_notifications_count }}</span>
+                  {% endif %}
                 </a>
                 <a class="dropdown-item" href="#">
                   <svg class="icon me-2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
                     <path fill="var(--ci-primary-color, currentcolor)" d="M274.6 25.623a32.01 32.01 0 0 0-37.2 0L16 183.766V496h480V183.766ZM464 402.693 339.97 322.96 464 226.492ZM256 51.662 454.429 193.4 311.434 304.615 256 268.979l-55.434 35.636L57.571 193.4ZM48 226.492l124.03 96.468L48 402.693ZM464 464H48v-23.265l208-133.714 208 133.714Z" class="ci-primary" />
                   </svg>
                   Messages
-                  <span class="badge badge-sm bg-success ms-2">42</span>
+                  {% if unread_messages_count %}
+                    <span class="badge badge-sm bg-success ms-auto">{{ unread_messages_count }}</span>
+                  {% endif %}
                 </a>
                 <a class="dropdown-item" href="#">
                   <svg class="icon me-2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
                     <path fill="var(--ci-primary-color, currentcolor)" d="m222.085 235.644-62.01-62.01L81.8 251.905l62.009 62.01-.04.04 66.958 66.957 11.354 11.275.04.039 66.957-66.957 11.273-11.354 202.277-202.271-78.272-78.271Zm44.33 66.958-11.274 11.353-33.057 33.056-.04-.039-33.017-33.017.04-.04-62.009-62.01 33.016-33.016 62.01 62.009L424.356 78.627l33.017 33.017Z" class="ci-primary" />
                     <path fill="var(--ci-primary-color, currentcolor)" d="M448 464H48V64h300.22l32-32H16v464h464V179.095l-32 32z" class="ci-primary" />
                   </svg>
-                  Tasks
-                </a>
-                <a class="dropdown-item" href="#">
-                  <svg class="icon me-2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
-                    <path fill="var(--ci-primary-color, currentcolor)" d="M496 496h-47.229l-69.522-128H40a24.03 24.03 0 0 1-24-24V40a24.03 24.03 0 0 1 24-24h432a24.03 24.03 0 0 1 24 24ZM48 336h350.284L464 456.993V48H48Z" class="ci-primary" />
-                  </svg>
-                  Comments
+                  Pending Orders
+                  {% if pending_orders_count %}
+                    <span class="badge badge-sm bg-warning text-dark ms-auto">{{ pending_orders_count }}</span>
+                  {% endif %}
                 </a>
                 <div class="dropdown-header bg-body-tertiary text-body-secondary fw-semibold my-2">
                   <div class="fw-semibold">Settings</div>
@@ -467,61 +719,48 @@
                   <svg class="icon me-2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
                     <path fill="var(--ci-primary-color, currentcolor)" d="m411.6 343.656-72.823-47.334 27.455-50.334A80.2 80.2 0 0 0 376 207.681V128a112 112 0 0 0-224 0v79.681a80.24 80.24 0 0 0 9.768 38.308l27.455 50.333-72.823 47.334A79.72 79.72 0 0 0 80 410.732V496h368v-85.268a79.73 79.73 0 0 0-36.4-67.076M416 464H112v-53.268a47.84 47.84 0 0 1 21.841-40.246l97.66-63.479-41.64-76.341A48.15 48.15 0 0 1 184 207.681V128a80 80 0 0 1 160 0v79.681a48.15 48.15 0 0 1-5.861 22.985L296.5 307.007l97.662 63.479A47.84 47.84 0 0 1 416 410.732Z" class="ci-primary" />
                   </svg>
-                  Profile
+                  Store Profile
                 </a>
                 <a class="dropdown-item" href="#">
                   <svg class="icon me-2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
                     <path fill="var(--ci-primary-color, currentcolor)" d="M245.151 168a88 88 0 1 0 88 88 88.1 88.1 0 0 0-88-88m0 144a56 56 0 1 1 56-56 56.063 56.063 0 0 1-56 56" class="ci-primary" />
                     <path fill="var(--ci-primary-color, currentcolor)" d="m464.7 322.319-31.77-26.153a193.1 193.1 0 0 0 0-80.332l31.77-26.153a19.94 19.94 0 0 0 4.606-25.439l-32.612-56.483a19.936 19.936 0 0 0-24.337-8.73l-38.561 14.447a192 192 0 0 0-69.54-40.192l-6.766-40.571A19.936 19.936 0 0 0 277.762 16H212.54a19.94 19.94 0 0 0-19.728 16.712l-6.762 40.572a192 192 0 0 0-69.54 40.192L77.945 99.027a19.94 19.94 0 0 0-24.334 8.731L21 164.245a19.94 19.94 0 0 0 4.61 25.438l31.767 26.151a193.1 193.1 0 0 0 0 80.332l-31.77 26.153A19.94 19.94 0 0 0 21 347.758l32.612 56.483a19.94 19.94 0 0 0 24.337 8.73l38.562-14.447a192 192 0 0 0 69.54 40.192l6.762 40.571A19.94 19.94 0 0 0 212.54 496h65.222a19.936 19.936 0 0 0 19.728-16.712l6.763-40.572a192 192 0 0 0 69.54-40.192l38.564 14.449a19.94 19.94 0 0 0 24.334-8.731l32.609-56.487a19.94 19.94 0 0 0-4.6-25.436m-50.636 57.12-48.109-18.024-7.285 7.334a159.96 159.96 0 0 1-72.625 41.973l-10 2.636L267.6 464h-44.89l-8.442-50.642-10-2.636a159.96 159.96 0 0 1-72.625-41.973l-7.285-7.334-48.117 18.024L53.8 340.562l39.629-32.624-2.7-9.973a160.9 160.9 0 0 1 0-83.93l2.7-9.972L53.8 171.439l22.446-38.878 48.109 18.024 7.285-7.334a159.96 159.96 0 0 1 72.625-41.973l10-2.636L222.706 48H267.6l8.442 50.642 10 2.636a159.96 159.96 0 0 1 72.625 41.973l7.285 7.334 48.109-18.024 22.447 38.877-39.629 32.625 2.7 9.972a160.9 160.9 0 0 1 0 83.93l-2.7 9.973 39.629 32.623Z" class="ci-primary" />
                   </svg>
-                  Settings
+                  Store Settings
                 </a>
                 <a class="dropdown-item" href="#">
                   <svg class="icon me-2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
                     <path fill="var(--ci-primary-color, currentcolor)" d="M472 72H40a24.03 24.03 0 0 0-24 24v320a24.03 24.03 0 0 0 24 24h432a24.03 24.03 0 0 0 24-24V96a24.03 24.03 0 0 0-24-24m-8 32v64H48v-64ZM48 408V232h416v176Z" class="ci-primary" />
                     <path fill="var(--ci-primary-color, currentcolor)" d="M88 312h64v32H88zm96 0h64v32h-64z" class="ci-primary" />
                   </svg>
-                  Payments
-                </a>
-                <a class="dropdown-item" href="#">
-                  <svg class="icon me-2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
-                    <path fill="var(--ci-primary-color, currentcolor)" d="M334.627 16H48v480h424V153.373ZM440 166.627V168H320V48h1.373ZM80 464V48h208v152h152v264Z" class="ci-primary" />
-                  </svg>
-                  Projects
+                  Earnings & Payouts
                 </a>
                 <div class="dropdown-divider"></div>
-                <a class="dropdown-item" href="#">
-                  <svg class="icon me-2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
-                    <path fill="var(--ci-primary-color, currentcolor)" d="M384 200v-56a128 128 0 0 0-256 0v56H88v128c0 92.635 75.364 168 168 168s168-75.365 168-168V200Zm-224-56a96 96 0 0 1 192 0v56H160Zm232 184c0 74.99-61.01 136-136 136s-136-61.01-136-136v-96h272Z" class="ci-primary" />
-                  </svg>
-                  Lock Account
-                </a>
-                <a class="dropdown-item" href="/authentication/login.html">
-                  <svg class="icon me-2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
-                    <path fill="var(--ci-primary-color, currentcolor)" d="M77.155 272.034H351.75v-32.001H77.155l75.053-75.053v-.001l-22.628-22.626-113.681 113.68.001.001h-.001L129.58 369.715l22.628-22.627v-.001z" class="ci-primary" />
-                    <path fill="var(--ci-primary-color, currentcolor)" d="M160 16v32h304v416H160v32h336V16z" class="ci-primary" />
-                  </svg>
-                  Logout
-                </a>
+                <form method="post" action="{% url 'account_logout' %}" class="m-0">
+                  {% csrf_token %}
+                  <button type="submit" class="dropdown-item text-danger">
+                    <svg class="icon me-2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+                      <path fill="currentcolor" d="M77.155 272.034H351.75v-32.001H77.155l75.053-75.053v-.001l-22.628-22.626-113.681 113.68.001.001h-.001L129.58 369.715l22.628-22.627v-.001z" class="ci-primary" />
+                      <path fill="currentcolor" d="M160 16v32h304v416H160v32h336V16z" class="ci-primary" />
+                    </svg>
+                    Logout
+                  </button>
+                </form>
               </div>
             </li>
           </ul>
         </div>
 
-
-
-
-
-
         <div class="container-fluid px-4">
           <nav aria-label="breadcrumb">
             <ol class="breadcrumb my-0">
-              <li class="breadcrumb-item"><a href="#">Home</a></li>
+              <li class="breadcrumb-item"><a href="{% url 'shopkeeper:home' %}" class="text-decoration-none">Dashboard</a></li>
               <li class="breadcrumb-item active"><span>{% block header %}Dashboard{% endblock %}</span></li>
             </ol>
           </nav>
         </div>
       </header>
+
       <div class="body flex-grow-1">
         <div class="container-lg px-4">
           {% block content %}
@@ -530,23 +769,17 @@
         </div>
       </div>
 
-
-
-
-
-
       <footer class="footer px-4">
         <div>
-          <a href="https://coreui.io">CoreUI</a>
-          <a href="https://coreui.io/product/free-bootstrap-admin-template/">Bootstrap Admin Template</a>
-          &copy; 2026 creativeLabs.
+          &copy; {% now "Y" %} <strong>The Spotlight</strong>. All rights reserved.
         </div>
         <div class="ms-auto">
           Powered by&nbsp;
-          <a href="https://coreui.io/bootstrap/docs/">CoreUI UI Components</a>
+          <strong>The Nova</strong>
         </div>
       </footer>
     </div>
+
     <!-- CoreUI and necessary plugins-->
     <script src="{% static 'shopkeeper/vendors/@coreui/coreui/js/coreui.bundle.min.js' %}"></script>
     <script src="{% static 'shopkeeper/vendors/simplebar/js/simplebar.min.js' %}"></script>
