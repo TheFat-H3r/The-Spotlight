@@ -5,7 +5,7 @@ from django.contrib import messages
 from django.contrib.admin.views.decorators import staff_member_required
 from django.core.exceptions import PermissionDenied
 from django.db import IntegrityError
-from django.db.models import Q, Count, ProtectedError, Sum
+from django.db.models import Q, Avg, Count, ProtectedError, Sum
 from django.forms import ValidationError
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
@@ -14,7 +14,7 @@ from django.utils.dateparse import parse_date, parse_datetime
 from accounts.models import User
 from marketing.models import Advertisement, Announcement
 from operations.models import AdminNotification, BroadcastAnnouncement, CommissionPlan, Complaint, Payout, StoreSubscription
-from stores.models import BusinessType, Category, Product, Service, Store, unique_slug
+from stores.models import BusinessType, Category, Product, Review, Service, Store, unique_slug
 from transactions.models import Booking, Order
 
 @staff_member_required
@@ -1327,12 +1327,61 @@ def admin_notification_create(request):
 
 
 @staff_member_required
-def manage_reviews(request):
-    return _placeholder_view(
-        request,
-        "Reviews & ratings",
-        "Moderate customer feedback and flagged reviews.",
-        "reviews",
+def reviews_management(request):
+    if request.method == "POST":
+        review = get_object_or_404(Review, pk=request.POST.get("review_id"))
+        action = request.POST.get("action")
+
+        if action == "hide":
+            if review.status != Review.Status.HIDDEN:
+                review.status = Review.Status.HIDDEN
+                review.save(update_fields=["status", "updated_at"])
+                messages.warning(request, "Review hidden from public storefront and ratings updated.")
+
+        elif action == "publish":
+            if review.status != Review.Status.PUBLISHED:
+                review.status = Review.Status.PUBLISHED
+                review.save(update_fields=["status", "updated_at"])
+                messages.success(request, "Review restored to Published and ratings updated.")
+
+        elif action == "remove_reply":
+            if review.has_reply:
+                review.remove_reply()
+                messages.info(request, "Vendor reply removed from review.")
+
+        elif action == "delete":
+            review.delete()
+            messages.warning(request, "Review permanently deleted and ratings recalculated.")
+
+        return redirect("operations:reviews")
+
+    reviews_qs = (
+        Review.objects.select_related(
+            "store",
+            "product",
+            "service",
+            "author",
+            "replied_by",
+            "order_item__order",
+            "booking",
+        )
+        .order_by("-created_at")
+    )
+
+    published_qs = reviews_qs.filter(status=Review.Status.PUBLISHED)
+    avg_rating = published_qs.aggregate(avg=Avg("overall_rating"))["avg"]
+
+    return render(
+        request,    
+        "operations/reviews.html",
+        {
+            "reviews": reviews_qs,
+            "total_review_count": reviews_qs.count(),
+            "published_count": published_qs.count(),
+            "hidden_count": reviews_qs.filter(status=Review.Status.HIDDEN).count(),
+            "low_rating_count": published_qs.filter(overall_rating__lte=2).count(),
+            "average_rating": round(avg_rating, 2) if avg_rating is not None else "0.00",
+        },
     )
 
 @staff_member_required
