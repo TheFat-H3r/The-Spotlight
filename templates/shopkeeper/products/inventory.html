@@ -1,0 +1,44 @@
+{% extends "shopkeeper/base.html" %}
+{% block title %}{{ page_title }}{% endblock %}
+
+{% block content %}
+<h4 class="mb-4">{{ page_title }}</h4>
+<div class="card">
+  <div class="table-responsive">
+    <table class="table align-middle mb-0">
+      <thead>
+        <tr>
+          <th>SKU</th>
+          <th>Product</th>
+          <th>Current Stock</th>
+          <th>Status</th>
+          <th>Quick Adjust</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for item in inventory_items %}
+        <tr>
+          <td>{{ item.sku }}</td>
+          <td>{{ item.name }}</td>
+          <td>{{ item.stock }}</td>
+          <td>
+            {% if item.stock == 0 %}<span class="badge bg-danger">Out of Stock</span>
+            {% elif item.stock < 5 %}<span class="badge bg-warning text-dark">Low Stock</span>
+            {% else %}<span class="badge bg-success">In Stock</span>{% endif %}
+          </td>
+          <td>
+            <form method="post" class="d-flex gap-2" style="max-width: 180px;">
+              {% csrf_token %}
+              <input type="number" name="stock" value="{{ item.stock }}" class="form-control form-control-sm">
+              <button class="btn btn-sm btn-primary">Update</button>
+            </form>
+          </td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="5" class="text-center py-4 text-body-secondary">No inventory records.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

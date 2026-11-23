@@ -1,0 +1,22 @@
+{% extends "shopkeeper/base.html" %}
+{% block title %}{{ page_title }}{% endblock %}
+
+{% block content %}
+<h4 class="mb-4">{{ page_title }}</h4>
+<div class="card col-md-8">
+  <div class="card-body">
+    <form method="post">
+      {% csrf_token %}
+      <div class="mb-3">
+        <label class="form-label">Subject</label>
+        <input type="text" name="subject" class="form-control" required>
+      </div>
+      <div class="mb-3">
+        <label class="form-label">Describe your issue</label>
+        <textarea name="message" rows="4" class="form-control" required></textarea>
+      </div>
+      <button type="submit" class="btn btn-primary">Submit Support Ticket</button>
+    </form>
+  </div>
+</div>
+{% endblock %}

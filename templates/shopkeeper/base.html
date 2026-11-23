@@ -7,7 +7,7 @@
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, shrink-to-fit=no">
-    <title>{% block title %}Dashboard | The Spotlight by The Nova{% endblock %}</title>
+    <title>{% block title %}{{ page_title|default:"Dashboard" }}{% endblock %} | The Spotlight</title>
     <link rel="icon" type="image/png" href="{% static 'shopkeeper/assets/favicon/favicon-16x16.png' %}">
     <link rel="manifest" href="{% static 'shopkeeper/assets/favicon/manifest.json' %}">
     <meta name="msapplication-TileColor" content="#ffffff">
@@ -20,10 +20,19 @@
       rel="stylesheet"
       href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css"
     />
+    <!-- DataTables Bootstrap 5 CSS -->
+<link rel="stylesheet" href="https://cdn.datatables.net/2.1.8/css/dataTables.bootstrap5.min.css">
     <!-- Main styles for this application-->
     <link href="{% static 'shopkeeper/css/style.css' %}" rel="stylesheet">
     {% block extra_css %}{% endblock %}
     <style>
+      .table > thead,
+      .table > thead > tr > th,
+      table.dataTable > thead > tr > th {
+        background-color: var(--cui-tertiary-bg) !important;
+        color: var(--cui-body-color) !important;
+        border-bottom-color: var(--cui-border-color) !important;
+      }
       /* Full-width horizontal logo with fixed height in sidebar header */
       .sidebar-header {
         padding: 0.65rem 1rem;
@@ -81,6 +90,7 @@
     <script src="{% static 'shopkeeper/js/color-modes.js' %}"></script>
   </head>
   <body>
+    {% with current_url=request.resolver_match.url_name %}
     <div class="sidebar sidebar-dark sidebar-fixed border-end" id="sidebar">
       <div class="sidebar-header border-bottom">
         <div class="sidebar-brand">
@@ -110,21 +120,21 @@
         <li class="nav-title">Overview</li>
 
         <li class="nav-item">
-          <a class="nav-link active" href="{% url 'shopkeeper:home' %}">
+          <a class="nav-link {% if current_url == 'home' %}active{% endif %}" href="{% url 'shopkeeper:home' %}">
             <i class="nav-icon fa-solid fa-gauge-high"></i>
             Dashboard
           </a>
         </li>
 
         <li class="nav-item">
-          <a class="nav-link" href="#">
+          <a class="nav-link {% if current_url == 'analytics' %}active{% endif %}" href="{% url 'shopkeeper:analytics' %}">
             <i class="nav-icon fa-solid fa-chart-line"></i>
             Analytics & Reports
           </a>
         </li>
 
         <li class="nav-item">
-          <a class="nav-link" href="#">
+          <a class="nav-link {% if current_url == 'notifications' %}active{% endif %}" href="{% url 'shopkeeper:notifications' %}">
             <i class="nav-icon fa-solid fa-bell"></i>
             Notifications
             {% if unread_notifications_count %}
@@ -137,26 +147,26 @@
         <!-- BUSINESS MANAGEMENT -->
         <li class="nav-title">Business Management</li>
 
-        <li class="nav-group">
+        <li class="nav-group {% if current_url in 'store_profile,store_settings,store_verification' %}show{% endif %}">
           <a class="nav-link nav-group-toggle" href="#">
             <i class="nav-icon fa-solid fa-store"></i>
             My Store
           </a>
           <ul class="nav-group-items compact">
             <li class="nav-item">
-              <a class="nav-link" href="#">
+              <a class="nav-link {% if current_url == 'store_profile' %}active{% endif %}" href="{% url 'shopkeeper:store_profile' %}">
                 <span class="nav-icon"><span class="nav-icon-bullet"></span></span>
                 Store Profile
               </a>
             </li>
             <li class="nav-item">
-              <a class="nav-link" href="#">
+              <a class="nav-link {% if current_url == 'store_settings' %}active{% endif %}" href="{% url 'shopkeeper:store_settings' %}">
                 <span class="nav-icon"><span class="nav-icon-bullet"></span></span>
                 Store Settings
               </a>
             </li>
             <li class="nav-item">
-              <a class="nav-link" href="#">
+              <a class="nav-link {% if current_url == 'store_verification' %}active{% endif %}" href="{% url 'shopkeeper:store_verification' %}">
                 <span class="nav-icon"><span class="nav-icon-bullet"></span></span>
                 Business Verification
               </a>
@@ -166,32 +176,26 @@
 
         {% if is_product_business %}
           <!-- PRODUCT BUSINESS MENU -->
-          <li class="nav-group">
+          <li class="nav-group {% if current_url in 'product_list,product_create,product_approvals' %}show{% endif %}">
             <a class="nav-link nav-group-toggle" href="#">
               <i class="nav-icon fa-solid fa-boxes-stacked"></i>
               Products
             </a>
             <ul class="nav-group-items compact">
               <li class="nav-item">
-                <a class="nav-link" href="#">
+                <a class="nav-link {% if current_url == 'product_list' %}active{% endif %}" href="{% url 'shopkeeper:product_list' %}">
                   <span class="nav-icon"><span class="nav-icon-bullet"></span></span>
                   All Products
                 </a>
               </li>
               <li class="nav-item">
-                <a class="nav-link" href="#">
+                <a class="nav-link {% if current_url == 'product_create' %}active{% endif %}" href="{% url 'shopkeeper:product_create' %}">
                   <span class="nav-icon"><span class="nav-icon-bullet"></span></span>
                   Add New Product
                 </a>
               </li>
               <li class="nav-item">
-                <a class="nav-link" href="#">
-                  <span class="nav-icon"><span class="nav-icon-bullet"></span></span>
-                  Categories
-                </a>
-              </li>
-              <li class="nav-item">
-                <a class="nav-link" href="#">
+                <a class="nav-link {% if current_url == 'product_approvals' %}active{% endif %}" href="{% url 'shopkeeper:product_approvals' %}">
                   <span class="nav-icon"><span class="nav-icon-bullet"></span></span>
                   Product Approvals
                   {% if pending_listing_approvals_count %}
@@ -202,20 +206,20 @@
             </ul>
           </li>
 
-          <li class="nav-group">
+          <li class="nav-group {% if current_url in 'order_list,order_pending,order_completed,order_cancelled' %}show{% endif %}">
             <a class="nav-link nav-group-toggle" href="#">
               <i class="nav-icon fa-solid fa-cart-shopping"></i>
               Orders
             </a>
             <ul class="nav-group-items compact">
               <li class="nav-item">
-                <a class="nav-link" href="#">
+                <a class="nav-link {% if current_url == 'order_list' %}active{% endif %}" href="{% url 'shopkeeper:order_list' %}">
                   <span class="nav-icon"><span class="nav-icon-bullet"></span></span>
                   All Orders
                 </a>
               </li>
               <li class="nav-item">
-                <a class="nav-link" href="#">
+                <a class="nav-link {% if current_url == 'order_pending' %}active{% endif %}" href="{% url 'shopkeeper:order_pending' %}">
                   <span class="nav-icon"><span class="nav-icon-bullet"></span></span>
                   Pending Orders
                   {% if pending_orders_count %}
@@ -224,13 +228,13 @@
                 </a>
               </li>
               <li class="nav-item">
-                <a class="nav-link" href="#">
+                <a class="nav-link {% if current_url == 'order_completed' %}active{% endif %}" href="{% url 'shopkeeper:order_completed' %}">
                   <span class="nav-icon"><span class="nav-icon-bullet"></span></span>
                   Completed Orders
                 </a>
               </li>
               <li class="nav-item">
-                <a class="nav-link" href="#">
+                <a class="nav-link {% if current_url == 'order_cancelled' %}active{% endif %}" href="{% url 'shopkeeper:order_cancelled' %}">
                   <span class="nav-icon"><span class="nav-icon-bullet"></span></span>
                   Cancelled Orders
                 </a>
@@ -239,7 +243,7 @@
           </li>
 
           <li class="nav-item">
-            <a class="nav-link" href="#">
+            <a class="nav-link {% if current_url == 'inventory' %}active{% endif %}" href="{% url 'shopkeeper:inventory' %}">
               <i class="nav-icon fa-solid fa-warehouse"></i>
               Inventory
             </a>
@@ -248,32 +252,32 @@
 
         {% if is_service_business %}
           <!-- SERVICE BUSINESS MENU -->
-          <li class="nav-group">
+          <li class="nav-group {% if current_url in 'service_list,service_create,service_categories,service_approvals' %}show{% endif %}">
             <a class="nav-link nav-group-toggle" href="#">
               <i class="nav-icon fa-solid fa-concierge-bell"></i>
               Services
             </a>
             <ul class="nav-group-items compact">
               <li class="nav-item">
-                <a class="nav-link" href="#">
+                <a class="nav-link {% if current_url == 'service_list' %}active{% endif %}" href="{% url 'shopkeeper:service_list' %}">
                   <span class="nav-icon"><span class="nav-icon-bullet"></span></span>
                   All Services
                 </a>
               </li>
               <li class="nav-item">
-                <a class="nav-link" href="#">
+                <a class="nav-link {% if current_url == 'service_create' %}active{% endif %}" href="{% url 'shopkeeper:service_create' %}">
                   <span class="nav-icon"><span class="nav-icon-bullet"></span></span>
                   Add New Service
                 </a>
               </li>
               <li class="nav-item">
-                <a class="nav-link" href="#">
+                <a class="nav-link {% if current_url == 'service_categories' %}active{% endif %}" href="{% url 'shopkeeper:service_categories' %}">
                   <span class="nav-icon"><span class="nav-icon-bullet"></span></span>
                   Service Categories
                 </a>
               </li>
               <li class="nav-item">
-                <a class="nav-link" href="#">
+                <a class="nav-link {% if current_url == 'service_approvals' %}active{% endif %}" href="{% url 'shopkeeper:service_approvals' %}">
                   <span class="nav-icon"><span class="nav-icon-bullet"></span></span>
                   Service Approvals
                   {% if pending_listing_approvals_count %}
@@ -284,20 +288,20 @@
             </ul>
           </li>
 
-          <li class="nav-group">
+          <li class="nav-group {% if current_url in 'booking_list,booking_pending,booking_confirmed,booking_completed,booking_cancelled' %}show{% endif %}">
             <a class="nav-link nav-group-toggle" href="#">
               <i class="nav-icon fa-solid fa-calendar-check"></i>
               Bookings
             </a>
             <ul class="nav-group-items compact">
               <li class="nav-item">
-                <a class="nav-link" href="#">
+                <a class="nav-link {% if current_url == 'booking_list' %}active{% endif %}" href="{% url 'shopkeeper:booking_list' %}">
                   <span class="nav-icon"><span class="nav-icon-bullet"></span></span>
                   All Bookings
                 </a>
               </li>
               <li class="nav-item">
-                <a class="nav-link" href="#">
+                <a class="nav-link {% if current_url == 'booking_pending' %}active{% endif %}" href="{% url 'shopkeeper:booking_pending' %}">
                   <span class="nav-icon"><span class="nav-icon-bullet"></span></span>
                   Pending Requests
                   {% if pending_bookings_count %}
@@ -306,19 +310,19 @@
                 </a>
               </li>
               <li class="nav-item">
-                <a class="nav-link" href="#">
+                <a class="nav-link {% if current_url == 'booking_confirmed' %}active{% endif %}" href="{% url 'shopkeeper:booking_confirmed' %}">
                   <span class="nav-icon"><span class="nav-icon-bullet"></span></span>
                   Confirmed Bookings
                 </a>
               </li>
               <li class="nav-item">
-                <a class="nav-link" href="#">
+                <a class="nav-link {% if current_url == 'booking_completed' %}active{% endif %}" href="{% url 'shopkeeper:booking_completed' %}">
                   <span class="nav-icon"><span class="nav-icon-bullet"></span></span>
                   Completed Bookings
                 </a>
               </li>
               <li class="nav-item">
-                <a class="nav-link" href="#">
+                <a class="nav-link {% if current_url == 'booking_cancelled' %}active{% endif %}" href="{% url 'shopkeeper:booking_cancelled' %}">
                   <span class="nav-icon"><span class="nav-icon-bullet"></span></span>
                   Cancelled Bookings
                 </a>
@@ -326,26 +330,26 @@
             </ul>
           </li>
 
-          <li class="nav-group">
+          <li class="nav-group {% if current_url in 'manage_slots,create_slots,working_hours' %}show{% endif %}">
             <a class="nav-link nav-group-toggle" href="#">
               <i class="nav-icon fa-solid fa-clock"></i>
               Slots & Schedule
             </a>
             <ul class="nav-group-items compact">
               <li class="nav-item">
-                <a class="nav-link" href="#">
+                <a class="nav-link {% if current_url == 'manage_slots' %}active{% endif %}" href="{% url 'shopkeeper:manage_slots' %}">
                   <span class="nav-icon"><span class="nav-icon-bullet"></span></span>
                   Manage Time Slots
                 </a>
               </li>
               <li class="nav-item">
-                <a class="nav-link" href="#">
+                <a class="nav-link {% if current_url == 'create_slots' %}active{% endif %}" href="{% url 'shopkeeper:create_slots' %}">
                   <span class="nav-icon"><span class="nav-icon-bullet"></span></span>
                   Create Slots
                 </a>
               </li>
               <li class="nav-item">
-                <a class="nav-link" href="#">
+                <a class="nav-link {% if current_url == 'working_hours' %}active{% endif %}" href="{% url 'shopkeeper:working_hours' %}">
                   <span class="nav-icon"><span class="nav-icon-bullet"></span></span>
                   Working Hours
                 </a>
@@ -355,14 +359,14 @@
         {% endif %}
 
         <li class="nav-item">
-          <a class="nav-link" href="#">
+          <a class="nav-link {% if current_url == 'sales' %}active{% endif %}" href="{% url 'shopkeeper:sales' %}">
             <i class="nav-icon fa-solid fa-chart-simple"></i>
             Sales Management
           </a>
         </li>
 
         <li class="nav-item">
-          <a class="nav-link" href="#">
+          <a class="nav-link {% if current_url == 'customers' %}active{% endif %}" href="{% url 'shopkeeper:customers' %}">
             <i class="nav-icon fa-solid fa-users"></i>
             {% if is_service_business and not is_product_business %}Clients{% else %}Customers{% endif %}
           </a>
@@ -372,32 +376,32 @@
         <!-- MARKETING -->
         <li class="nav-title">Marketing & Promotion</li>
 
-        <li class="nav-group">
+        <li class="nav-group {% if current_url in 'ad_campaigns,ad_create,ad_performance,ad_approvals' %}show{% endif %}">
           <a class="nav-link nav-group-toggle" href="#">
             <i class="nav-icon fa-solid fa-bullhorn"></i>
             Advertisements
           </a>
           <ul class="nav-group-items compact">
             <li class="nav-item">
-              <a class="nav-link" href="#">
+              <a class="nav-link {% if current_url == 'ad_campaigns' %}active{% endif %}" href="{% url 'shopkeeper:ad_campaigns' %}">
                 <span class="nav-icon"><span class="nav-icon-bullet"></span></span>
                 My Campaigns
               </a>
             </li>
             <li class="nav-item">
-              <a class="nav-link" href="#">
+              <a class="nav-link {% if current_url == 'ad_create' %}active{% endif %}" href="{% url 'shopkeeper:ad_create' %}">
                 <span class="nav-icon"><span class="nav-icon-bullet"></span></span>
                 Create Advertisement
               </a>
             </li>
             <li class="nav-item">
-              <a class="nav-link" href="#">
+              <a class="nav-link {% if current_url == 'ad_performance' %}active{% endif %}" href="{% url 'shopkeeper:ad_performance' %}">
                 <span class="nav-icon"><span class="nav-icon-bullet"></span></span>
                 Ad Performance
               </a>
             </li>
             <li class="nav-item">
-              <a class="nav-link" href="#">
+              <a class="nav-link {% if current_url == 'ad_approvals' %}active{% endif %}" href="{% url 'shopkeeper:ad_approvals' %}">
                 <span class="nav-icon"><span class="nav-icon-bullet"></span></span>
                 Ad Approvals
                 {% if pending_ad_approvals_count %}
@@ -409,21 +413,21 @@
         </li>
 
         <li class="nav-item">
-          <a class="nav-link" href="#">
+          <a class="nav-link {% if current_url == 'promotions' %}active{% endif %}" href="{% url 'shopkeeper:promotions' %}">
             <i class="nav-icon fa-solid fa-tags"></i>
             Promotions & Coupons
           </a>
         </li>
 
         <li class="nav-item">
-          <a class="nav-link" href="#">
+          <a class="nav-link {% if current_url == 'featured_listings' %}active{% endif %}" href="{% url 'shopkeeper:featured_listings' %}">
             <i class="nav-icon fa-solid fa-star"></i>
             Featured Listings
           </a>
         </li>
 
         <li class="nav-item">
-          <a class="nav-link" href="#">
+          <a class="nav-link {% if current_url == 'announcements' %}active{% endif %}" href="{% url 'shopkeeper:announcements' %}">
             <i class="nav-icon fa-solid fa-bullhorn"></i>
             Announcements
             {% if has_new_announcements %}
@@ -436,59 +440,53 @@
         <!-- FINANCIAL MANAGEMENT -->
         <li class="nav-title">Financial Management</li>
 
-        <li class="nav-group">
+        <li class="nav-group {% if current_url in 'earnings_overview,payout_history' %}show{% endif %}">
           <a class="nav-link nav-group-toggle" href="#">
             <i class="nav-icon fa-solid fa-wallet"></i>
             Earnings & Payouts
           </a>
           <ul class="nav-group-items compact">
             <li class="nav-item">
-              <a class="nav-link" href="#">
+              <a class="nav-link {% if current_url == 'earnings_overview' %}active{% endif %}" href="{% url 'shopkeeper:earnings_overview' %}">
                 <span class="nav-icon"><span class="nav-icon-bullet"></span></span>
                 Earnings Overview
               </a>
             </li>
             <li class="nav-item">
-              <a class="nav-link" href="#">
+              <a class="nav-link {% if current_url == 'payout_history' %}active{% endif %}" href="{% url 'shopkeeper:payout_history' %}">
                 <span class="nav-icon"><span class="nav-icon-bullet"></span></span>
                 Payout History
-              </a>
-            </li>
-            <li class="nav-item">
-              <a class="nav-link" href="#">
-                <span class="nav-icon"><span class="nav-icon-bullet"></span></span>
-                Request Withdrawal
               </a>
             </li>
           </ul>
         </li>
 
-        <li class="nav-group">
+        <li class="nav-group {% if current_url in 'my_subscription,available_plans,billing_history,invoices' %}show{% endif %}">
           <a class="nav-link nav-group-toggle" href="#">
             <i class="nav-icon fa-solid fa-credit-card"></i>
             Subscriptions
           </a>
           <ul class="nav-group-items compact">
             <li class="nav-item">
-              <a class="nav-link" href="#">
+              <a class="nav-link {% if current_url == 'my_subscription' %}active{% endif %}" href="{% url 'shopkeeper:my_subscription' %}">
                 <span class="nav-icon"><span class="nav-icon-bullet"></span></span>
                 My Subscription
               </a>
             </li>
             <li class="nav-item">
-              <a class="nav-link" href="#">
+              <a class="nav-link {% if current_url == 'available_plans' %}active{% endif %}" href="{% url 'shopkeeper:available_plans' %}">
                 <span class="nav-icon"><span class="nav-icon-bullet"></span></span>
                 Available Plans
               </a>
             </li>
             <li class="nav-item">
-              <a class="nav-link" href="#">
+              <a class="nav-link {% if current_url == 'billing_history' %}active{% endif %}" href="{% url 'shopkeeper:billing_history' %}">
                 <span class="nav-icon"><span class="nav-icon-bullet"></span></span>
                 Billing History
               </a>
             </li>
             <li class="nav-item">
-              <a class="nav-link" href="#">
+              <a class="nav-link {% if current_url == 'invoices' %}active{% endif %}" href="{% url 'shopkeeper:invoices' %}">
                 <span class="nav-icon"><span class="nav-icon-bullet"></span></span>
                 Invoices
               </a>
@@ -497,7 +495,7 @@
         </li>
 
         <li class="nav-item">
-          <a class="nav-link" href="#">
+          <a class="nav-link {% if current_url == 'transactions' %}active{% endif %}" href="{% url 'shopkeeper:transactions' %}">
             <i class="nav-icon fa-solid fa-receipt"></i>
             Transactions
           </a>
@@ -508,24 +506,14 @@
         <li class="nav-title">Communication</li>
 
         <li class="nav-item">
-          <a class="nav-link" href="#">
-            <i class="nav-icon fa-solid fa-envelope"></i>
-            Messages
-            {% if unread_messages_count %}
-              <span class="badge bg-success ms-auto">{{ unread_messages_count }}</span>
-            {% endif %}
-          </a>
-        </li>
-
-        <li class="nav-item">
-          <a class="nav-link" href="#">
+          <a class="nav-link {% if current_url == 'reviews' %}active{% endif %}" href="{% url 'shopkeeper:reviews' %}">
             <i class="nav-icon fa-solid fa-star-half-stroke"></i>
             Reviews & Ratings
           </a>
         </li>
 
         <li class="nav-item">
-          <a class="nav-link" href="#">
+          <a class="nav-link {% if current_url == 'support' %}active{% endif %}" href="{% url 'shopkeeper:support' %}">
             <i class="nav-icon fa-solid fa-headset"></i>
             Help & Support
           </a>
@@ -537,6 +525,7 @@
         <button class="sidebar-toggler" type="button" data-coreui-toggle="unfoldable"></button>
       </div>
     </div>
+    {% endwith %}
 
     <div class="wrapper d-flex flex-column min-vh-100">
       <header class="header header-sticky p-0 mb-4">
@@ -567,8 +556,8 @@
                     <span class="badge bg-danger">{{ unread_notifications_count }} unread</span>
                   {% endif %}
                 </div>
-                {% for notification in recent_header_notifications %}
-                  <a class="dropdown-item py-2 border-bottom text-wrap" href="#">
+                {% for notification in recent_header_notifications|slice:":2" %}
+                  <a class="dropdown-item py-2 border-bottom text-wrap" href="{% url 'shopkeeper:notifications' %}">
                     <div class="d-flex justify-content-between align-items-start gap-2">
                       <span class="small {% if not notification.is_read %}fw-semibold text-primary{% else %}fw-medium{% endif %}">
                         {{ notification.title }}
@@ -585,39 +574,40 @@
                     No new notifications.
                   </div>
                 {% endfor %}
-                <a class="dropdown-item text-center small fw-semibold py-2" href="#">
+                <a class="dropdown-item text-center small fw-semibold py-2" href="{% url 'shopkeeper:notifications' %}">
                   View all notifications
                 </a>
               </div>
             </li>
 
-            <!-- Pending Orders Quick Link -->
-            <li class="nav-item">
-              <a class="nav-link position-relative" href="#" title="Pending Orders">
-                <svg class="icon icon-lg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
-                  <path fill="var(--ci-primary-color, currentcolor)" d="M136 24H16v120h120Zm-32 88H48V56h56Zm32 88H16v120h120Zm-32 88H48v-56h56Zm32 88H16v120h120Zm-32 88H48v-56h56Zm72-440.002h320v32H176zm0 88h256v32H176zm0 88h320v32H176zm0 88h256v32H176zm0 176h256v32H176zm0-88h320v32H176z" class="ci-primary" />
-                </svg>
-                {% if pending_orders_count %}
-                  <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-warning text-dark" style="font-size: 0.65rem;">
-                    {{ pending_orders_count }}
-                  </span>
-                {% endif %}
-              </a>
-            </li>
-
-            <!-- Messages Quick Link -->
-            <li class="nav-item">
-              <a class="nav-link position-relative" href="#" title="Messages">
-                <svg class="icon icon-lg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
-                  <path fill="var(--ci-primary-color, currentcolor)" d="M274.6 25.623a32.01 32.01 0 0 0-37.2 0L16 183.766V496h480V183.766ZM464 402.693 339.97 322.96 464 226.492ZM256 51.662 454.429 193.4 311.434 304.615 256 268.979l-55.434 35.636L57.571 193.4ZM48 226.492l124.03 96.468L48 402.693ZM464 464H48v-23.265l208-133.714 208 133.714Z" class="ci-primary" />
-                </svg>
-                {% if unread_messages_count %}
-                  <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-success" style="font-size: 0.65rem;">
-                    {{ unread_messages_count }}
-                  </span>
-                {% endif %}
-              </a>
-            </li>
+            <!-- Pending Orders / Bookings Quick Link -->
+            {% if is_product_business %}
+              <li class="nav-item">
+                <a class="nav-link position-relative" href="{% url 'shopkeeper:order_pending' %}" title="Pending Orders">
+                  <svg class="icon icon-lg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+                    <path fill="var(--ci-primary-color, currentcolor)" d="M136 24H16v120h120Zm-32 88H48V56h56Zm32 88H16v120h120Zm-32 88H48v-56h56Zm32 88H16v120h120Zm-32 88H48v-56h56Zm72-440.002h320v32H176zm0 88h256v32H176zm0 88h320v32H176zm0 88h256v32H176zm0 176h256v32H176zm0-88h320v32H176z" class="ci-primary" />
+                  </svg>
+                  {% if pending_orders_count %}
+                    <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-warning text-dark" style="font-size: 0.65rem;">
+                      {{ pending_orders_count }}
+                    </span>
+                  {% endif %}
+                </a>
+              </li>
+            {% elif is_service_business %}
+              <li class="nav-item">
+                <a class="nav-link position-relative" href="{% url 'shopkeeper:booking_pending' %}" title="Pending Bookings">
+                  <svg class="icon icon-lg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+                    <path fill="var(--ci-primary-color, currentcolor)" d="M448 64h-48V32h-32v32H144V32h-32v32H64a32.036 32.036 0 0 0-32 32v352a32.036 32.036 0 0 0 32 32h384a32.036 32.036 0 0 0 32-32V96a32.036 32.036 0 0 0-32-32m0 384H64V192h384Zm0-288H64V96h48v32h32V96h224v32h32V96h48Z" class="ci-primary" />
+                  </svg>
+                  {% if pending_bookings_count %}
+                    <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-warning text-dark" style="font-size: 0.65rem;">
+                      {{ pending_bookings_count }}
+                    </span>
+                  {% endif %}
+                </a>
+              </li>
+            {% endif %}
           </ul>
 
           <ul class="header-nav">
@@ -667,7 +657,7 @@
             <li class="nav-item dropdown">
               <a class="nav-link py-0 pe-0 d-flex align-items-center gap-2" data-coreui-toggle="dropdown" href="#" role="button" aria-haspopup="true" aria-expanded="false">
                 <span class="d-none d-md-inline fw-medium small">
-                  {{ vendor_display_name|default:request.user.email }}
+                  {{ vendor_display_name|truncatewords:1|slice:":-2"|default:request.user.email }}
                 </span>
                 {% if vendor_avatar_url %}
                   <div class="avatar avatar-md">
@@ -684,7 +674,7 @@
                   <div class="fw-semibold text-body">{{ vendor_display_name|default:"Vendor Account" }}</div>
                   <div class="small text-truncate">{{ request.user.email }}</div>
                 </div>
-                <a class="dropdown-item" href="#">
+                <a class="dropdown-item" href="{% url 'shopkeeper:notifications' %}">
                   <svg class="icon me-2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
                     <path fill="var(--ci-primary-color, currentcolor)" d="m450.27 348.569-43.67-80.624V184c0-83.813-68.187-152-152-152s-152 68.187-152 152v83.945l-43.672 80.623A24 24 0 0 0 80.031 384h86.935a89 89 0 0 0-.367 8 88 88 0 0 0 176 0c0-2.7-.129-5.364-.367-8h86.935a24 24 0 0 0 21.1-35.431ZM310.6 392a56 56 0 1 1-111.419-8h110.837a56 56 0 0 1 .582 8M93.462 352l41.138-75.945V184a120 120 0 0 1 240 0v92.055L415.736 352Z" class="ci-primary" />
                   </svg>
@@ -693,42 +683,47 @@
                     <span class="badge badge-sm bg-danger ms-auto">{{ unread_notifications_count }}</span>
                   {% endif %}
                 </a>
-                <a class="dropdown-item" href="#">
-                  <svg class="icon me-2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
-                    <path fill="var(--ci-primary-color, currentcolor)" d="M274.6 25.623a32.01 32.01 0 0 0-37.2 0L16 183.766V496h480V183.766ZM464 402.693 339.97 322.96 464 226.492ZM256 51.662 454.429 193.4 311.434 304.615 256 268.979l-55.434 35.636L57.571 193.4ZM48 226.492l124.03 96.468L48 402.693ZM464 464H48v-23.265l208-133.714 208 133.714Z" class="ci-primary" />
-                  </svg>
-                  Messages
-                  {% if unread_messages_count %}
-                    <span class="badge badge-sm bg-success ms-auto">{{ unread_messages_count }}</span>
-                  {% endif %}
-                </a>
-                <a class="dropdown-item" href="#">
-                  <svg class="icon me-2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
-                    <path fill="var(--ci-primary-color, currentcolor)" d="m222.085 235.644-62.01-62.01L81.8 251.905l62.009 62.01-.04.04 66.958 66.957 11.354 11.275.04.039 66.957-66.957 11.273-11.354 202.277-202.271-78.272-78.271Zm44.33 66.958-11.274 11.353-33.057 33.056-.04-.039-33.017-33.017.04-.04-62.009-62.01 33.016-33.016 62.01 62.009L424.356 78.627l33.017 33.017Z" class="ci-primary" />
-                    <path fill="var(--ci-primary-color, currentcolor)" d="M448 464H48V64h300.22l32-32H16v464h464V179.095l-32 32z" class="ci-primary" />
-                  </svg>
-                  Pending Orders
-                  {% if pending_orders_count %}
-                    <span class="badge badge-sm bg-warning text-dark ms-auto">{{ pending_orders_count }}</span>
-                  {% endif %}
-                </a>
+                
+                {% if is_product_business %}
+                  <a class="dropdown-item" href="{% url 'shopkeeper:order_pending' %}">
+                    <svg class="icon me-2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+                      <path fill="var(--ci-primary-color, currentcolor)" d="m222.085 235.644-62.01-62.01L81.8 251.905l62.009 62.01-.04.04 66.958 66.957 11.354 11.275.04.039 66.957-66.957 11.273-11.354 202.277-202.271-78.272-78.271Zm44.33 66.958-11.274 11.353-33.057 33.056-.04-.039-33.017-33.017.04-.04-62.009-62.01 33.016-33.016 62.01 62.009L424.356 78.627l33.017 33.017Z" class="ci-primary" />
+                      <path fill="var(--ci-primary-color, currentcolor)" d="M448 464H48V64h300.22l32-32H16v464h464V179.095l-32 32z" class="ci-primary" />
+                    </svg>
+                    Pending Orders
+                    {% if pending_orders_count %}
+                      <span class="badge badge-sm bg-warning text-dark ms-auto">{{ pending_orders_count }}</span>
+                    {% endif %}
+                  </a>
+                {% endif %}
+                {% if is_service_business %}
+                  <a class="dropdown-item" href="{% url 'shopkeeper:booking_pending' %}">
+                    <svg class="icon me-2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+                      <path fill="var(--ci-primary-color, currentcolor)" d="M448 64h-48V32h-32v32H144V32h-32v32H64a32.036 32.036 0 0 0-32 32v352a32.036 32.036 0 0 0 32 32h384a32.036 32.036 0 0 0 32-32V96a32.036 32.036 0 0 0-32-32m0 384H64V192h384Zm0-288H64V96h48v32h32V96h224v32h32V96h48Z" class="ci-primary" />
+                    </svg>
+                    Pending Bookings
+                    {% if pending_bookings_count %}
+                      <span class="badge badge-sm bg-warning text-dark ms-auto">{{ pending_bookings_count }}</span>
+                    {% endif %}
+                  </a>
+                {% endif %}
                 <div class="dropdown-header bg-body-tertiary text-body-secondary fw-semibold my-2">
                   <div class="fw-semibold">Settings</div>
                 </div>
-                <a class="dropdown-item" href="#">
+                <a class="dropdown-item" href="{% url 'shopkeeper:store_profile' %}">
                   <svg class="icon me-2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
                     <path fill="var(--ci-primary-color, currentcolor)" d="m411.6 343.656-72.823-47.334 27.455-50.334A80.2 80.2 0 0 0 376 207.681V128a112 112 0 0 0-224 0v79.681a80.24 80.24 0 0 0 9.768 38.308l27.455 50.333-72.823 47.334A79.72 79.72 0 0 0 80 410.732V496h368v-85.268a79.73 79.73 0 0 0-36.4-67.076M416 464H112v-53.268a47.84 47.84 0 0 1 21.841-40.246l97.66-63.479-41.64-76.341A48.15 48.15 0 0 1 184 207.681V128a80 80 0 0 1 160 0v79.681a48.15 48.15 0 0 1-5.861 22.985L296.5 307.007l97.662 63.479A47.84 47.84 0 0 1 416 410.732Z" class="ci-primary" />
                   </svg>
                   Store Profile
                 </a>
-                <a class="dropdown-item" href="#">
+                <a class="dropdown-item" href="{% url 'shopkeeper:store_settings' %}">
                   <svg class="icon me-2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
                     <path fill="var(--ci-primary-color, currentcolor)" d="M245.151 168a88 88 0 1 0 88 88 88.1 88.1 0 0 0-88-88m0 144a56 56 0 1 1 56-56 56.063 56.063 0 0 1-56 56" class="ci-primary" />
                     <path fill="var(--ci-primary-color, currentcolor)" d="m464.7 322.319-31.77-26.153a193.1 193.1 0 0 0 0-80.332l31.77-26.153a19.94 19.94 0 0 0 4.606-25.439l-32.612-56.483a19.936 19.936 0 0 0-24.337-8.73l-38.561 14.447a192 192 0 0 0-69.54-40.192l-6.766-40.571A19.936 19.936 0 0 0 277.762 16H212.54a19.94 19.94 0 0 0-19.728 16.712l-6.762 40.572a192 192 0 0 0-69.54 40.192L77.945 99.027a19.94 19.94 0 0 0-24.334 8.731L21 164.245a19.94 19.94 0 0 0 4.61 25.438l31.767 26.151a193.1 193.1 0 0 0 0 80.332l-31.77 26.153A19.94 19.94 0 0 0 21 347.758l32.612 56.483a19.94 19.94 0 0 0 24.337 8.73l38.562-14.447a192 192 0 0 0 69.54 40.192l6.762 40.571A19.94 19.94 0 0 0 212.54 496h65.222a19.936 19.936 0 0 0 19.728-16.712l6.763-40.572a192 192 0 0 0 69.54-40.192l38.564 14.449a19.94 19.94 0 0 0 24.334-8.731l32.609-56.487a19.94 19.94 0 0 0-4.6-25.436m-50.636 57.12-48.109-18.024-7.285 7.334a159.96 159.96 0 0 1-72.625 41.973l-10 2.636L267.6 464h-44.89l-8.442-50.642-10-2.636a159.96 159.96 0 0 1-72.625-41.973l-7.285-7.334-48.117 18.024L53.8 340.562l39.629-32.624-2.7-9.973a160.9 160.9 0 0 1 0-83.93l2.7-9.972L53.8 171.439l22.446-38.878 48.109 18.024 7.285-7.334a159.96 159.96 0 0 1 72.625-41.973l10-2.636L222.706 48H267.6l8.442 50.642 10 2.636a159.96 159.96 0 0 1 72.625 41.973l7.285 7.334 48.109-18.024 22.447 38.877-39.629 32.625 2.7 9.972a160.9 160.9 0 0 1 0 83.93l-2.7 9.973 39.629 32.623Z" class="ci-primary" />
                   </svg>
                   Store Settings
                 </a>
-                <a class="dropdown-item" href="#">
+                <a class="dropdown-item" href="{% url 'shopkeeper:earnings_overview' %}">
                   <svg class="icon me-2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
                     <path fill="var(--ci-primary-color, currentcolor)" d="M472 72H40a24.03 24.03 0 0 0-24 24v320a24.03 24.03 0 0 0 24 24h432a24.03 24.03 0 0 0 24-24V96a24.03 24.03 0 0 0-24-24m-8 32v64H48v-64ZM48 408V232h416v176Z" class="ci-primary" />
                     <path fill="var(--ci-primary-color, currentcolor)" d="M88 312h64v32H88zm96 0h64v32h-64z" class="ci-primary" />
@@ -755,7 +750,7 @@
           <nav aria-label="breadcrumb">
             <ol class="breadcrumb my-0">
               <li class="breadcrumb-item"><a href="{% url 'shopkeeper:home' %}" class="text-decoration-none">Dashboard</a></li>
-              <li class="breadcrumb-item active"><span>{% block header %}Dashboard{% endblock %}</span></li>
+              <li class="breadcrumb-item active"><span>{% block header %}{{ page_title|default:"Dashboard" }}{% endblock %}</span></li>
             </ol>
           </nav>
         </div>
@@ -763,6 +758,15 @@
 
       <div class="body flex-grow-1">
         <div class="container-lg px-4">
+          {% if messages %}
+            {% for message in messages %}
+              <div class="alert alert-{{ message.tags|default:'info' }} alert-dismissible fade show" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-coreui-dismiss="alert" aria-label="Close"></button>
+              </div>
+            {% endfor %}
+          {% endif %}
+
           {% block content %}
 
           {% endblock %}
@@ -796,6 +800,29 @@
     <script src="{% static 'shopkeeper/vendors/chart.js/js/chart.umd.js' %}"></script>
     <script src="{% static 'shopkeeper/vendors/@coreui/chartjs/js/coreui-chartjs.js' %}"></script>
     <script src="{% static 'shopkeeper/vendors/@coreui/utils/js/index.js' %}"></script>
+    <!-- jQuery & DataTables Bootstrap 5 JS -->
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script src="https://cdn.datatables.net/2.1.8/js/dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/2.1.8/js/dataTables.bootstrap5.min.js"></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        document.querySelectorAll("table.datatable").forEach(function (tableEl) {
+          new DataTable(tableEl, {
+            pageLength: 25,
+            lengthMenu: [10, 25, 50, 100],
+            order: [], // Respect Django's default ordering on initial load
+            columnDefs: [
+              { orderable: false, searchable: false, targets: "no-sort" }
+            ],
+            language: {
+              search: "_INPUT_",
+              searchPlaceholder: "Search records...",
+              emptyTable: tableEl.dataset.emptyText || "No records found."
+            }
+          });
+        });
+      });
+    </script>
     {% block vendor_js %}{% endblock %}
     {% block extra_js %}{% endblock %}
   </body>

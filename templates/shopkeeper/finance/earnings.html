@@ -1,0 +1,14 @@
+{% extends "shopkeeper/base.html" %}
+{% block title %}{{ page_title }}{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <h4 class="mb-0">{{ page_title }}</h4>
+  <a href="#" class="btn btn-primary">Request Withdrawal</a>
+</div>
+<div class="row g-3">
+  <div class="col-md-4"><div class="card card-body"><small class="text-body-secondary">Available Balance</small><h3 class="text-success">$2,480.00</h3></div></div>
+  <div class="col-md-4"><div class="card card-body"><small class="text-body-secondary">Pending Clearance</small><h3>$410.00</h3></div></div>
+  <div class="col-md-4"><div class="card card-body"><small class="text-body-secondary">Total Withdrawn</small><h3>$9,560.00</h3></div></div>
+</div>
+{% endblock %}

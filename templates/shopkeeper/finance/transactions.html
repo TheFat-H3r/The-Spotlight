@@ -1,0 +1,157 @@
+{% extends "shopkeeper/base.html" %}
+{% block title %}{{ page_title }}{% endblock %}
+
+{% block content %}
+<!-- Header & CSV Export -->
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
+  <div>
+    <h4 class="mb-1">{{ page_title }}</h4>
+    <p class="text-body-secondary small mb-0">
+      Financial credits, refunds, and settlement entries for <strong>{{ store.name }}</strong>.
+    </p>
+  </div>
+
+  <div class="d-flex flex-wrap align-items-center gap-2">
+    <div class="btn-group btn-group-sm" role="group" aria-label="Entry type filter">
+      <a href="?entry=all&method={{ method_filter }}" class="btn btn-outline-secondary {% if entry_filter == 'all' %}active{% endif %}">All Entries</a>
+      <a href="?entry=credit&method={{ method_filter }}" class="btn btn-outline-secondary {% if entry_filter == 'credit' %}active{% endif %}">Credits (+)</a>
+      <a href="?entry=debit&method={{ method_filter }}" class="btn btn-outline-secondary {% if entry_filter == 'debit' %}active{% endif %}">Debits (-)</a>
+    </div>
+
+    <a href="?entry={{ entry_filter }}&method={{ method_filter }}&export=csv" class="btn btn-sm btn-outline-primary">
+      <i class="fa-solid fa-file-csv me-1"></i>Export CSV
+    </a>
+  </div>
+</div>
+
+<!-- Financial Summary KPIs -->
+<div class="row g-3 mb-4">
+  <div class="col-6 col-lg-3">
+    <div class="card h-100">
+      <div class="card-body py-3">
+        <div class="text-body-secondary small">Total Credits (Inflow)</div>
+        <div class="fs-4 fw-bold text-success">+Rs {{ stats.total_credits|floatformat:2 }}</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-6 col-lg-3">
+    <div class="card h-100">
+      <div class="card-body py-3">
+        <div class="text-body-secondary small">Total Debits (Refunds / Fees)</div>
+        <div class="fs-4 fw-bold text-danger">-Rs {{ stats.total_debits|floatformat:2 }}</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-6 col-lg-3">
+    <div class="card h-100">
+      <div class="card-body py-3">
+        <div class="text-body-secondary small">Net Ledger Balance</div>
+        <div class="fs-4 fw-bold {% if stats.net_balance >= 0 %}text-primary{% else %}text-danger{% endif %}">
+          Rs {{ stats.net_balance|floatformat:2 }}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-6 col-lg-3">
+    <div class="card h-100">
+      <div class="card-body py-3">
+        <div class="text-body-secondary small">Recorded Entries</div>
+        <div class="fs-4 fw-bold">{{ stats.txn_count }}</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Payment Method Filter -->
+<div class="card mb-4">
+  <div class="card-body py-3">
+    <form method="get" class="row g-2 align-items-center">
+      <input type="hidden" name="entry" value="{{ entry_filter }}">
+      <div class="col-8 col-md-4">
+        <select name="method" class="form-select form-select-sm">
+          <option value="all" {% if method_filter == 'all' %}selected{% endif %}>All Payment Channels</option>
+          {% for val, label in payment_methods %}
+            <option value="{{ val }}" {% if method_filter == val %}selected{% endif %}>{{ label }}</option>
+          {% endfor %}
+          <option value="booking" {% if method_filter == 'booking' %}selected{% endif %}>Booking Settlement</option>
+          <option value="platform" {% if method_filter == 'platform' %}selected{% endif %}>Platform Billing</option>
+        </select>
+      </div>
+      <div class="col-4 col-md-3 d-flex gap-2">
+        <button type="submit" class="btn btn-sm btn-primary w-100">Filter</button>
+        {% if method_filter != 'all' %}
+          <a href="?entry={{ entry_filter }}" class="btn btn-sm btn-outline-secondary">Reset</a>
+        {% endif %}
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- DataTables Transactions Ledger -->
+<div class="card">
+  <div class="card-body">
+    <div class="table-responsive">
+      <table
+        id="transactionsTable"
+        class="table table-hover align-middle mb-0 datatable w-100"
+        data-empty-text="No financial transactions recorded yet."
+      >
+        <thead class="bg-body-tertiary">
+          <tr>
+            <th>Txn ID</th>
+            <th>Description</th>
+            <th>Channel</th>
+            <th>Type</th>
+            <th>Amount</th>
+            <th>Date</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for txn in transactions %}
+            <tr>
+              <td>
+                <code class="fw-semibold">{{ txn.reference }}</code>
+                <div class="small text-body-secondary">Ref: {{ txn.source_ref }}</div>
+              </td>
+
+              <td>
+                <div class="fw-medium">{{ txn.description }}</div>
+                <span class="badge bg-body-secondary text-body-emphasis small">{{ txn.category }}</span>
+              </td>
+
+              <td class="small">{{ txn.payment_method }}</td>
+
+              <td>
+                {% if txn.is_credit %}
+                  <span class="badge bg-success-subtle text-success-emphasis">
+                    <i class="fa-solid fa-arrow-down-left me-1"></i>{{ txn.entry_type }}
+                  </span>
+                {% else %}
+                  <span class="badge bg-danger-subtle text-danger-emphasis">
+                    <i class="fa-solid fa-arrow-up-right me-1"></i>{{ txn.entry_type }}
+                  </span>
+                {% endif %}
+              </td>
+
+              <td
+                data-order="{% if txn.is_credit %}{{ txn.amount }}{% else %}-{{ txn.amount }}{% endif %}"
+                class="fw-semibold {% if txn.is_credit %}text-success{% else %}text-danger{% endif %}"
+              >
+                {% if txn.is_credit %}+{% else %}-{% endif %}Rs {{ txn.amount|floatformat:2 }}
+              </td>
+
+              <td data-order="{{ txn.created_at|date:'U' }}">
+                <div>{{ txn.created_at|date:"M d, Y" }}</div>
+                <div class="small text-body-secondary">{{ txn.created_at|date:"H:i" }}</div>
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}

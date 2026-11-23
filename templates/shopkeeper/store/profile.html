@@ -1,0 +1,32 @@
+{% extends "shopkeeper/base.html" %}
+{% block title %}{{ page_title }}{% endblock %}
+
+{% block content %}
+<h4 class="mb-4">{{ page_title }}</h4>
+<div class="card">
+  <div class="card-body">
+    <form method="post" enctype="multipart/form-data">
+      {% csrf_token %}
+      <div class="row g-3">
+        <div class="col-md-6">
+          <label class="form-label">Store Name</label>
+          <input type="text" name="name" class="form-control" value="{{ store.name }}" required>
+        </div>
+        <div class="col-md-6">
+          <label class="form-label">Contact Email</label>
+          <input type="email" name="email" class="form-control" value="{{ store.email }}">
+        </div>
+        <div class="col-12">
+          <label class="form-label">Description</label>
+          <textarea name="description" rows="3" class="form-control">{{ store.description }}</textarea>
+        </div>
+        <div class="col-md-6">
+          <label class="form-label">Store Logo</label>
+          <input type="file" name="logo" class="form-control">
+        </div>
+      </div>
+      <button type="submit" class="btn btn-primary mt-4">Save Profile</button>
+    </form>
+  </div>
+</div>
+{% endblock %}

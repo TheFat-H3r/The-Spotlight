@@ -1,0 +1,30 @@
+{% extends "shopkeeper/base.html" %}
+{% block title %}{{ page_title }}{% endblock %}
+
+{% block content %}
+<h4 class="mb-4">{{ page_title }}</h4>
+<div class="card">
+  <div class="card-body">
+    <form method="post">
+      {% csrf_token %}
+      <div class="form-check form-switch mb-3">
+        <input class="form-check-input" type="checkbox" id="storeOpen" name="is_open" checked>
+        <label class="form-check-label" for="storeOpen">Accepting New Orders / Bookings</label>
+      </div>
+      <div class="form-check form-switch mb-3">
+        <input class="form-check-input" type="checkbox" id="autoConfirm" name="auto_confirm">
+        <label class="form-check-label" for="autoConfirm">Auto-confirm incoming requests</label>
+      </div>
+      <div class="mb-3 col-md-4">
+        <label class="form-label">Default Currency</label>
+        <select name="currency" class="form-select">
+          <option value="MUR">MUR (Rs)</option>
+          <option value="USD">USD ($)</option>
+          <option value="EUR">EUR (€)</option>
+        </select>
+      </div>
+      <button type="submit" class="btn btn-primary">Update Settings</button>
+    </form>
+  </div>
+</div>
+{% endblock %}

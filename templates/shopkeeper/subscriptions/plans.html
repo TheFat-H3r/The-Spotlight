@@ -1,0 +1,22 @@
+{% extends "shopkeeper/base.html" %}
+{% block title %}{{ page_title }}{% endblock %}
+
+{% block content %}
+<h4 class="mb-4">{{ page_title }}</h4>
+<div class="row g-4">
+  {% for plan in plans %}
+  <div class="col-md-4">
+    <div class="card h-100">
+      <div class="card-body d-flex flex-column">
+        <h5>{{ plan.name }}</h5>
+        <h3 class="my-3">${{ plan.price }}<small class="fs-6 text-body-secondary">/mo</small></h3>
+        <p class="text-body-secondary flex-grow-1">{{ plan.description }}</p>
+        <button class="btn btn-primary w-100">Select Plan</button>
+      </div>
+    </div>
+  </div>
+  {% empty %}
+  <div class="col-12"><div class="card card-body text-center text-body-secondary">No subscription plans configured.</div></div>
+  {% endfor %}
+</div>
+{% endblock %}

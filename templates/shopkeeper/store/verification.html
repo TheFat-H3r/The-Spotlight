@@ -1,0 +1,29 @@
+{% extends "shopkeeper/base.html" %}
+{% block title %}{{ page_title }}{% endblock %}
+
+{% block content %}
+<h4 class="mb-4">{{ page_title }}</h4>
+<div class="alert alert-info">
+  Verification Status: <strong>{{ store.verification_status|default:"Unverified" }}</strong>
+</div>
+<div class="card">
+  <div class="card-body">
+    <form method="post" enctype="multipart/form-data">
+      {% csrf_token %}
+      <div class="mb-3">
+        <label class="form-label">Business Registration Number (BRN)</label>
+        <input type="text" name="brn" class="form-control" required>
+      </div>
+      <div class="mb-3">
+        <label class="form-label">Registration Certificate (PDF/JPG)</label>
+        <input type="file" name="certificate" class="form-control" required>
+      </div>
+      <div class="mb-3">
+        <label class="form-label">Owner National ID / Passport</label>
+        <input type="file" name="owner_id" class="form-control" required>
+      </div>
+      <button type="submit" class="btn btn-primary">Submit for Verification</button>
+    </form>
+  </div>
+</div>
+{% endblock %}
