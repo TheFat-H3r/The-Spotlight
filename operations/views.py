@@ -1,5 +1,5 @@
 from datetime import datetime, time, timedelta
-from decimal import Decimal
+from decimal import Decimal, InvalidOperation
 
 from django.contrib import messages
 from django.contrib.admin.views.decorators import staff_member_required
@@ -13,7 +13,7 @@ from django.utils.dateparse import parse_date
 from accounts.models import User
 from marketing.models import Advertisement, Announcement
 from operations.models import CommissionPlan, Complaint, Payout, StoreSubscription
-from stores.models import BusinessType, Category, Store
+from stores.models import BusinessType, Category, Product, Service, Store, unique_slug
 from transactions.models import Booking, Order
 
 @staff_member_required
@@ -687,14 +687,178 @@ def business_type_form(request, pk=None):
     )
 
 @staff_member_required
-def manage_catalog(request):
-    return _placeholder_view(
+def catalog_management(request):
+    if request.method == "POST":
+        item_type = request.POST.get("item_type")
+        action = request.POST.get("action")
+
+        if item_type == "product":
+            item = get_object_or_404(Product, pk=request.POST.get("item_id"))
+        elif item_type == "service":
+            item = get_object_or_404(Service, pk=request.POST.get("item_id"))
+        else:
+            return redirect("operations:catalog")
+
+        if action == "toggle_available":
+            item.is_available = not item.is_available
+            item.save(update_fields=["is_available", "updated_at"])
+            state = "available" if item.is_available else "unavailable"
+            messages.success(request, f"'{item.name}' marked as {state}.")
+
+        elif action == "toggle_featured":
+            item.is_featured = not item.is_featured
+            item.save(update_fields=["is_featured", "updated_at"])
+            state = "featured" if item.is_featured else "removed from featured"
+            messages.info(request, f"'{item.name}' {state}.")
+
+        elif action == "delete":
+            name = item.name
+            item.delete()
+            messages.warning(request, f"Deleted '{name}'.")
+
+        return redirect("operations:catalog")
+
+    products = Product.objects.select_related("store", "category").order_by("-is_featured", "-created_at")
+    services = Service.objects.select_related("store", "category").order_by("-is_featured", "-created_at")
+
+    return render(
         request,
-        "Products & services",
-        "Audit marketplace product listings and service offerings.",
-        "catalog",
+        "operations/catalog.html",
+        {
+            "products": products,
+            "services": services,
+            "product_count": products.count(),
+            "service_count": services.count(),
+            "featured_count": products.filter(is_featured=True).count() + services.filter(is_featured=True).count(),
+            "out_of_stock_count": products.filter(stock=0).count(),
+        },
     )
 
+
+@staff_member_required
+def product_form(request, pk=None):
+    product = get_object_or_404(Product.objects.select_related("store", "category"), pk=pk) if pk else None
+    stores = Store.objects.filter(
+        store_type__in=(Store.StoreType.PRODUCTS, Store.StoreType.BOTH)
+    ).order_by("name")
+    categories = Category.objects.all().order_by("name")
+
+    if request.method == "POST":
+        store_id = request.POST.get("store")
+        name = request.POST.get("name", "").strip()
+        slug = request.POST.get("slug", "").strip()
+        description = request.POST.get("description", "").strip()
+        category_id = request.POST.get("category") or None
+        raw_price = request.POST.get("price", "0").strip() or "0"
+        raw_stock = request.POST.get("stock", "0").strip() or "0"
+        is_available = request.POST.get("is_available") == "on"
+        is_featured = request.POST.get("is_featured") == "on"
+
+        try:
+            price = Decimal(raw_price)
+            stock = max(0, int(raw_stock))
+        except (InvalidOperation, ValueError):
+            messages.error(request, "Please enter a valid price and stock quantity.")
+            price = None
+            stock = 0
+
+        if not (store_id and name) or price is None:
+            if not (store_id and name):
+                messages.error(request, "Store and product name are required.")
+        else:
+            try:
+                if product is None:
+                    product = Product()
+
+                product.store_id = store_id
+                product.name = name
+                product.slug = slug or unique_slug(Product, name, product, max_length=255)
+                product.description = description
+                product.category_id = category_id
+                product.price = price
+                product.stock = stock
+                product.is_available = is_available
+                product.is_featured = is_featured
+
+                if request.FILES.get("image"):
+                    product.image = request.FILES["image"]
+
+                product.save()
+                messages.success(request, f"Product '{product.name}' saved.")
+                return redirect("operations:catalog")
+            except IntegrityError:
+                messages.error(request, "A product with this slug already exists.")
+
+    return render(
+        request,
+        "operations/product_form.html",
+        {
+            "product": product,
+            "stores": stores,
+            "categories": categories,
+        },
+    )
+
+
+@staff_member_required
+def service_form(request, pk=None):
+    service = get_object_or_404(Service.objects.select_related("store", "category"), pk=pk) if pk else None
+    stores = Store.objects.filter(
+        store_type__in=(Store.StoreType.SERVICES, Store.StoreType.BOTH)
+    ).order_by("name")
+    categories = Category.objects.all().order_by("name")
+
+    if request.method == "POST":
+        store_id = request.POST.get("store")
+        name = request.POST.get("name", "").strip()
+        slug = request.POST.get("slug", "").strip()
+        description = request.POST.get("description", "").strip()
+        category_id = request.POST.get("category") or None
+        raw_price = request.POST.get("starting_price", "0").strip() or "0"
+        is_available = request.POST.get("is_available") == "on"
+        is_featured = request.POST.get("is_featured") == "on"
+
+        try:
+            starting_price = Decimal(raw_price)
+        except InvalidOperation:
+            messages.error(request, "Please enter a valid starting price.")
+            starting_price = None
+
+        if not (store_id and name) or starting_price is None:
+            if not (store_id and name):
+                messages.error(request, "Store and service name are required.")
+        else:
+            try:
+                if service is None:
+                    service = Service()
+
+                service.store_id = store_id
+                service.name = name
+                service.slug = slug or unique_slug(Service, name, service, max_length=265)
+                service.description = description
+                service.category_id = category_id
+                service.starting_price = starting_price
+                service.is_available = is_available
+                service.is_featured = is_featured
+
+                if request.FILES.get("image"):
+                    service.image = request.FILES["image"]
+
+                service.save()
+                messages.success(request, f"Service '{service.name}' saved.")
+                return redirect("operations:catalog")
+            except IntegrityError:
+                messages.error(request, "A service with this slug already exists.")
+
+    return render(
+        request,
+        "operations/service_form.html",
+        {
+            "service": service,
+            "stores": stores,
+            "categories": categories,
+        },
+    )
 
 @staff_member_required
 def manage_users(request):
