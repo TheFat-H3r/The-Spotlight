@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Payout, PayoutItem, CommissionPlan, StoreSubscription, Complaint, AdminNotification, BroadcastAnnouncement
+from .models import Payout, PayoutItem, CommissionPlan, StoreSubscription, Complaint, AdminNotification, BroadcastAnnouncement, PlatformSettings
 
 admin.site.register(Payout)
 admin.site.register(PayoutItem)
@@ -20,3 +20,5 @@ class BroadcastAnnouncementAdmin(admin.ModelAdmin):
     list_display = ("title", "audience", "created_at")
     list_filter = ("audience",)
     search_fields = ("title", "message")
+
+admin.site.register(PlatformSettings)

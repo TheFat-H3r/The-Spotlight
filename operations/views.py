@@ -3,6 +3,7 @@ from decimal import Decimal, InvalidOperation
 
 from django.contrib import messages
 from django.contrib.admin.views.decorators import staff_member_required
+from django.contrib.auth import update_session_auth_hash
 from django.core.exceptions import PermissionDenied
 from django.db import IntegrityError
 from django.db.models import Q, Avg, Count, ProtectedError, Sum
@@ -13,7 +14,7 @@ from django.utils.dateparse import parse_date, parse_datetime
 
 from accounts.models import User
 from marketing.models import Advertisement, Announcement
-from operations.models import AdminNotification, BroadcastAnnouncement, CommissionPlan, Complaint, Payout, StoreSubscription
+from operations.models import AdminNotification, BroadcastAnnouncement, CommissionPlan, Complaint, Payout, PlatformSettings, StoreSubscription
 from stores.models import BusinessType, Category, Product, Review, Service, Store, unique_slug
 from transactions.models import Booking, Order
 
@@ -1386,9 +1387,117 @@ def reviews_management(request):
 
 @staff_member_required
 def admin_settings(request):
-    return _placeholder_view(
+    user = request.user
+    platform_settings = PlatformSettings.get_solo()
+
+    if request.method == "POST":
+        form_type = request.POST.get("form_type")
+
+        # 1. Admin Profile Update
+        if form_type == "profile":
+            full_name = request.POST.get("full_name", "").strip()
+            phone = request.POST.get("phone", "").strip()
+            student_id = request.POST.get("student_id", "").strip()
+            course = request.POST.get("course", "").strip()
+            cohort = request.POST.get("cohort", "").strip().upper()
+            residence = request.POST.get("residence", "").strip()
+            room_number = request.POST.get("room_number", "").strip().upper()
+
+            if not full_name:
+                messages.error(request, "Full name is required.")
+            else:
+                user.full_name = full_name
+                user.phone = phone
+                user.student_id = student_id
+                user.course = course
+                user.cohort = cohort
+                user.residence = residence
+                user.room_number = room_number
+
+                if request.FILES.get("avatar"):
+                    user.avatar = request.FILES["avatar"]
+
+                try:
+                    user.full_clean(exclude=["password"])
+                    user.save()
+                    messages.success(request, "Admin profile updated.")
+                    return redirect("operations:settings")
+                except ValidationError as exc:
+                    for field, errs in exc.message_dict.items():
+                        for err in errs:
+                            messages.error(request, f"{field.replace('_', ' ').title()}: {err}")
+
+        # 2. Password Update (Email & password accounts only)
+        elif form_type == "password":
+            if user.auth_provider != User.AuthProvider.EMAIL:
+                messages.error(request, "Google sign-in accounts manage passwords through Google.")
+            else:
+                current_pw = request.POST.get("current_password", "")
+                new_pw = request.POST.get("new_password", "")
+                confirm_pw = request.POST.get("confirm_password", "")
+
+                if not user.check_password(current_pw):
+                    messages.error(request, "Current password is incorrect.")
+                elif len(new_pw) < 8:
+                    messages.error(request, "New password must be at least 8 characters long.")
+                elif new_pw != confirm_pw:
+                    messages.error(request, "New passwords do not match.")
+                else:
+                    user.set_password(new_pw)
+                    user.save(update_fields=["password", "updated_at"])
+                    update_session_auth_hash(request, user)
+                    messages.success(request, "Password updated successfully.")
+                    return redirect("operations:settings")
+
+        # 3. Platform & Marketplace Configuration
+        elif form_type == "platform":
+            raw_commission = request.POST.get("default_commission_rate", "5.00").strip()
+            raw_fee = request.POST.get("monthly_subscription_fee", "250.00").strip()
+            raw_payout_day = request.POST.get("payout_day_of_month", "28").strip()
+            raw_cancel_hours = request.POST.get("cancellation_window_hours", "2").strip()
+            support_email = request.POST.get("support_email", "").strip()
+            support_whatsapp = request.POST.get("support_whatsapp", "").strip()
+            maintenance_message = request.POST.get("maintenance_message", "").strip()
+
+            try:
+                commission_rate = Decimal(raw_commission)
+                subscription_fee = Decimal(raw_fee)
+                payout_day = max(1, min(28, int(raw_payout_day)))
+                cancel_hours = max(0, int(raw_cancel_hours))
+            except (InvalidOperation, ValueError):
+                messages.error(request, "Please enter valid numeric values for fees, commission, and hours.")
+                commission_rate = None
+
+            if commission_rate is not None:
+                if not support_email:
+                    messages.error(request, "Support email is required.")
+                else:
+                    platform_settings.auto_approve_stores = request.POST.get("auto_approve_stores") == "on"
+                    platform_settings.default_commission_rate = commission_rate
+                    platform_settings.monthly_subscription_fee = subscription_fee # type: ignore
+                    platform_settings.payout_day_of_month = payout_day # type: ignore
+                    platform_settings.cancellation_window_hours = cancel_hours # type: ignore
+                    platform_settings.allow_new_registrations = request.POST.get("allow_new_registrations") == "on"
+                    platform_settings.support_email = support_email
+                    platform_settings.support_whatsapp = support_whatsapp
+                    platform_settings.notify_staff_new_store = request.POST.get("notify_staff_new_store") == "on"
+                    platform_settings.notify_staff_urgent_complaint = request.POST.get("notify_staff_urgent_complaint") == "on"
+                    platform_settings.maintenance_mode = request.POST.get("maintenance_mode") == "on"
+                    platform_settings.maintenance_message = maintenance_message
+                    platform_settings.updated_by = user
+                    platform_settings.save()
+
+                    messages.success(request, "Platform settings saved.")
+                    return redirect("operations:settings")
+
+    return render(
         request,
-        "Settings",
-        "Configure platform settings, integrations, and system preferences.",
-        "settings",
+        "operations/settings.html",
+        {
+            "profile": user,
+            "platform_settings": platform_settings,
+            "courses": User.Course.choices,
+            "residences": User.Residence.choices,
+            "is_email_auth": user.auth_provider == User.AuthProvider.EMAIL,
+        },
     )

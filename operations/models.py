@@ -622,3 +622,90 @@ class BroadcastAnnouncement(models.Model):
 
     def __str__(self):
         return f"{self.title} ({self.get_audience_display()})" # type: ignore
+
+class PlatformSettings(models.Model):
+    """Singleton configuration record (pk=1) for The Spotlight marketplace."""
+
+    # Store & Vendor Rules
+    auto_approve_stores = models.BooleanField(
+        default=False,
+        help_text="Automatically approve newly submitted store applications.",
+    )
+    default_commission_rate = models.DecimalField(
+        max_digits=5,
+        decimal_places=2,
+        default=Decimal("5.00"),
+        help_text="Default platform commission percentage (%).",
+    )
+    monthly_subscription_fee = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        default=Decimal("250.00"),
+        help_text="Standard monthly vendor subscription fee (MUR).",
+    )
+    payout_day_of_month = models.PositiveSmallIntegerField(
+        default=28,
+        help_text="Day of the month (1–28) when vendor payouts are processed.",
+    )
+
+    # Orders & Bookings
+    cancellation_window_hours = models.PositiveSmallIntegerField(
+        default=2,
+        help_text="Minimum hours before a booking slot that customers can cancel.",
+    )
+    allow_new_registrations = models.BooleanField(
+        default=True,
+        help_text="Allow new student and vendor accounts to sign up.",
+    )
+
+    # Support & Operations Alerts
+    support_email = models.EmailField(
+        default="support@thespotlight.mu",
+        help_text="Public support email displayed on order receipts and complaints.",
+    )
+    support_whatsapp = models.CharField(
+        max_length=25,
+        blank=True,
+        default="+230 5000 0000",
+        help_text="Operations support WhatsApp contact number.",
+    )
+    notify_staff_new_store = models.BooleanField(
+        default=True,
+        help_text="Send an operations alert when a new store submits an application.",
+    )
+    notify_staff_urgent_complaint = models.BooleanField(
+        default=True,
+        help_text="Send an operations alert when a high-priority complaint is filed.",
+    )
+
+    # Maintenance Banner
+    maintenance_mode = models.BooleanField(
+        default=False,
+        help_text="Display a platform-wide maintenance notice banner to non-staff users.",
+    )
+    maintenance_message = models.CharField(
+        max_length=255,
+        blank=True,
+        default="The Spotlight is undergoing scheduled maintenance. Some features may be temporarily unavailable.",
+    )
+
+    updated_at = models.DateTimeField(auto_now=True)
+    updated_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="+",
+    )
+
+    class Meta:
+        verbose_name = "Platform Settings"
+        verbose_name_plural = "Platform Settings"
+
+    def __str__(self):
+        return "The Spotlight — Platform Settings"
+
+    @classmethod
+    def get_solo(cls):
+        obj, _ = cls.objects.get_or_create(pk=1)
+        return obj
