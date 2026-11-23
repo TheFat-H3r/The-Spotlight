@@ -135,10 +135,15 @@
 
                     {# Catalog & Directory #}
                     <div class="ops-sidebar-caption">Marketplace &amp; Directory</div>
-                    <a class="ops-nav-link {% block stores_nav_class %}{% if request.resolver_match.url_name == 'manage-stores' %}active{% endif %}{% endblock %}"
-                       href="{% url 'operations:manage-stores' %}">
-                        <i class="bi bi-shop" aria-hidden="true"></i>
-                        <span>Manage stores</span>
+                    <a class="ops-nav-link {% block stores_nav_class %}{% if 'store' in request.resolver_match.url_name %}active{% endif %}{% endblock %}"
+                        href="{% url 'operations:stores' %}">
+                            <i class="bi bi-shop" aria-hidden="true"></i>
+                            <span>Stores</span>
+                            {% if draft_stores_count %}
+                                <span class="ops-nav-badge" aria-label="{{ draft_stores_count }} draft stores">
+                                    {{ draft_stores_count }}
+                                </span>
+                            {% endif %}
                     </a>
                     <a class="ops-nav-link {% block categories_nav_class %}{% if request.resolver_match.url_name == 'categories' %}active{% endif %}{% endblock %}"
                        href="{% url 'operations:categories' %}">

@@ -1,5 +1,5 @@
 from django.urls import path
-from .views import admin_home, admin_settings, authorize_stores, complaint_form, complaints, manage_bookings, manage_catalog, manage_categories, manage_orders, manage_payouts, manage_reviews, manage_stores, manage_users, marketing, marketing_ad_form, marketing_announcement_form, notifications_center, payout_detail
+from .views import admin_home, admin_settings, authorize_stores, business_type_form, categories_management, category_form, complaint_form, complaints, manage_bookings, manage_catalog, manage_orders, manage_payouts, manage_reviews, manage_users, marketing, marketing_ad_form, marketing_announcement_form, notifications_center, payout_detail, store_form, stores_management
 
 app_name = "operations"
 urlpatterns = [
@@ -21,9 +21,19 @@ urlpatterns = [
     path("marketing/announcements/add/", marketing_announcement_form, name="marketing-announcement-add"),
     path("marketing/announcements/<int:pk>/edit/", marketing_announcement_form, name="marketing-announcement-edit"),
 
+    # Stores management
+    path("stores/", stores_management, name="stores"),
+    path("stores/add/", store_form, name="store-add"),
+    path("stores/<int:pk>/edit/", store_form, name="store-edit"),
+    
+    # Categories / types
+    path("categories/", categories_management, name="categories"),
+    path("categories/add/", category_form, name="category-add"),
+    path("categories/<int:pk>/edit/", category_form, name="category-edit"),
+    path("business-types/add/", business_type_form, name="business-type-add"),
+    path("business-types/<int:pk>/edit/", business_type_form, name="business-type-edit"),
+    
     # Marketplace & Directory
-    path("stores/", manage_stores, name="manage-stores"),
-    path("categories/", manage_categories, name="categories"),
     path("catalog/", manage_catalog, name="catalog"),
     path("users/", manage_users, name="manage-users"),
 

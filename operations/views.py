@@ -4,7 +4,8 @@ from decimal import Decimal
 from django.contrib import messages
 from django.contrib.admin.views.decorators import staff_member_required
 from django.core.exceptions import PermissionDenied
-from django.db.models import Count, Sum
+from django.db import IntegrityError
+from django.db.models import Count, ProtectedError, Sum
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 from django.utils.dateparse import parse_date
@@ -12,7 +13,7 @@ from django.utils.dateparse import parse_date
 from accounts.models import User
 from marketing.models import Advertisement, Announcement
 from operations.models import CommissionPlan, Complaint, Payout, StoreSubscription
-from stores.models import Store
+from stores.models import BusinessType, Category, Store
 from transactions.models import Booking, Order
 
 @staff_member_required
@@ -458,19 +459,232 @@ def complaint_form(request, pk=None):
 
 
 @staff_member_required
-def manage_stores(request):
-    return render(request, 'operations/manage_stores.html')
+def stores_management(request):
+    if request.method == "POST":
+        store = get_object_or_404(Store, pk=request.POST.get("store_id"))
+        action = request.POST.get("action")
+
+        if action == "activate":
+            store.status = Store.Status.ACTIVE
+            store.save(update_fields=["status", "updated_at"])
+            messages.success(request, f"Store '{store.name}' is now Active.")
+
+        elif action == "suspend":
+            store.status = Store.Status.SUSPENDED
+            store.save(update_fields=["status", "updated_at"])
+            messages.warning(request, f"Store '{store.name}' has been Suspended.")
+
+        elif action == "draft":
+            store.status = Store.Status.DRAFT
+            store.save(update_fields=["status", "updated_at"])
+            messages.info(request, f"Store '{store.name}' moved back to Draft.")
+
+        elif action == "toggle_featured":
+            store.is_featured = not store.is_featured
+            store.save(update_fields=["is_featured", "updated_at"])
+            state = "featured" if store.is_featured else "removed from featured"
+            messages.info(request, f"Store '{store.name}' {state}.")
+
+        elif action == "delete":
+            name = store.name
+            store.delete()
+            messages.warning(request, f"Deleted store '{name}'.")
+
+        return redirect("operations:stores")
+
+    base_qs = (
+        Store.objects.select_related("owner", "business_type")
+        .prefetch_related("categories")
+        .annotate(
+            product_count=Count("products", distinct=True),
+            service_count=Count("services", distinct=True),
+        )
+    )
+
+    draft_stores = base_qs.filter(status=Store.Status.DRAFT).order_by("-created_at")
+    managed_stores = base_qs.exclude(status=Store.Status.DRAFT).order_by("-is_featured", "-created_at")
+
+    return render(
+        request,
+        "operations/stores.html",
+        {
+            "draft_stores": draft_stores,
+            "managed_stores": managed_stores,
+            "draft_store_count": draft_stores.count(),
+            "active_store_count": managed_stores.filter(status=Store.Status.ACTIVE).count(),
+            "featured_store_count": base_qs.filter(is_featured=True).count(),
+            "suspended_store_count": managed_stores.filter(status=Store.Status.SUSPENDED).count(),
+        },
+    )
 
 
 @staff_member_required
-def manage_categories(request):
-    return _placeholder_view(
+def store_form(request, pk=None):
+    store = (
+        get_object_or_404(
+            Store.objects.select_related("owner", "business_type").prefetch_related("categories"),
+            pk=pk,
+        )
+        if pk
+        else None
+    )
+    owners = User.objects.filter(is_active=True).order_by("first_name", "email")
+    business_types = BusinessType.objects.all().order_by("name")
+    categories = Category.objects.all().order_by("name")
+
+    if request.method == "POST":
+        name = request.POST.get("name", "").strip()
+        business_type_id = request.POST.get("business_type")
+        owner_id = request.POST.get("owner") or (store.owner_id if store else None)
+
+        if not (name and business_type_id and owner_id):
+            messages.error(request, "Store name, owner, and business type are required.")
+        else:
+            if store is None:
+                store = Store(owner_id=owner_id)
+            else:
+                store.owner_id = owner_id
+
+            store.name = name
+            store.tagline = request.POST.get("tagline", "").strip()
+            store.description = request.POST.get("description", "").strip()
+            store.business_type_id = business_type_id
+            store.contact_phone = request.POST.get("contact_phone", "").strip()
+            store.contact_email = request.POST.get("contact_email", "").strip()
+            store.whatsapp = request.POST.get("whatsapp", "").strip()
+            store.pickup_location = request.POST.get("pickup_location", "").strip()
+            store.status = request.POST.get("status", Store.Status.ACTIVE)
+            store.offers_delivery = request.POST.get("offers_delivery") == "on"
+            store.is_accepting_orders = request.POST.get("is_accepting_orders") == "on"
+            store.is_featured = request.POST.get("is_featured") == "on"
+
+            if request.FILES.get("logo"):
+                store.logo = request.FILES["logo"]
+            if request.FILES.get("banner"):
+                store.banner = request.FILES["banner"]
+
+            store.save()
+            store.categories.set(request.POST.getlist("categories"))
+
+            messages.success(request, f"Store '{store.name}' saved.")
+            return redirect("operations:stores")
+
+    return render(
         request,
-        "Categories",
-        "Create and organize product and service taxonomy.",
-        "categories",
+        "operations/store_form.html",
+        {
+            "store": store,
+            "owners": owners,
+            "business_types": business_types,
+            "categories": categories,
+            "selected_category_ids": set(store.categories.values_list("id", flat=True)) if store else set(),
+            "statuses": Store.Status.choices,
+        },
     )
 
+
+@staff_member_required
+def categories_management(request):
+    if request.method == "POST":
+        item_type = request.POST.get("item_type")
+        action = request.POST.get("action")
+
+        if item_type == "category" and action == "delete":
+            category = get_object_or_404(Category, pk=request.POST.get("item_id"))
+            name = category.name
+            category.delete()
+            messages.warning(request, f"Deleted category '{name}'.")
+
+        elif item_type == "business_type" and action == "delete":
+            bt = get_object_or_404(BusinessType, pk=request.POST.get("item_id"))
+            name = bt.name
+            try:
+                bt.delete()
+                messages.warning(request, f"Deleted business type '{name}'.")
+            except ProtectedError:
+                messages.error(
+                    request,
+                    f"Cannot delete '{name}' because one or more stores are still assigned to it.",
+                )
+
+        return redirect("operations:categories")
+
+    categories = Category.objects.annotate(store_count=Count("stores")).order_by("name")
+    business_types = BusinessType.objects.annotate(store_count=Count("stores")).order_by("name")
+
+    return render(
+        request,
+        "operations/categories.html",
+        {
+            "categories": categories,
+            "business_types": business_types,
+            "category_count": categories.count(),
+            "business_type_count": business_types.count(),
+        },
+    )
+
+
+@staff_member_required
+def category_form(request, pk=None):
+    category = get_object_or_404(Category, pk=pk) if pk else None
+
+    if request.method == "POST":
+        name = request.POST.get("name", "").strip()
+        slug = request.POST.get("slug", "").strip()
+
+        if not name:
+            messages.error(request, "Category name is required.")
+        else:
+            try:
+                if category is None:
+                    category = Category(name=name, slug=slug)
+                else:
+                    category.name = name
+                    category.slug = slug  # blank triggers auto-generation if cleared, or keeps custom slug
+                category.save()
+                messages.success(request, f"Category '{category.name}' saved.")
+                return redirect("operations:categories")
+            except IntegrityError:
+                messages.error(request, "A category with this name or slug already exists.")
+
+    return render(
+        request,
+        "operations/category_form.html",
+        {"category": category},
+    )
+
+
+@staff_member_required
+def business_type_form(request, pk=None):
+    business_type = get_object_or_404(BusinessType, pk=pk) if pk else None
+
+    if request.method == "POST":
+        name = request.POST.get("name", "").strip()
+        store_type = request.POST.get("store_type", BusinessType.StoreType.PRODUCTS)
+
+        if not name:
+            messages.error(request, "Business type name is required.")
+        else:
+            try:
+                if business_type is None:
+                    business_type = BusinessType(name=name, store_type=store_type)
+                else:
+                    business_type.name = name
+                    business_type.store_type = store_type
+                business_type.save()
+                messages.success(request, f"Business type '{business_type.name}' saved.")
+                return redirect("operations:categories")
+            except IntegrityError:
+                messages.error(request, "A business type with this name already exists.")
+
+    return render(
+        request,
+        "operations/business_type_form.html",
+        {
+            "business_type": business_type,
+            "store_types": BusinessType.StoreType.choices,
+        },
+    )
 
 @staff_member_required
 def manage_catalog(request):
