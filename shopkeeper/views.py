@@ -10,15 +10,15 @@ from django.forms import ValidationError
 from django.http import HttpRequest, HttpResponse
 from django.shortcuts import get_object_or_404, render, redirect
 from django.contrib import messages
-from django.db.models import Avg, Count, Q, Sum
+from django.db.models import F, Avg, Count, Q, DecimalField, ExpressionWrapper, Sum
 
 from django.template.loader import render_to_string
 from django.utils import timezone
 from django.views.decorators.http import require_POST
 
 from shopkeeper.context_processors import _resolve_business_mode
-from shopkeeper.forms import DAYS_OF_WEEK, StoreProfileForm, StoreSettingsForm, VerificationComplaintForm
-from stores.models import Product, Review, Service, Store
+from shopkeeper.forms import DAYS_OF_WEEK, StoreProfileForm, StoreSettingsForm, VerificationComplaintForm, Product, ProductForm
+from stores.models import Category, Product, Review, Service, Store
 from transactions.models import Booking, Order, VendorNotification
 
 ZERO = Decimal("0.00")
@@ -44,6 +44,24 @@ def _get_vendor_store(
     if require_store and not store:
         messages.warning(request, "Please create your store profile first.")
         return None, redirect("shopkeeper:store_profile")
+
+    return store, None
+
+def _require_product_store(request: HttpRequest) -> tuple[Store | None, HttpResponse | None]:
+    """
+    Ensures the vendor has an active/registered store that supports products
+    (store_type in {'products', 'both'}). Redirects service-only stores away.
+    """
+    store, redirect_response = _get_vendor_store(request)
+    if redirect_response or store is None:
+        return None, redirect_response or redirect("shopkeeper:store_profile")
+
+    if not store.accepts_orders:
+        messages.warning(
+            request,
+            "Product catalog management is only available for product-based stores.",
+        )
+        return None, redirect("shopkeeper:home")
 
     return store, None
 
@@ -597,7 +615,7 @@ def business_verification(request):
                 request,
                 "Your verification inquiry/complaint has been submitted to the admin team.",
             )
-            return redirect("shopkeeper:business_verification")
+            return redirect("shopkeeper:store_verification")
     else:
         complaint_form = VerificationComplaintForm()
 
@@ -633,26 +651,343 @@ def business_verification(request):
 
 # --- PRODUCTS & INVENTORY ---
 @login_required
-def product_list(request, status="all"):
-    titles = {"all": "All Products", "pending": "Product Approvals"}
-    return render(request, "shopkeeper/products/list.html", {
-        "page_title": titles.get(status, "Products"),
-        "status_filter": status,
-    })
+def products_list(request):
+    """
+    Product catalog management for product-based stores (products or both).
+    Supports creating a product, searching/filtering, and viewing KPIs.
+    """
+    store, redirect_response = _require_product_store(request)
+    if redirect_response or store is None:
+        return redirect_response or redirect("shopkeeper:store_profile")
+
+    if request.method == "POST":
+        form = ProductForm(request.POST, request.FILES, store=store)
+        if form.is_valid():
+            new_product = form.save()
+            messages.success(request, f"Product '{new_product.name}' added to your store.")
+            return redirect("shopkeeper:product_list")
+        messages.error(request, "Please fix the errors below before adding the product.")
+    else:
+        form = ProductForm(store=store, initial={"is_available": True})
+
+    qs = (
+        Product.objects.filter(store=store)
+        .select_related("category")
+        .order_by("-is_featured", "-created_at")
+    )
+
+    # Optional query filters
+    query = (request.GET.get("q") or "").strip()
+    availability = (request.GET.get("availability") or "").strip()
+    category_id = (request.GET.get("category") or "").strip()
+
+    if query:
+        qs = qs.filter(Q(name__icontains=query) | Q(description__icontains=query))
+    if availability == "available":
+        qs = qs.filter(is_available=True, stock__gt=0)
+    elif availability == "out_of_stock":
+        qs = qs.filter(stock=0)
+    elif availability == "hidden":
+        qs = qs.filter(is_available=False)
+    if category_id.isdigit():
+        qs = qs.filter(category_id=int(category_id))
+
+    all_products = Product.objects.filter(store=store)
+    aggregates = all_products.aggregate(
+        total_stock=Sum("stock"),
+        avg_rating=Avg("rating_average"),
+    )
+
+    stats = {
+        "total_count": all_products.count(),
+        "active_count": all_products.filter(is_available=True, stock__gt=0).count(),
+        "low_stock_count": all_products.filter(stock__gt=0, stock__lte=5).count(),
+        "out_of_stock_count": all_products.filter(stock=0).count(),
+        "total_units": aggregates["total_stock"] or 0,
+    }
+
+    store_categories = (
+        store.categories.all()
+        if store.categories.exists()
+        else Category.objects.filter(products__store=store).distinct()
+    )
+
+    return render(
+        request,
+        "shopkeeper/products/list.html",
+        {
+            "store": store,
+            "products": qs,
+            "form": form,
+            "stats": stats,
+            "store_categories": store_categories,
+            "filters": {
+                "q": query,
+                "availability": availability,
+                "category": category_id,
+            },
+            "open_create_modal": request.method == "POST" and not form.is_valid(),
+        },
+    )
 
 
 @login_required
-def product_create(request):
+def product_edit(request, product_id: int):
+    """Edit an existing product belonging to the vendor's store."""
+    store, redirect_response = _require_product_store(request)
+    if redirect_response or store is None:
+        return redirect_response or redirect("shopkeeper:store_profile")
+
+    product = get_object_or_404(Product, pk=product_id, store=store)
+
     if request.method == "POST":
-        messages.success(request, "Product created and submitted for approval.")
-        return redirect("shopkeeper:product_list")
-    return render(request, "shopkeeper/products/form.html", {"page_title": "Add New Product"})
+        form = ProductForm(request.POST, request.FILES, instance=product, store=store)
+        if form.is_valid():
+            updated = form.save()
+            messages.success(request, f"Updated '{updated.name}'.")
+            return redirect("shopkeeper:product_list")
+    else:
+        form = ProductForm(instance=product, store=store)
+
+    return render(
+        request,
+        "shopkeeper/products/form.html",
+        {
+            "store": store,
+            "product": product,
+            "form": form,
+        },
+    )
 
 
+@login_required
+@require_POST
+def product_toggle_availability(request, product_id: int):
+    """Quickly pause or re-enable product availability from the table."""
+    store, redirect_response = _require_product_store(request)
+    if redirect_response or store is None:
+        return redirect_response or redirect("shopkeeper:store_profile")
+
+    product = get_object_or_404(Product, pk=product_id, store=store)
+    product.is_available = not product.is_available
+    product.save(update_fields=["is_available", "updated_at"])
+
+    state = "available" if product.is_available else "hidden from customers"
+    messages.info(request, f"'{product.name}' is now {state}.")
+    return redirect("shopkeeper:product_list")
+
+
+@login_required
+@require_POST
+def product_delete(request, product_id: int):
+    """Delete a product from the vendor's store."""
+    store, redirect_response = _require_product_store(request)
+    if redirect_response or store is None:
+        return redirect_response or redirect("shopkeeper:store_profile")
+
+    product = get_object_or_404(Product, pk=product_id, store=store)
+    name = product.name
+    product.delete()
+    messages.success(request, f"Deleted product '{name}'.")
+    return redirect("shopkeeper:product_list")
 
 @login_required
 def inventory_management(request):
-    return render(request, "shopkeeper/products/inventory.html", {"page_title": "Inventory Management"})
+    """
+    Dedicated stock & inventory control for product-enabled stores.
+    Supports quick single-product stock adjustments and bulk stock updates.
+    """
+    store, redirect_response = _require_product_store(request)
+    if redirect_response or store is None:
+        return redirect_response or redirect("shopkeeper:store_profile")
+
+    if request.method == "POST":
+        action = request.POST.get("action", "single_update")
+
+        if action == "bulk_update":
+            updated_count = 0
+            products_by_id = {
+                str(p.id): p for p in Product.objects.filter(store=store) # type: ignore
+            }
+            for key, raw_val in request.POST.items():
+                if not key.startswith("stock_"):
+                    continue
+                prod_id = key.removeprefix("stock_")
+                product = products_by_id.get(prod_id)
+                if not product:
+                    continue
+                try:
+                    new_stock = max(0, int(raw_val))
+                except (TypeError, ValueError):
+                    continue
+
+                if product.stock != new_stock:
+                    product.stock = new_stock
+                    product.save(update_fields=["stock", "updated_at"])
+                    updated_count += 1
+
+            if updated_count:
+                messages.success(
+                    request,
+                    f"Updated stock levels for {updated_count} product(s).",
+                )
+            else:
+                messages.info(request, "No stock quantities were changed.")
+            return redirect("shopkeeper:inventory_management")
+
+        # Single-product adjustment (quick +restock / -deduct / exact set)
+        product_id = request.POST.get("product_id")
+        product = get_object_or_404(Product, pk=product_id, store=store)
+        mode = request.POST.get("mode", "set")
+
+        try:
+            amount = int(request.POST.get("amount", 0))
+        except (TypeError, ValueError):
+            messages.error(request, "Please enter a valid whole number for stock.")
+            return redirect("shopkeeper:inventory_management")
+
+        if mode == "add":
+            if amount <= 0:
+                messages.error(request, "Restock amount must be greater than 0.")
+                return redirect("shopkeeper:inventory_management")
+            product.stock += amount
+        elif mode == "subtract":
+            if amount <= 0:
+                messages.error(request, "Deduction amount must be greater than 0.")
+                return redirect("shopkeeper:inventory_management")
+            product.stock = max(0, product.stock - amount)
+        else:
+            if amount < 0:
+                messages.error(request, "Stock cannot be negative.")
+                return redirect("shopkeeper:inventory_management")
+            product.stock = amount
+
+        update_fields = ["stock", "updated_at"]
+        if request.POST.get("auto_enable") == "on" and product.stock > 0 and not product.is_available:
+            product.is_available = True
+            update_fields.append("is_available")
+
+        product.save(update_fields=update_fields)
+        messages.success(
+            request,
+            f"Stock for '{product.name}' is now {product.stock} unit(s).",
+        )
+        return redirect("shopkeeper:inventory_management")
+
+    # Filtering
+    stock_filter = (request.GET.get("level") or "").strip()
+    query = (request.GET.get("q") or "").strip()
+
+    products_qs = (
+        Product.objects.filter(store=store)
+        .select_related("category")
+        .annotate(
+            inventory_value=ExpressionWrapper(
+                F("price") * F("stock"),
+                output_field=DecimalField(max_digits=14, decimal_places=2),
+            )
+        )
+        .order_by("stock", "name")
+    )
+
+    if query:
+        products_qs = products_qs.filter(Q(name__icontains=query) | Q(category__name__icontains=query))
+    if stock_filter == "out":
+        products_qs = products_qs.filter(stock=0)
+    elif stock_filter == "low":
+        products_qs = products_qs.filter(stock__gt=0, stock__lte=5)
+    elif stock_filter == "healthy":
+        products_qs = products_qs.filter(stock__gt=5)
+
+    all_products = Product.objects.filter(store=store)
+    totals = all_products.annotate(
+        line_value=ExpressionWrapper(
+            F("price") * F("stock"),
+            output_field=DecimalField(max_digits=14, decimal_places=2),
+        )
+    ).aggregate(
+        total_units=Sum("stock"),
+        total_value=Sum("line_value"),
+    )
+
+    inventory_stats = {
+        "sku_count": all_products.count(),
+        "total_units": totals["total_units"] or 0,
+        "total_value": totals["total_value"] or Decimal("0.00"),
+        "low_stock_count": all_products.filter(stock__gt=0, stock__lte=5).count(),
+        "out_of_stock_count": all_products.filter(stock=0).count(),
+    }
+
+    return render(
+        request,
+        "shopkeeper/products/inventory.html",
+        {
+            "store": store,
+            "products": products_qs,
+            "stats": inventory_stats,
+            "filters": {
+                "level": stock_filter,
+                "q": query,
+            },
+        },
+    )
+
+@login_required
+def product_create(request):
+    """Dedicated page for adding a new product (linked from sidebar 'Add New Product')."""
+    store, redirect_response = _require_product_store(request)
+    if redirect_response or store is None:
+        return redirect_response or redirect("shopkeeper:store_profile")
+
+    if request.method == "POST":
+        form = ProductForm(request.POST, request.FILES, store=store)
+        if form.is_valid():
+            product = form.save()
+            messages.success(request, f"Product '{product.name}' created successfully.")
+            if request.POST.get("save_and_add_another"):
+                return redirect("shopkeeper:product_create")
+            return redirect("shopkeeper:product_list")
+    else:
+        form = ProductForm(store=store, initial={"is_available": True})
+
+    return render(
+        request,
+        "shopkeeper/products/create.html",
+        {
+            "store": store,
+            "form": form,
+        },
+    )
+
+
+@login_required
+def product_approvals(request):
+    """
+    Shows product listing visibility & readiness status for the vendor's store
+    (e.g. products hidden/paused, out of stock, or awaiting store activation).
+    """
+    store, redirect_response = _require_product_store(request)
+    if redirect_response or store is None:
+        return redirect_response or redirect("shopkeeper:store_profile")
+
+    products = (
+        Product.objects.filter(store=store)
+        .select_related("category")
+        .order_by("is_available", "-created_at")
+    )
+
+    live_products = [p for p in products if store.is_public and p.is_available and p.stock > 0]
+    paused_or_pending = [p for p in products if not (store.is_public and p.is_available and p.stock > 0)]
+
+    return render(
+        request,
+        "shopkeeper/products/approvals.html",
+        {
+            "store": store,
+            "live_products": live_products,
+            "paused_or_pending": paused_or_pending,
+        },
+    )
 
 
 # --- ORDERS ---

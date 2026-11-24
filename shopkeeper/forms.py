@@ -1,5 +1,6 @@
 from django import forms
-from stores.models import BusinessType, Category, Store
+from django.utils.text import slugify
+from stores.models import BusinessType, Category, Product, Store
 
 
 DAYS_OF_WEEK = [
@@ -168,3 +169,82 @@ class VerificationComplaintForm(forms.Form):
             }
         ),
     )
+
+class ProductForm(forms.ModelForm):
+    class Meta:
+        model = Product
+        fields = [
+            "name",
+            "category",
+            "price",
+            "stock",
+            "image",
+            "description",
+            "is_available",
+            "is_featured",
+        ]
+        widgets = {
+            "name": forms.TextInput(
+                attrs={"class": "form-control", "placeholder": "e.g. Custom ALCHE Hoodie"}
+            ),
+            "category": forms.Select(attrs={"class": "form-select"}),
+            "price": forms.NumberInput(
+                attrs={"class": "form-control", "step": "0.01", "min": "0", "placeholder": "0.00"}
+            ),
+            "stock": forms.NumberInput(
+                attrs={"class": "form-control", "min": "0", "placeholder": "0"}
+            ),
+            "image": forms.ClearableFileInput(
+                attrs={"class": "form-control", "accept": "image/*"}
+            ),
+            "description": forms.Textarea(
+                attrs={
+                    "class": "form-control",
+                    "rows": 3,
+                    "placeholder": "Describe materials, sizes, colors, or usage details...",
+                }
+            ),
+            "is_available": forms.CheckboxInput(attrs={"class": "form-check-input"}),
+            "is_featured": forms.CheckboxInput(attrs={"class": "form-check-input"}),
+        }
+
+    def __init__(self, *args, **kwargs):
+        self.store = kwargs.pop("store", None)
+        super().__init__(*args, **kwargs)
+
+        # Scope category choices to the store's selected categories if configured, otherwise all categories
+        if self.store and self.store.categories.exists():
+            self.fields["category"].queryset = self.store.categories.all() # type: ignore
+        else:
+            self.fields["category"].queryset = Category.objects.all() # type: ignore
+        self.fields["category"].empty_label = "— Uncategorized —" # type: ignore
+
+    def clean_price(self):
+        price = self.cleaned_data.get("price")
+        if price is None:
+            return 0
+        if price < 0:
+            raise forms.ValidationError("Price cannot be negative.")
+        return price
+
+    def save(self, commit=True):
+        product = super().save(commit=False)
+        if self.store:
+            product.store = self.store
+
+        # Generate a unique slug from name if creating or if slug is empty
+        if not product.slug:
+            base_slug = slugify(product.name)[:240] or "product"
+            slug = base_slug
+            counter = 2
+            qs = Product.objects.all()
+            if product.pk:
+                qs = qs.exclude(pk=product.pk)
+            while qs.filter(slug=slug).exists():
+                slug = f"{base_slug}-{counter}"
+                counter += 1
+            product.slug = slug
+
+        if commit:
+            product.save()
+        return product

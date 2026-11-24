@@ -1,40 +1,106 @@
 {% extends "shopkeeper/base.html" %}
-{% block title %}{{ page_title }}{% endblock %}
+
+{% block title %}Edit {{ product.name }} | The Spotlight{% endblock %}
+{% block header %}Edit Product{% endblock %}
 
 {% block content %}
-<h4 class="mb-4">{{ page_title }}</h4>
-<div class="card">
-  <div class="card-body">
-    <form method="post" enctype="multipart/form-data">
-      {% csrf_token %}
-      <div class="row g-3">
-        <div class="col-md-6">
-          <label class="form-label">Product Name</label>
-          <input type="text" name="name" class="form-control" required>
-        </div>
-        <div class="col-md-6">
-          <label class="form-label">Category</label>
-          <select name="category" class="form-select"></select>
-        </div>
-        <div class="col-md-4">
-          <label class="form-label">Price</label>
-          <input type="number" step="0.01" name="price" class="form-control" required>
-        </div>
-        <div class="col-md-4">
-          <label class="form-label">Initial Stock</label>
-          <input type="number" name="stock" class="form-control" required>
-        </div>
-        <div class="col-md-4">
-          <label class="form-label">SKU</label>
-          <input type="text" name="sku" class="form-control">
-        </div>
-        <div class="col-12">
-          <label class="form-label">Product Images</label>
-          <input type="file" name="images" class="form-control" multiple>
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-3 my-3">
+  <div>
+    <h2 class="h4 mb-1">Edit Product</h2>
+    <p class="text-body-secondary mb-0">Updating <strong>{{ product.name }}</strong></p>
+  </div>
+  <a href="{% url 'shopkeeper:product_list' %}" class="btn btn-outline-secondary btn-sm">
+    <i class="fa-solid fa-arrow-left me-1"></i> Back to Products
+  </a>
+</div>
+
+<div class="row g-4 my-2">
+  <div class="col-lg-8">
+    <div class="card border-0 shadow-sm">
+      <div class="card-body p-3">
+        <form method="post" enctype="multipart/form-data" novalidate>
+          {% csrf_token %}
+          <div class="row g-3">
+            <div class="col-md-7">
+              <label for="{{ form.name.id_for_label }}" class="form-label fw-semibold">Product Name <span class="text-danger">*</span></label>
+              {{ form.name }}
+              {% if form.name.errors %}<div class="text-danger small mt-1">{{ form.name.errors|join:", " }}</div>{% endif %}
+            </div>
+            <div class="col-md-5">
+              <label for="{{ form.category.id_for_label }}" class="form-label fw-semibold">Category</label>
+              {{ form.category }}
+              {% if form.category.errors %}<div class="text-danger small mt-1">{{ form.category.errors|join:", " }}</div>{% endif %}
+            </div>
+            <div class="col-md-6">
+              <label for="{{ form.price.id_for_label }}" class="form-label fw-semibold">Price (Rs) <span class="text-danger">*</span></label>
+              {{ form.price }}
+              {% if form.price.errors %}<div class="text-danger small mt-1">{{ form.price.errors|join:", " }}</div>{% endif %}
+            </div>
+            <div class="col-md-6">
+              <label for="{{ form.stock.id_for_label }}" class="form-label fw-semibold">Stock Quantity <span class="text-danger">*</span></label>
+              {{ form.stock }}
+              {% if form.stock.errors %}<div class="text-danger small mt-1">{{ form.stock.errors|join:", " }}</div>{% endif %}
+            </div>
+            <div class="col-12">
+              <label for="{{ form.image.id_for_label }}" class="form-label fw-semibold">Product Image</label>
+              {{ form.image }}
+              {% if form.image.errors %}<div class="text-danger small mt-1">{{ form.image.errors|join:", " }}</div>{% endif %}
+            </div>
+            <div class="col-12">
+              <label for="{{ form.description.id_for_label }}" class="form-label fw-semibold">Description</label>
+              {{ form.description }}
+              {% if form.description.errors %}<div class="text-danger small mt-1">{{ form.description.errors|join:", " }}</div>{% endif %}
+            </div>
+            <div class="col-sm-6">
+              <div class="form-check form-switch">
+                {{ form.is_available }}
+                <label class="form-check-label fw-semibold" for="{{ form.is_available.id_for_label }}">Available for Purchase</label>
+              </div>
+            </div>
+            <div class="col-sm-6">
+              <div class="form-check form-switch">
+                {{ form.is_featured }}
+                <label class="form-check-label fw-semibold" for="{{ form.is_featured.id_for_label }}">Featured Product</label>
+              </div>
+            </div>
+          </div>
+
+          <div class="d-flex justify-content-end gap-2 mt-4 pt-3 border-top">
+            <a href="{% url 'shopkeeper:product_list' %}" class="btn btn-outline-secondary">Cancel</a>
+            <button type="submit" class="btn btn-primary">
+              <i class="fa-solid fa-floppy-disk me-1"></i> Save Changes
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-lg-4">
+    <div class="card border-0 shadow-sm">
+      <div class="card-header bg-transparent p-3">
+        <h6 class="mb-0">Current Preview &amp; Stats</h6>
+      </div>
+      <div class="card-body p-3">
+        {% if product.image %}
+          <img src="{{ product.image.url }}" alt="{{ product.name }}" class="img-fluid rounded border mb-3 w-100 object-fit-cover" style="max-height: 220px;">
+        {% endif %}
+        <div class="small">
+          <div class="d-flex justify-content-between mb-2">
+            <span class="text-body-secondary">Slug</span>
+            <code>{{ product.slug }}</code>
+          </div>
+          <div class="d-flex justify-content-between mb-2">
+            <span class="text-body-secondary">Rating</span>
+            <span class="fw-semibold">{{ product.rating_average }} ({{ product.rating_count }} reviews)</span>
+          </div>
+          <div class="d-flex justify-content-between">
+            <span class="text-body-secondary">Last Updated</span>
+            <span>{{ product.updated_at|date:"d M Y, H:i" }}</span>
+          </div>
         </div>
       </div>
-      <button type="submit" class="btn btn-primary mt-4">Save Product</button>
-    </form>
+    </div>
   </div>
 </div>
 {% endblock %}

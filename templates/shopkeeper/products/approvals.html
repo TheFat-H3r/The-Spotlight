@@ -1,0 +1,110 @@
+{% extends "shopkeeper/base.html" %}
+
+{% block title %}Product Approvals &amp; Visibility — {{ store.name }} | The Spotlight{% endblock %}
+{% block header %}Product Approvals{% endblock %}
+
+{% block content %}
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-3 my-3">
+  <div>
+    <h2 class="h4 mb-1">Product Approvals &amp; Marketplace Visibility</h2>
+    <p class="text-body-secondary mb-0">
+      Review which products are currently live to buyers and which require stock, availability, or store activation.
+    </p>
+  </div>
+  <a href="{% url 'shopkeeper:product_create' %}" class="btn btn-primary btn-sm">
+    <i class="fa-solid fa-plus me-1"></i> Add New Product
+  </a>
+</div>
+
+{% if not store.is_public %}
+  <div class="alert alert-warning my-3">
+    <i class="fa-solid fa-triangle-exclamation me-2"></i>
+    Your store <strong>{{ store.name }}</strong> is currently <strong>{{ store.get_status_display }}</strong>. None of your products will appear publicly until an administrator activates your store.
+    <a href="{% url 'shopkeeper:store_verification' %}" class="alert-link ms-1">Check Verification Status</a>
+  </div>
+{% endif %}
+
+<div class="card border-0 shadow-sm my-3">
+  <div class="card-header bg-transparent p-3 d-flex justify-content-between align-items-center">
+    <h5 class="mb-0">Unpublished / Attention Needed ({{ paused_or_pending|length }})</h5>
+  </div>
+  <div class="card-body p-3">
+    {% if paused_or_pending %}
+      <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+          <thead>
+            <tr>
+              <th>Product</th>
+              <th>Price</th>
+              <th>Stock</th>
+              <th>Reason Not Public</th>
+              <th class="text-end">Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for product in paused_or_pending %}
+              <tr>
+                <td class="fw-semibold">{{ product.name }}</td>
+                <td>Rs {{ product.price }}</td>
+                <td>{{ product.stock }}</td>
+                <td>
+                  {% if not store.is_public %}
+                    <span class="badge text-bg-warning">Store {{ store.get_status_display }}</span>
+                  {% elif not product.is_available %}
+                    <span class="badge text-bg-secondary">Hidden by Vendor</span>
+                  {% elif product.stock == 0 %}
+                    <span class="badge text-bg-danger">Out of Stock (0)</span>
+                  {% endif %}
+                </td>
+                <td class="text-end">
+                  <a href="{% url 'shopkeeper:product_edit' product.id %}" class="btn btn-sm btn-outline-primary">
+                    Edit Listing
+                  </a>
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% else %}
+      <p class="text-body-secondary small mb-0">All of your products are live and ready for orders.</p>
+    {% endif %}
+  </div>
+</div>
+
+<div class="card border-0 shadow-sm my-3">
+  <div class="card-header bg-transparent p-3">
+    <h5 class="mb-0">Live on Marketplace ({{ live_products|length }})</h5>
+  </div>
+  <div class="card-body p-3">
+    {% if live_products %}
+      <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+          <thead>
+            <tr>
+              <th>Product</th>
+              <th>Category</th>
+              <th>Price</th>
+              <th>Stock</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for product in live_products %}
+              <tr>
+                <td class="fw-semibold">{{ product.name }}</td>
+                <td>{{ product.category.name|default:"Uncategorized" }}</td>
+                <td>Rs {{ product.price }}</td>
+                <td>{{ product.stock }}</td>
+                <td><span class="badge text-bg-success">Live</span></td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% else %}
+      <p class="text-body-secondary small mb-0">No products are currently live on the marketplace.</p>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

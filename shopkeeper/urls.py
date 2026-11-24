@@ -20,9 +20,14 @@ urlpatterns = [
     path("store/verification/", views.business_verification, name="store_verification"),
 
     # Products
-    path("products/", views.product_list, {"status": "all"}, name="product_list"),
-    path("products/add/", views.product_create, name="product_create"),
-    path("products/approvals/", views.product_list, {"status": "pending"}, name="product_approvals"),
+    # Products (Product-based stores only)
+    path("products/", views.products_list, name="product_list"),
+    path("products/new/", views.product_create, name="product_create"),
+    path("products/approvals/", views.product_approvals, name="product_approvals"),
+    path("products/<int:product_id>/edit/", views.product_edit, name="product_edit"),
+    path("products/<int:product_id>/toggle/", views.product_toggle_availability, name="product_toggle_availability"),
+    path("products/<int:product_id>/delete/", views.product_delete, name="product_delete"),
+
 
     # Orders
     path("orders/", views.order_list, {"status": "all"}, name="order_list"),
