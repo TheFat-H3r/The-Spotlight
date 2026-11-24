@@ -2,11 +2,12 @@ import csv
 from decimal import Decimal
 from datetime import datetime, time, timedelta
 import json
+from django.apps import apps
 from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator
 from django.db.models.functions import TruncDate, TruncMonth
 from django.forms import ValidationError
-from django.http import HttpResponse
+from django.http import HttpRequest, HttpResponse
 from django.shortcuts import get_object_or_404, render, redirect
 from django.contrib import messages
 from django.db.models import Avg, Count, Q, Sum
@@ -16,18 +17,32 @@ from django.utils import timezone
 from django.views.decorators.http import require_POST
 
 from shopkeeper.context_processors import _resolve_business_mode
+from shopkeeper.forms import DAYS_OF_WEEK, StoreProfileForm, StoreSettingsForm, VerificationComplaintForm
 from stores.models import Product, Review, Service, Store
 from transactions.models import Booking, Order, VendorNotification
 
 ZERO = Decimal("0.00")
-def _get_vendor_store(user):
-    """Helper to verify vendor access and fetch their store."""
-    if getattr(user, "role", None) == "customer" and not user.is_staff:
-        return None, redirect("marketplace:home")
+def _get_vendor_store(
+    request: HttpRequest,
+    *,
+    require_store: bool = True,
+) -> tuple[Store | None, HttpResponse | None]:
+    """
+    Verify vendor access and fetch their single store.
+    Returns (store, None) on success, or (None, redirect_response) if blocked/missing.
+    """
+    user = request.user
+    if getattr(user, "role", None) == "customer" and not user.is_staff: # type: ignore
+        return None, redirect("core:home")
 
-    store = Store.objects.filter(owner=user).select_related("business_type").first()
-    if not store:
-        messages.warning(None, "Please create your store profile first.") # type: ignore
+    store = (
+        Store.objects.filter(owner=user)
+        .select_related("business_type")
+        .prefetch_related("categories")
+        .first()
+    )
+    if require_store and not store:
+        messages.warning(request, "Please create your store profile first.")
         return None, redirect("shopkeeper:store_profile")
 
     return store, None
@@ -49,7 +64,7 @@ def home(request):
 
     # Prevent pure customer accounts from accessing the vendor dashboard
     if getattr(vendor, "role", None) == "customer" and not vendor.is_staff:
-        return redirect("marketplace:home")
+        return redirect("core:home")
 
     store = (
         Store.objects.filter(owner=vendor)
@@ -319,7 +334,7 @@ def notifications_list(request):
     Displays all store notifications (orders, bookings, reviews, system updates)
     with category tabs, read/unread status, and DataTables search/sort.
     """
-    store, redirect_response = _get_vendor_store(request.user)
+    store, redirect_response = _get_vendor_store(request)
     if redirect_response:
         return redirect_response
 
@@ -370,7 +385,7 @@ def notifications_list(request):
 @require_POST
 def notification_mark_read(request, pk):
     """Marks a single notification as read and optionally redirects to its target."""
-    store, redirect_response = _get_vendor_store(request.user)
+    store, redirect_response = _get_vendor_store(request)
     if redirect_response:
         return redirect_response
 
@@ -390,7 +405,7 @@ def notification_mark_read(request, pk):
 @require_POST
 def notification_mark_all_read(request):
     """Marks all unread notifications for the current store as read."""
-    store, redirect_response = _get_vendor_store(request.user)
+    store, redirect_response = _get_vendor_store(request)
     if redirect_response:
         return redirect_response
 
@@ -409,7 +424,7 @@ def notification_mark_all_read(request):
 @require_POST
 def notification_delete(request, pk):
     """Deletes a single notification."""
-    store, redirect_response = _get_vendor_store(request.user)
+    store, redirect_response = _get_vendor_store(request)
     if redirect_response:
         return redirect_response
 
@@ -422,27 +437,199 @@ def notification_delete(request, pk):
 # --- MY STORE ---
 @login_required
 def store_profile(request):
+    vendor = request.user
+    store, redirect_response = _get_vendor_store(request, require_store=False)
+    if redirect_response:
+        return redirect_response
+
+    is_creating = store is None
+
     if request.method == "POST":
-        messages.success(request, "Store profile updated.")
-        return redirect("shopkeeper:store_profile")
-    return render(request, "shopkeeper/store/profile.html", {"page_title": "Store Profile"})
+        form = StoreProfileForm(request.POST, request.FILES, instance=store, owner=vendor)
+        if form.is_valid():
+            saved_store = form.save(commit=False)
+            if is_creating:
+                if Store.objects.filter(owner=vendor).exists():
+                    messages.warning(request, "You already have a registered store.")
+                    return redirect("shopkeeper:store_profile")
+                saved_store.owner = vendor
+            saved_store.save()
+            form.save_m2m()
+
+            if is_creating:
+                messages.success(
+                    request,
+                    f"'{saved_store.name}' has been created as a Draft. Complete your settings and submit for verification.",
+                )
+            else:
+                messages.success(request, "Store profile updated successfully.")
+            return redirect("shopkeeper:store_profile")
+    else:
+        initial = {"contact_email": vendor.email} if is_creating else {}
+        form = StoreProfileForm(instance=store, owner=vendor, initial=initial)
+
+    return render(
+        request,
+        "shopkeeper/store/profile.html",
+        {
+            "store": store,
+            "form": form,
+            "is_creating": is_creating,
+        },
+    )
 
 
 @login_required
 def store_settings(request):
+    """
+    Operational settings tailored dynamically to Products, Services, or Both.
+    """
+    store, redirect_response = _get_vendor_store(request)
+    if redirect_response or store is None:
+        return redirect_response or redirect("shopkeeper:store_profile")
+
     if request.method == "POST":
-        messages.success(request, "Store settings saved.")
-        return redirect("shopkeeper:store_settings")
-    return render(request, "shopkeeper/store/settings.html", {"page_title": "Store Settings"})
+        form = StoreSettingsForm(request.POST, instance=store)
+        if form.is_valid():
+            updated_store = form.save(commit=False)
+
+            # Parse structured opening hours into JSON: {"mon": "09:00-17:00", "sun": null}
+            hours_payload = {}
+            for code, _label in DAYS_OF_WEEK:
+                is_closed = request.POST.get(f"closed_{code}") == "on"
+                open_time = (request.POST.get(f"open_{code}") or "").strip()
+                close_time = (request.POST.get(f"close_{code}") or "").strip()
+                if is_closed or not open_time or not close_time:
+                    hours_payload[code] = None
+                else:
+                    hours_payload[code] = f"{open_time}-{close_time}"
+
+            updated_store.opening_hours = hours_payload
+            updated_store.save()
+            messages.success(request, "Store operational settings saved.")
+            return redirect("shopkeeper:store_settings")
+    else:
+        form = StoreSettingsForm(instance=store)
+
+    # Prepare structured day rows for template rendering
+    raw_hours = store.opening_hours or {}
+    schedule_rows = []
+    for code, label in DAYS_OF_WEEK:
+        val = raw_hours.get(code)
+        if val and "-" in str(val):
+            open_str, close_str = str(val).split("-", 1)
+            closed = False
+        else:
+            open_str, close_str = "09:00", "17:00"
+            closed = True if code in raw_hours else False
+        schedule_rows.append({
+            "code": code,
+            "label": label,
+            "open": open_str.strip(),
+            "close": close_str.strip(),
+            "closed": closed,
+        })
+
+    return render(
+        request,
+        "shopkeeper/store/settings.html",
+        {
+            "store": store,
+            "form": form,
+            "schedule_rows": schedule_rows,
+        },
+    )
 
 
 @login_required
-def store_verification(request):
-    if request.method == "POST":
-        messages.success(request, "Verification documents submitted for review.")
-        return redirect("shopkeeper:store_verification")
-    return render(request, "shopkeeper/store/verification.html", {"page_title": "Business Verification"})
+def business_verification(request):
+    """
+    Read-only verification & moderation status page for the vendor,
+    with a form to lodge a complaint or appeal to administrators.
+    """
+    vendor = request.user
+    store, redirect_response = _get_vendor_store(request)
+    if redirect_response or store is None:
+        return redirect_response or redirect("shopkeeper:store_profile")
 
+    # Fetch vendor's past complaints if Complaint model exists
+    past_complaints = []
+    ComplaintModel = None
+    for app_label in ("operations", "stores", "marketplace", "transactions"):
+        try:
+            ComplaintModel = apps.get_model(app_label, "Complaint")
+            break
+        except LookupError:
+            continue
+
+    if ComplaintModel:
+        filter_kwargs = {"store": store} if hasattr(ComplaintModel, "store") else {"user": vendor}
+        past_complaints = list(ComplaintModel.objects.filter(**filter_kwargs).order_by("-created_at")[:10])
+
+    if request.method == "POST":
+        complaint_form = VerificationComplaintForm(request.POST)
+        if complaint_form.is_valid():
+            subject_label = dict(complaint_form.fields["subject"].choices)[ # type: ignore
+                complaint_form.cleaned_data["subject"]
+            ]
+            body = complaint_form.cleaned_data["message"].strip()
+
+            if ComplaintModel:
+                create_kwargs = {}
+                field_names = {f.name for f in ComplaintModel._meta.get_fields()}
+                if "store" in field_names:
+                    create_kwargs["store"] = store
+                if "complainant" in field_names:
+                    create_kwargs["complainant"] = vendor
+                elif "user" in field_names:
+                    create_kwargs["user"] = vendor
+                if "subject" in field_names:
+                    create_kwargs["subject"] = subject_label
+                elif "title" in field_names:
+                    create_kwargs["title"] = subject_label
+                if "description" in field_names:
+                    create_kwargs["description"] = body
+                elif "message" in field_names:
+                    create_kwargs["message"] = body
+                ComplaintModel.objects.create(**create_kwargs)
+
+            messages.success(
+                request,
+                "Your verification inquiry/complaint has been submitted to the admin team.",
+            )
+            return redirect("shopkeeper:business_verification")
+    else:
+        complaint_form = VerificationComplaintForm()
+
+    location_label = (
+        "Service / appointment location set"
+        if store.accepts_bookings and not store.accepts_orders
+        else (
+            "Pickup & service location set"
+            if store.accepts_bookings and store.accepts_orders
+            else "Order pickup location set"
+        )
+    )
+
+    checklist = [
+        {"label": "Store name & business type configured", "done": bool(store.name and store.business_type_id)},
+        {"label": "Store description added", "done": bool(store.description.strip())},
+        {"label": "Store logo uploaded", "done": bool(store.logo)},
+        {"label": "At least one category selected", "done": store.categories.exists()},
+        {"label": "Contact phone or WhatsApp provided", "done": bool(store.contact_phone or store.whatsapp)},
+        {"label": location_label, "done": bool(store.pickup_location.strip())},
+    ]
+
+    return render(
+        request,
+        "shopkeeper/store/verification.html",
+        {
+            "store": store,
+            "complaint_form": complaint_form,
+            "past_complaints": past_complaints,
+            "checklist": checklist,
+        },
+    )
 
 # --- PRODUCTS & INVENTORY ---
 @login_required
@@ -475,7 +662,7 @@ def order_list(request, status="all"):
     Lists store orders filtered by status ('all', 'pending', 'completed', 'cancelled')
     for client-side DataTables search, sort, and pagination.
     """
-    store, redirect_response = _get_vendor_store(request.user)
+    store, redirect_response = _get_vendor_store(request)
     if redirect_response:
         return redirect_response
 
@@ -560,7 +747,7 @@ def order_update_status(request, order_number):
     """
     Transitions an order to a valid next status using Order.change_status().
     """
-    store, redirect_response = _get_vendor_store(request.user)
+    store, redirect_response = _get_vendor_store(request)
     if redirect_response:
         return redirect_response
 
@@ -616,7 +803,7 @@ def booking_list(request, status="all"):
     Lists store service bookings filtered by status ('all', 'pending', 'confirmed',
     'completed', 'cancelled') for client-side DataTables search, sort, and pagination.
     """
-    store, redirect_response = _get_vendor_store(request.user)
+    store, redirect_response = _get_vendor_store(request)
     if redirect_response:
         return redirect_response
 
@@ -715,7 +902,7 @@ def booking_update_status(request, reference):
     Executes valid vendor transitions on a Booking using its domain methods
     (approve, reject, cancel_by_vendor, complete, mark_no_show).
     """
-    store, redirect_response = _get_vendor_store(request.user)
+    store, redirect_response = _get_vendor_store(request)
     if redirect_response:
         return redirect_response
 
@@ -781,7 +968,7 @@ def sales_list(request):
     Unified sales ledger combining completed Orders and completed Bookings,
     including a Chart.js comparison against the previous period and receipt downloads.
     """
-    store, redirect_response = _get_vendor_store(request.user)
+    store, redirect_response = _get_vendor_store(request)
     if redirect_response:
         return redirect_response
 
@@ -1057,7 +1244,7 @@ def sale_receipt(request, sale_type, pk):
     Supports `?download=1` to download a standalone HTML receipt file,
     or `?print=1` to immediately trigger the browser Print / Save as PDF dialog.
     """
-    store, redirect_response = _get_vendor_store(request.user)
+    store, redirect_response = _get_vendor_store(request)
     if redirect_response:
         return redirect_response
 
@@ -1125,7 +1312,7 @@ def customers_list(request):
     Aggregates unique customers & clients across store Orders and Bookings,
     computing total completed spend, order/booking counts, and last activity.
     """
-    store, redirect_response = _get_vendor_store(request.user)
+    store, redirect_response = _get_vendor_store(request)
     if redirect_response:
         return redirect_response
 
@@ -1334,7 +1521,7 @@ def transactions_list(request):
     Unified financial ledger (credits and debits) across paid/refunded orders,
     completed bookings, and platform payouts/fees, with CSV export and DataTables.
     """
-    store, redirect_response = _get_vendor_store(request.user)
+    store, redirect_response = _get_vendor_store(request)
     if redirect_response:
         return redirect_response
 
@@ -1420,9 +1607,9 @@ def transactions_list(request):
 
     # Optional: include Subscription / Commission payouts if the model exists in your project
     try:
-        from subscriptions.models import VendorPayout  # adjust app path if applicable
+        from operations.models import Payout  # adjust app path if applicable
 
-        for payout in VendorPayout.objects.filter(store=store):
+        for payout in Payout.objects.filter(store=store):
             payout_amt = getattr(payout, "amount", ZERO) or ZERO
             total_debits += payout_amt
             transactions.append({
@@ -1498,7 +1685,7 @@ def reviews_list(request):
     Store review analytics, 1-5 star breakdown, monthly rating trends,
     top/lowest-rated item breakdown, and DataTables management with vendor replies.
     """
-    store, redirect_response = _get_vendor_store(request.user)
+    store, redirect_response = _get_vendor_store(request)
     if redirect_response:
         return redirect_response
 
@@ -1670,7 +1857,7 @@ def reviews_list(request):
 @require_POST
 def review_reply(request, pk):
     """Adds, updates, or removes a vendor reply using Review.add_reply / remove_reply."""
-    store, redirect_response = _get_vendor_store(request.user)
+    store, redirect_response = _get_vendor_store(request)
     if redirect_response:
         return redirect_response
 

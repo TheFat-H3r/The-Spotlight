@@ -17,7 +17,7 @@ urlpatterns = [
     # My Store
     path("store/profile/", views.store_profile, name="store_profile"),
     path("store/settings/", views.store_settings, name="store_settings"),
-    path("store/verification/", views.store_verification, name="store_verification"),
+    path("store/verification/", views.business_verification, name="store_verification"),
 
     # Products
     path("products/", views.product_list, {"status": "all"}, name="product_list"),

@@ -1,29 +1,181 @@
 {% extends "shopkeeper/base.html" %}
-{% block title %}{{ page_title }}{% endblock %}
+
+{% block title %}Business Verification — {{ store.name }} | The Spotlight{% endblock %}
+{% block header %}Business Verification{% endblock %}
 
 {% block content %}
-<h4 class="mb-4">{{ page_title }}</h4>
-<div class="alert alert-info">
-  Verification Status: <strong>{{ store.verification_status|default:"Unverified" }}</strong>
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-3 my-3">
+  <div>
+    <h2 class="h4 mb-1">Business Verification &amp; Moderation Status</h2>
+    <p class="text-body-secondary mb-0">
+      Store activation and moderation status are reviewed and managed by platform administrators.
+    </p>
+  </div>
 </div>
-<div class="card">
-  <div class="card-body">
-    <form method="post" enctype="multipart/form-data">
-      {% csrf_token %}
-      <div class="mb-3">
-        <label class="form-label">Business Registration Number (BRN)</label>
-        <input type="text" name="brn" class="form-control" required>
+
+
+<div class="row g-4 my-2">
+  <!-- Left Column: Current Status + Readiness Checklist -->
+  <div class="col-lg-7">
+    <div class="card border-0 shadow-sm mb-4">
+      <div class="card-header bg-transparent p-3 d-flex justify-content-between align-items-center">
+        <h5 class="mb-0">Current Store Status</h5>
+        {% if store.status == "active" %}
+          <span class="badge text-bg-success fs-6">Active &amp; Verified</span>
+        {% elif store.status == "draft" %}
+          <span class="badge text-bg-warning fs-6">Draft (Pending Admin Activation)</span>
+        {% else %}
+          <span class="badge text-bg-danger fs-6">Suspended by Admin</span>
+        {% endif %}
       </div>
-      <div class="mb-3">
-        <label class="form-label">Registration Certificate (PDF/JPG)</label>
-        <input type="file" name="certificate" class="form-control" required>
+      <div class="card-body p-3">
+        {% if store.status == "active" %}
+          <div class="alert alert-success mb-3">
+            <i class="fa-solid fa-circle-check me-2"></i>
+            <strong>{{ store.name }}</strong> is approved and active.
+            {% if store.is_public %}
+              Your storefront is currently visible to customers on The Spotlight.
+            {% else %}
+              Note: Your store status is active, but your account status currently prevents public listing.
+            {% endif %}
+          </div>
+        {% elif store.status == "draft" %}
+          <div class="alert alert-warning mb-3">
+            <i class="fa-solid fa-hourglass-half me-2"></i>
+            <strong>{{ store.name }}</strong> is currently in <strong>Draft</strong> mode and is not visible to the public yet. Complete the readiness checklist below and submit an activation request if your store is ready.
+          </div>
+        {% else %}
+          <div class="alert alert-danger mb-3">
+            <i class="fa-solid fa-triangle-exclamation me-2"></i>
+            <strong>{{ store.name }}</strong> has been <strong>Suspended by Admin</strong>. Your listings are hidden from customers. Use the form on the right to submit an appeal or inquiry.
+          </div>
+        {% endif %}
+
+        <div class="row g-3 small">
+          <div class="col-sm-6">
+            <div class="p-3 rounded bg-body-tertiary h-100">
+              <div class="text-body-secondary mb-1">Business Type</div>
+              <div class="fw-semibold">{{ store.business_type }} ({{ store.get_store_type_display }})</div>
+            </div>
+          </div>
+          <div class="col-sm-6">
+            <div class="p-3 rounded bg-body-tertiary h-100">
+              <div class="text-body-secondary mb-1">Public Marketplace Visibility</div>
+              <div class="fw-semibold">
+                {% if store.is_public %}
+                  <span class="text-success">Publicly Visible</span>
+                {% else %}
+                  <span class="text-body-secondary">Not Public</span>
+                {% endif %}
+              </div>
+            </div>
+          </div>
+          <div class="col-sm-6">
+            <div class="p-3 rounded bg-body-tertiary h-100">
+              <div class="text-body-secondary mb-1">Featured Badge</div>
+              <div class="fw-semibold">
+                {% if store.is_featured %}
+                  <span class="text-warning"><i class="fa-solid fa-star me-1"></i>Featured Store</span>
+                {% else %}
+                  Standard Listing
+                {% endif %}
+              </div>
+            </div>
+          </div>
+          <div class="col-sm-6">
+            <div class="p-3 rounded bg-body-tertiary h-100">
+              <div class="text-body-secondary mb-1">Created On</div>
+              <div class="fw-semibold">{{ store.created_at|date:"d M Y" }}</div>
+            </div>
+          </div>
+        </div>
       </div>
-      <div class="mb-3">
-        <label class="form-label">Owner National ID / Passport</label>
-        <input type="file" name="owner_id" class="form-control" required>
+    </div>
+
+    <!-- Verification Readiness Checklist -->
+    <div class="card border-0 shadow-sm">
+      <div class="card-header bg-transparent p-3 d-flex justify-content-between align-items-center">
+        <h5 class="mb-0">Store Readiness Checklist</h5>
+        <a href="{% url 'shopkeeper:store_profile' %}" class="small text-decoration-none">Edit Profile</a>
       </div>
-      <button type="submit" class="btn btn-primary">Submit for Verification</button>
-    </form>
+      <div class="card-body p-3">
+        <ul class="list-group list-group-flush">
+          {% for item in checklist %}
+            <li class="list-group-item px-0 d-flex justify-content-between align-items-center">
+              <span>{{ item.label }}</span>
+              {% if item.done %}
+                <span class="badge text-bg-success"><i class="fa-solid fa-check me-1"></i>Done</span>
+              {% else %}
+                <span class="badge text-bg-secondary">Missing</span>
+              {% endif %}
+            </li>
+          {% endfor %}
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- Right Column: Lodge a Complaint / Verification Request -->
+  <div class="col-lg-5">
+    <div class="card border-0 shadow-sm mb-4">
+      <div class="card-header bg-transparent p-3">
+        <h5 class="mb-0">Submit Verification Inquiry or Complaint</h5>
+      </div>
+      <div class="card-body p-3">
+        <p class="small text-body-secondary">
+          Only administrators can change a store's verification or suspension status. Submit a message below to request activation review or appeal a moderation decision.
+        </p>
+
+        <form method="post" novalidate>
+          {% csrf_token %}
+          <div class="mb-3">
+            <label for="{{ complaint_form.subject.id_for_label }}" class="form-label fw-semibold">Reason / Topic</label>
+            {{ complaint_form.subject }}
+            {% if complaint_form.subject.errors %}
+              <div class="text-danger small mt-1">{{ complaint_form.subject.errors|join:", " }}</div>
+            {% endif %}
+          </div>
+
+          <div class="mb-3">
+            <label for="{{ complaint_form.message.id_for_label }}" class="form-label fw-semibold">Details</label>
+            {{ complaint_form.message }}
+            {% if complaint_form.message.errors %}
+              <div class="text-danger small mt-1">{{ complaint_form.message.errors|join:", " }}</div>
+            {% endif %}
+          </div>
+
+          <button type="submit" class="btn btn-primary w-100">
+            <i class="fa-solid fa-paper-plane me-1"></i> Send to Admin Team
+          </button>
+        </form>
+      </div>
+    </div>
+
+    {% if past_complaints %}
+      <div class="card border-0 shadow-sm">
+        <div class="card-header bg-transparent p-3">
+          <h6 class="mb-0">Recent Inquiries &amp; Complaints</h6>
+        </div>
+        <div class="card-body p-3">
+          {% for item in past_complaints %}
+            <div class="py-2 {% if not forloop.last %}border-bottom{% endif %}">
+              <div class="d-flex justify-content-between align-items-center gap-2">
+                <strong class="small">{{ item.subject|default:item.title }}</strong>
+                {% if item.status %}
+                  <span class="badge bg-secondary-subtle text-body-emphasis">{{ item.get_status_display|default:item.status }}</span>
+                {% endif %}
+              </div>
+              <div class="small text-body-secondary mt-1">
+                {{ item.description|default:item.message|truncatechars:100 }}
+              </div>
+              <div class="text-body-tertiary mt-1" style="font-size: 0.72rem;">
+                {{ item.created_at|date:"d M Y, H:i" }}
+              </div>
+            </div>
+          {% endfor %}
+        </div>
+      </div>
+    {% endif %}
   </div>
 </div>
 {% endblock %}
