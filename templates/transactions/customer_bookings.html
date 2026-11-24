@@ -5,6 +5,12 @@
 
 {% block content %}
 <main class="container py-5">
+    <div class="mb-3">
+        <a href="{% url 'core:home' %}" class="btn btn-outline-dark btn-sm">
+            <i class="bi bi-arrow-left me-1" aria-hidden="true"></i>
+            Back to Marketplace
+        </a>
+    </div>
     <div class="mb-4">
         <span class="section-label">BOOKING TRACKER</span>
         <h1 class="h3 fw-bold text-black">My Bookings</h1>
@@ -66,6 +72,28 @@
                                         </div>
                                     </div>
                                     <div class="col-md-6">
+                                        <div class="text-muted">Vendor contact</div>
+                                        <div class="d-flex flex-column">
+                                            {% with vendor_email=booking.service.store.contact_email|default:booking.service.store.owner.email %}
+                                                {% if vendor_email %}
+                                                    <a class="fw-semibold text-dark text-break"
+                                                       href="mailto:{{ vendor_email }}">
+                                                        <i class="bi bi-envelope me-1" aria-hidden="true"></i>{{ vendor_email }}
+                                                    </a>
+                                                {% endif %}
+                                            {% endwith %}
+                                            {% if booking.service.store.contact_phone %}
+                                                <a class="fw-semibold text-dark"
+                                                   href="tel:{{ booking.service.store.contact_phone }}">
+                                                    <i class="bi bi-telephone me-1" aria-hidden="true"></i>{{ booking.service.store.contact_phone }}
+                                                </a>
+                                            {% endif %}
+                                            {% if not booking.service.store.contact_email and not booking.service.store.owner.email and not booking.service.store.contact_phone %}
+                                                <span class="text-muted">No contact details listed</span>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
                                         <div class="text-muted">Appointment</div>
                                         <div class="fw-semibold text-dark">
                                             {{ booking.start_at|date:"D, d M Y" }},
@@ -89,6 +117,37 @@
                                 {{ booking.status_reason }}
                             </div>
                         {% endif %}
+
+                        <div class="border-top mt-3 pt-3 d-flex flex-wrap gap-2">
+                            {% if booking.edit_request_url %}
+                                <a href="{{ booking.edit_request_url }}" class="btn btn-outline-primary btn-sm">
+                                    <i class="bi bi-pencil me-1" aria-hidden="true"></i>Request edit
+                                </a>
+                            {% endif %}
+                            {% if booking.can_customer_cancel %}
+                                <form method="post"
+                                      action="{% url 'transactions:customer-cancel-booking' booking.pk %}"
+                                      onsubmit="return confirm('Cancel this booking?');">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn btn-outline-warning btn-sm">
+                                        <i class="bi bi-x-circle me-1" aria-hidden="true"></i>Cancel booking
+                                    </button>
+                                </form>
+                            {% endif %}
+                            {% if booking.status == "cancelled_by_customer" or booking.status == "cancelled_by_vendor" %}
+                                <form method="post"
+                                      action="{% url 'transactions:customer-delete-booking' booking.pk %}"
+                                      onsubmit="return confirm('Permanently delete this cancelled booking?');">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn btn-outline-danger btn-sm">
+                                        <i class="bi bi-trash me-1" aria-hidden="true"></i>Delete
+                                    </button>
+                                </form>
+                            {% endif %}
+                            <a href="{{ booking.report_url }}" class="btn btn-outline-secondary btn-sm">
+                                <i class="bi bi-flag me-1" aria-hidden="true"></i>Report issue
+                            </a>
+                        </div>
                     </div>
                 </article>
             </div>

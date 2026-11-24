@@ -22,30 +22,108 @@
 
 <body class="bg-white text-black d-flex flex-column min-vh-100">
 
+  
   <!-- ================= GLOBAL SITE HEADER ================= -->
-  <header class="site-header navbar navbar-expand-lg navbar-dark sticky-top shadow-sm py-2">
+  <header class="site-header navbar navbar-expand-lg navbar-dark sticky-top shadow-sm py-0" style="min-height: 80px;">
     <div class="container">
-      <a class="navbar-brand d-flex align-items-center" href="{% url 'core:home' %}">
+      <!-- Left: Brand Logo -->
+      <a class="navbar-brand d-flex align-items-center m-0 p-0" href="{% url 'core:home' %}">
         <img src="{% static 'img/Logo-Black.png' %}"
-             alt="The Spotlight"
-             style="height: 48px; width: auto; object-fit: contain;">
+            alt="The Spotlight"
+            class="site-logo"
+            style="height: 46px; max-height: 46px; width: auto; object-fit: contain;">
       </a>
 
-      <button class="navbar-toggler border-secondary" type="button" data-bs-toggle="collapse"
-              data-bs-target="#marketplaceNavbar" aria-controls="marketplaceNavbar"
-              aria-expanded="false" aria-label="Toggle navigation">
-        <span class="navbar-toggler-icon"></span>
-      </button>
+      <!-- Right: Cart, Profile & Mobile Toggler -->
+      <div class="d-flex align-items-center gap-2 order-lg-2 ms-auto ms-lg-3">
+        <!-- Shopping Cart -->
+        <a class="btn btn-header-icon position-relative text-white"
+          href="{% url 'transactions:cart_detail' %}"
+          aria-label="Shopping cart ({{ cart_item_count }} items)"
+          title="Shopping cart">
+          <i class="bi bi-cart3" aria-hidden="true"></i>
+          {% if cart_item_count > 0 %}
+            <span id="cart-badge"
+                  class="position-absolute top-0 start-100 translate-middle badge rounded-pill cart-badge">
+              {% if cart_item_count > 99 %}99+{% else %}{{ cart_item_count }}{% endif %}
+              <span class="visually-hidden">items in cart</span>
+            </span>
+          {% endif %}
+        </a>
 
-      <nav class="collapse navbar-collapse" id="marketplaceNavbar">
-        <div class="navbar-nav me-auto ms-lg-3">
+        <!-- Profile Dropdown -->
+        <div class="dropdown">
+          <button class="btn btn-header-icon text-white dropdown-toggle d-flex align-items-center gap-2"
+                  type="button"
+                  id="profileDropdown"
+                  data-bs-toggle="dropdown"
+                  aria-expanded="false"
+                  aria-label="Profile menu">
+            <i class="bi bi-person-circle" aria-hidden="true"></i>
+            {% if request.user.is_authenticated %}
+              <span class="small d-none d-md-inline text-white text-truncate" style="max-width: 140px;">
+                {{ request.user.get_short_name|default:request.user.email }}
+              </span>
+            {% endif %}
+          </button>
+          <ul class="dropdown-menu dropdown-menu-end dropdown-menu-spotlight shadow-lg mt-2"
+              aria-labelledby="profileDropdown">
+            {% if request.user.is_authenticated %}
+              <li>
+                <span class="dropdown-item-text small text-gold fw-semibold text-truncate d-block" style="max-width: 220px;">
+                  {{ request.user.email }}
+                </span>
+              </li>
+              <li><hr class="dropdown-divider"></li>
+              <li><a class="dropdown-item" href="{% url 'accounts:profile' %}">
+                <i class="bi bi-person me-2 text-gold" aria-hidden="true"></i>My account
+              </a></li>
+              <li><a class="dropdown-item" href="{% url 'transactions:customer-orders' %}">
+                <i class="bi bi-receipt me-2 text-gold" aria-hidden="true"></i>My orders
+              </a></li>
+              <li><a class="dropdown-item" href="{% url 'transactions:customer-bookings' %}">
+                <i class="bi bi-calendar-check me-2 text-gold" aria-hidden="true"></i>My bookings
+              </a></li>
+              <li><a class="dropdown-item" href="#">
+                <i class="bi bi-gear me-2 text-gold" aria-hidden="true"></i>Settings
+              </a></li>
+              <li><hr class="dropdown-divider"></li>
+              <li><a class="dropdown-item" href="{% url 'accounts:logout' %}">
+                <i class="bi bi-box-arrow-right me-2 text-gold" aria-hidden="true"></i>Sign out
+              </a></li>
+            {% else %}
+              <li><a class="dropdown-item" href="{% url 'accounts:login' %}">
+                <i class="bi bi-box-arrow-in-right me-2 text-gold" aria-hidden="true"></i>Sign in
+              </a></li>
+              <li><a class="dropdown-item" href="{% url 'accounts:register' %}">
+                <i class="bi bi-person-plus me-2 text-gold" aria-hidden="true"></i>Create an account
+              </a></li>
+            {% endif %}
+          </ul>
+        </div>
+
+        <!-- Mobile Toggler -->
+        <button class="navbar-toggler border-secondary"
+                type="button"
+                data-bs-toggle="collapse"
+                data-bs-target="#marketplaceNavbar"
+                aria-controls="marketplaceNavbar"
+                aria-expanded="false"
+                aria-label="Toggle navigation">
+          <span class="navbar-toggler-icon"></span>
+        </button>
+      </div>
+
+      <!-- Center: Navigation Links -->
+      <nav class="collapse navbar-collapse order-lg-1" id="marketplaceNavbar">
+        <div class="navbar-nav me-auto ms-lg-4 gap-lg-2">
           <a class="nav-link" href="{% url 'core:home' %}">Marketplace</a>
           <a class="nav-link" href="{% url 'store:store-products-list' %}">Products</a>
           <a class="nav-link" href="{% url 'store:store-services-list' %}">Services</a>
-          <!-- stores dropdown -->
+
           <div class="nav-item dropdown">
             <a class="nav-link dropdown-toggle" href="#" id="storesDropdown" role="button"
-               data-bs-toggle="dropdown" aria-expanded="false">
+              data-bs-toggle="dropdown" aria-expanded="false">
               Stores
             </a>
             <ul class="dropdown-menu dropdown-menu-dark" aria-labelledby="storesDropdown">
@@ -54,13 +132,13 @@
               <li><a class="dropdown-item" href="{% url 'store:store-list' %}?sort=date">New Arrivals</a></li>
             </ul>
           </div>
-          <!-- categories dropdown -->
+
           <div class="nav-item dropdown">
             <a class="nav-link dropdown-toggle" href="#" id="categoriesDropdown" role="button"
-               data-bs-toggle="dropdown" aria-expanded="false">
+              data-bs-toggle="dropdown" aria-expanded="false">
               Categories
             </a>
-            <ul class="dropdown-menu dropdown-menu-dark" aria-labelledby="categoriesDropdown">
+            <ul class="dropdown-menu dropdown-menu-dark category-dropdown-menu" aria-labelledby="categoriesDropdown">
               <li><a class="dropdown-item" href="#">All Categories</a></li>
               {% for category in business_types %}
                 <li><a class="dropdown-item" href="">{{ category.name }}</a></li>
