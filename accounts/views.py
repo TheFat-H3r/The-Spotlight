@@ -226,24 +226,26 @@ class LoginView(View):
             return redirect(next_url)
         return redirect_by_role(user)
 
+
 class ProfileView(LoginRequiredMixin, View):
     template_name = 'accounts/profile.html'
     login_url = 'accounts:login'
 
     def _get_role_data(self, user):
-        """Fetches or initializes role-specific profile records safely."""
+        
         customer_profile = None
         vendor_profile = None
 
         if user.role == User.Role.CUSTOMER:
-            customer_profile, _ = CustomerProfile.objects.get_or_create(user=user)
-        elif user.role == User.Role.VENDOR:
+            customer_profile = user
+
+        if user.role == User.Role.VENDOR:
             default_name = user.full_name or user.email.split('@')[0]
-            vendor_profile, _ = VendorProfile.objects.get_or_create(
-                user=user,
+            vendor_profile, _ = Store.objects.get_or_create(
+                owner=user,
                 defaults={
-                    'business_name': default_name,
-                    'slug': VendorProfile.generate_unique_slug(default_name),
+                    'name': default_name,
+                    'slug': Store.generate_unique_slug(default_name), # type: ignore
                     'contact_email': user.email,
                     'contact_phone': user.phone or '',
                 }
@@ -260,8 +262,8 @@ class ProfileView(LoginRequiredMixin, View):
             'user_obj': user,
             'customer_profile': customer_profile,
             'vendor_profile': vendor_profile,
-            'residence_choices': CustomerProfile.Residence.choices,
-            'course_choices': CustomerProfile.Course.choices,
+            'residence_choices': User.Residence.choices,
+            'course_choices': User.Course.choices,
             'edit_mode': edit_mode,
         }
         return render(request, self.template_name, context)
@@ -273,6 +275,7 @@ class ProfileView(LoginRequiredMixin, View):
         # 1. Common User Fields
         full_name = request.POST.get('full_name', '').strip()
         phone = request.POST.get('phone', '').strip()
+        avatar = request.FILES.get('avatar')
 
         # 2. Customer Fields
         course = request.POST.get('course', '').strip()
@@ -294,11 +297,13 @@ class ProfileView(LoginRequiredMixin, View):
 
         logo = request.FILES.get('logo')
         banner = request.FILES.get('banner')
+
+
         error_context = {
             'user_obj': user,
             'customer_profile': customer_profile,
             'vendor_profile': vendor_profile,
-            'residence_choices': customer_profile.Residence.choices,
+            'residence_choices': User.Residence.choices,
             'edit_mode': True,
             'form_data': request.POST,
         }
@@ -318,7 +323,7 @@ class ProfileView(LoginRequiredMixin, View):
                 messages.error(request, "Cohort must strictly match the format F'25.")
                 return render(request, self.template_name, error_context)
 
-            if residence and residence not in CustomerProfile.Residence.values:
+            if residence and residence not in User.Residence.values:
                 messages.error(request, "Please select a valid campus residence.")
                 return render(request, self.template_name, error_context)
 
@@ -331,6 +336,7 @@ class ProfileView(LoginRequiredMixin, View):
             customer_profile.cohort = cohort
             customer_profile.residence = residence
             customer_profile.room_number = room_number
+            
             customer_profile.save()
 
         elif user.role == User.Role.VENDOR:
@@ -347,10 +353,10 @@ class ProfileView(LoginRequiredMixin, View):
                 social_links['website'] = website
 
             assert vendor_profile is not None
-            if vendor_profile.business_name != business_name:
-                vendor_profile.slug = VendorProfile.generate_unique_slug(business_name)
+            if Store.name != business_name:
+                vendor_profile.slug = Store.generate_unique_slug(business_name) # type: ignore
 
-            vendor_profile.business_name = business_name
+            vendor_profile.name = business_name
             vendor_profile.tagline = tagline
             vendor_profile.description = description
             vendor_profile.contact_email = contact_email or user.email
@@ -368,11 +374,12 @@ class ProfileView(LoginRequiredMixin, View):
         # 6. Save Base User Updates
         user.full_name = full_name
         user.phone = phone
-        user.save(update_fields=['full_name', 'phone'])
+        if avatar:
+            user.avatar = avatar
+        user.save(update_fields=['full_name', 'phone', 'avatar'])
 
         messages.success(request, "Your profile has been updated successfully.")
         return redirect('accounts:profile')
-
 
 class PasswordResetRequestView(View):
     
@@ -425,8 +432,8 @@ class PasswordResetRequestView(View):
             return render(request, self.template_name, context)
 
         messages.success(request, "A password reset link has been sent to your email address.")
-        return redirect('accounts:login')
-
+            
+    
 class PasswordResetConfirmView(View):
     """Handles setting the new password when user clicks the reset link."""
     template_name = 'accounts/password_reset_confirm.html'
