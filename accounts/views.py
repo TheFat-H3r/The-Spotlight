@@ -75,7 +75,7 @@ class RegisterView(View):
         # Send Email Verification Link via Brevo API
         if user.auth_provider == User.AuthProvider.EMAIL:
             token = user.generate_email_verification_token()
-            verification_path = reverse('accounts:resend_verification')
+            verification_path = reverse('accounts:resend_verification', kwargs={'token': token})
             verification_url = request.build_absolute_uri(verification_path)
 
             send_verification_email(
@@ -231,20 +231,19 @@ class ProfileView(LoginRequiredMixin, View):
     login_url = 'accounts:login'
 
     def _get_role_data(self, user):
-        
+        """Fetches or initializes role-specific profile records safely."""
         customer_profile = None
         vendor_profile = None
 
         if user.role == User.Role.CUSTOMER:
-            customer_profile = user
-
-        if user.role == User.Role.VENDOR:
+            customer_profile, _ = CustomerProfile.objects.get_or_create(user=user)
+        elif user.role == User.Role.VENDOR:
             default_name = user.full_name or user.email.split('@')[0]
-            vendor_profile, _ = Store.objects.get_or_create(
-                owner=user,
+            vendor_profile, _ = VendorProfile.objects.get_or_create(
+                user=user,
                 defaults={
-                    'name': default_name,
-                    'slug': Store.generate_unique_slug(default_name), # type: ignore
+                    'business_name': default_name,
+                    'slug': VendorProfile.generate_unique_slug(default_name),
                     'contact_email': user.email,
                     'contact_phone': user.phone or '',
                 }
@@ -261,8 +260,8 @@ class ProfileView(LoginRequiredMixin, View):
             'user_obj': user,
             'customer_profile': customer_profile,
             'vendor_profile': vendor_profile,
-            'residence_choices': User.Residence.choices,
-            'course_choices': User.Course.choices,
+            'residence_choices': CustomerProfile.Residence.choices,
+            'course_choices': CustomerProfile.Course.choices,
             'edit_mode': edit_mode,
         }
         return render(request, self.template_name, context)
@@ -274,7 +273,6 @@ class ProfileView(LoginRequiredMixin, View):
         # 1. Common User Fields
         full_name = request.POST.get('full_name', '').strip()
         phone = request.POST.get('phone', '').strip()
-        avatar = request.FILES.get('avatar')
 
         # 2. Customer Fields
         course = request.POST.get('course', '').strip()
@@ -296,13 +294,11 @@ class ProfileView(LoginRequiredMixin, View):
 
         logo = request.FILES.get('logo')
         banner = request.FILES.get('banner')
-
-
         error_context = {
             'user_obj': user,
             'customer_profile': customer_profile,
             'vendor_profile': vendor_profile,
-            'residence_choices': User.Residence.choices,
+            'residence_choices': customer_profile.Residence.choices,
             'edit_mode': True,
             'form_data': request.POST,
         }
@@ -322,7 +318,7 @@ class ProfileView(LoginRequiredMixin, View):
                 messages.error(request, "Cohort must strictly match the format F'25.")
                 return render(request, self.template_name, error_context)
 
-            if residence and residence not in User.Residence.values:
+            if residence and residence not in CustomerProfile.Residence.values:
                 messages.error(request, "Please select a valid campus residence.")
                 return render(request, self.template_name, error_context)
 
@@ -335,7 +331,6 @@ class ProfileView(LoginRequiredMixin, View):
             customer_profile.cohort = cohort
             customer_profile.residence = residence
             customer_profile.room_number = room_number
-            
             customer_profile.save()
 
         elif user.role == User.Role.VENDOR:
@@ -352,10 +347,10 @@ class ProfileView(LoginRequiredMixin, View):
                 social_links['website'] = website
 
             assert vendor_profile is not None
-            if Store.name != business_name:
-                vendor_profile.slug = Store.generate_unique_slug(business_name) # type: ignore
+            if vendor_profile.business_name != business_name:
+                vendor_profile.slug = VendorProfile.generate_unique_slug(business_name)
 
-            vendor_profile.name = business_name
+            vendor_profile.business_name = business_name
             vendor_profile.tagline = tagline
             vendor_profile.description = description
             vendor_profile.contact_email = contact_email or user.email
@@ -373,9 +368,7 @@ class ProfileView(LoginRequiredMixin, View):
         # 6. Save Base User Updates
         user.full_name = full_name
         user.phone = phone
-        if avatar:
-            user.avatar = avatar
-        user.save(update_fields=['full_name', 'phone', 'avatar'])
+        user.save(update_fields=['full_name', 'phone'])
 
         messages.success(request, "Your profile has been updated successfully.")
         return redirect('accounts:profile')
@@ -485,3 +478,10 @@ class PasswordResetConfirmView(View):
 def logout_view(request):
     logout(request)
     return redirect("accounts:login")
+
+def user_settings(request):
+
+    context = {
+        'user':request.user,
+    }
+    return render(request, 'accounts/user-settings.html', context)
