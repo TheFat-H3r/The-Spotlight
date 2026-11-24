@@ -1,0 +1,269 @@
+{% extends "shopkeeper/base.html" %}
+
+{% block title %}Availability Slots — {{ store.name }} | The Spotlight{% endblock %}
+{% block header %}Availability Slots{% endblock %}
+
+{% block content %}
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-3 my-3">
+  <div>
+    <h2 class="h4 mb-1">Availability &amp; Appointment Slots</h2>
+    <p class="text-body-secondary mb-0">
+      Publish single appointment windows or generate recurring time slots for <strong>{{ store.name }}</strong>.
+    </p>
+  </div>
+  <a href="{% url 'shopkeeper:service_list' %}" class="btn btn-outline-secondary btn-sm">
+    <i class="fa-solid fa-arrow-left me-1"></i> Back to Services
+  </a>
+</div>
+
+
+{% if not services %}
+  <div class="alert alert-warning my-3">
+    <i class="fa-solid fa-circle-info me-2"></i>
+    You need at least one service before creating availability slots.
+    <a href="{% url 'shopkeeper:service_create' %}" class="alert-link ms-1">Create a Service First</a>
+  </div>
+{% else %}
+  <div class="row g-4 my-2">
+    <!-- Left Column: Add Single Slot & Bulk Generator -->
+    <div class="col-lg-5">
+      <!-- Single Slot Form -->
+      <div class="card border-0 shadow-sm mb-4">
+        <div class="card-header bg-transparent p-3">
+          <h5 class="mb-0">Add Single Time Slot</h5>
+        </div>
+        <div class="card-body p-3">
+          <form method="post" novalidate>
+            {% csrf_token %}
+            <input type="hidden" name="action" value="single">
+
+            {% if single_form.non_field_errors %}
+              <div class="alert alert-danger small">{{ single_form.non_field_errors }}</div>
+            {% endif %}
+
+            <div class="mb-3">
+              <label for="{{ single_form.service.id_for_label }}" class="form-label small fw-semibold">Service <span class="text-danger">*</span></label>
+              {{ single_form.service }}
+              {% if single_form.service.errors %}<div class="text-danger small mt-1">{{ single_form.service.errors|join:", " }}</div>{% endif %}
+            </div>
+
+            <div class="row g-2 mb-3">
+              <div class="col-6">
+                <label for="{{ single_form.start_at.id_for_label }}" class="form-label small fw-semibold">Start Time <span class="text-danger">*</span></label>
+                {{ single_form.start_at }}
+                {% if single_form.start_at.errors %}<div class="text-danger small mt-1">{{ single_form.start_at.errors|join:", " }}</div>{% endif %}
+              </div>
+              <div class="col-6">
+                <label for="{{ single_form.end_at.id_for_label }}" class="form-label small fw-semibold">End Time <span class="text-danger">*</span></label>
+                {{ single_form.end_at }}
+                {% if single_form.end_at.errors %}<div class="text-danger small mt-1">{{ single_form.end_at.errors|join:", " }}</div>{% endif %}
+              </div>
+            </div>
+
+            <div class="row g-2 align-items-center mb-3">
+              <div class="col-6">
+                <label for="{{ single_form.capacity.id_for_label }}" class="form-label small fw-semibold">Seats / Capacity</label>
+                {{ single_form.capacity }}
+                {% if single_form.capacity.errors %}<div class="text-danger small mt-1">{{ single_form.capacity.errors|join:", " }}</div>{% endif %}
+              </div>
+              <div class="col-6 pt-4">
+                <div class="form-check form-switch">
+                  {{ single_form.is_active }}
+                  <label class="form-check-label small fw-semibold" for="{{ single_form.is_active.id_for_label }}">Open immediately</label>
+                </div>
+              </div>
+            </div>
+
+            <button type="submit" class="btn btn-primary w-100">
+              <i class="fa-solid fa-plus me-1"></i> Add Slot
+            </button>
+          </form>
+        </div>
+      </div>
+
+      <!-- Bulk Schedule Generator -->
+      <div class="card border-0 shadow-sm">
+        <div class="card-header bg-transparent p-3">
+          <h5 class="mb-0">Bulk Generate Schedule</h5>
+          <div class="small text-body-secondary">Automatically creates consecutive slots and skips overlaps</div>
+        </div>
+        <div class="card-body p-3">
+          <form method="post" novalidate>
+            {% csrf_token %}
+            <input type="hidden" name="action" value="bulk">
+
+            <div class="mb-3">
+              <label for="{{ bulk_form.service.id_for_label }}" class="form-label small fw-semibold">Service <span class="text-danger">*</span></label>
+              {{ bulk_form.service }}
+            </div>
+
+            <div class="row g-2 mb-3">
+              <div class="col-6">
+                <label for="{{ bulk_form.start_date.id_for_label }}" class="form-label small fw-semibold">From Date</label>
+                {{ bulk_form.start_date }}
+                {% if bulk_form.start_date.errors %}<div class="text-danger small mt-1">{{ bulk_form.start_date.errors|join:", " }}</div>{% endif %}
+              </div>
+              <div class="col-6">
+                <label for="{{ bulk_form.end_date.id_for_label }}" class="form-label small fw-semibold">To Date</label>
+                {{ bulk_form.end_date }}
+                {% if bulk_form.end_date.errors %}<div class="text-danger small mt-1">{{ bulk_form.end_date.errors|join:", " }}</div>{% endif %}
+              </div>
+            </div>
+
+            <div class="row g-2 mb-3">
+              <div class="col-6">
+                <label for="{{ bulk_form.day_start_time.id_for_label }}" class="form-label small fw-semibold">Daily Start</label>
+                {{ bulk_form.day_start_time }}
+              </div>
+              <div class="col-6">
+                <label for="{{ bulk_form.day_end_time.id_for_label }}" class="form-label small fw-semibold">Daily End</label>
+                {{ bulk_form.day_end_time }}
+                {% if bulk_form.day_end_time.errors %}<div class="text-danger small mt-1">{{ bulk_form.day_end_time.errors|join:", " }}</div>{% endif %}
+              </div>
+            </div>
+
+            <div class="row g-2 mb-3">
+              <div class="col-4">
+                <label for="{{ bulk_form.slot_duration_minutes.id_for_label }}" class="form-label small fw-semibold">Duration (m)</label>
+                {{ bulk_form.slot_duration_minutes }}
+              </div>
+              <div class="col-4">
+                <label for="{{ bulk_form.break_minutes.id_for_label }}" class="form-label small fw-semibold">Break (m)</label>
+                {{ bulk_form.break_minutes }}
+              </div>
+              <div class="col-4">
+                <label for="{{ bulk_form.capacity.id_for_label }}" class="form-label small fw-semibold">Capacity</label>
+                {{ bulk_form.capacity }}
+              </div>
+            </div>
+
+            <button type="submit" class="btn btn-outline-primary w-100">
+              <i class="fa-solid fa-wand-magic-sparkles me-1"></i> Generate Slots
+            </button>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <!-- Right Column: Slots Schedule Table -->
+    <div class="col-lg-7">
+      <div class="card border-0 shadow-sm mb-3">
+        <div class="card-body p-3">
+          <form method="get" class="row g-2 align-items-end">
+            <div class="col-md-5">
+              <label class="form-label small fw-semibold mb-1">Filter by Service</label>
+              <select name="service" class="form-select form-select-sm">
+                <option value="">All Services</option>
+                {% for svc in services %}
+                  <option value="{{ svc.id }}" {% if filters.service == svc.id|stringformat:"s" %}selected{% endif %}>
+                    {{ svc.name }}
+                  </option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="col-md-4">
+              <label class="form-label small fw-semibold mb-1">Timeframe</label>
+              <select name="timeframe" class="form-select form-select-sm">
+                <option value="upcoming" {% if filters.timeframe == "upcoming" %}selected{% endif %}>Upcoming Slots</option>
+                <option value="past" {% if filters.timeframe == "past" %}selected{% endif %}>Past Slots</option>
+                <option value="all" {% if filters.timeframe == "all" %}selected{% endif %}>All Slots</option>
+              </select>
+            </div>
+            <div class="col-md-3 d-flex gap-2">
+              <button type="submit" class="btn btn-sm btn-primary flex-grow-1">Apply</button>
+              {% if filters.service or filters.timeframe != "upcoming" %}
+                <a href="{% url 'shopkeeper:service_slots' %}" class="btn btn-sm btn-outline-secondary">Reset</a>
+              {% endif %}
+            </div>
+          </form>
+        </div>
+      </div>
+
+      <div class="card border-0 shadow-sm">
+        <div class="card-body p-3">
+          {% if slots %}
+            <div class="table-responsive">
+              <table id="slotsTable" class="table table-hover align-middle mb-0">
+                <thead>
+                  <tr>
+                    <th>Service</th>
+                    <th>Date &amp; Time</th>
+                    <th>Booked / Cap</th>
+                    <th>Status</th>
+                    <th class="text-end">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for slot in slots %}
+                    <tr>
+                      <td class="fw-semibold">{{ slot.service.name }}</td>
+                      <td class="small">
+                        <div class="fw-medium">{{ slot.start_at|date:"D, d M Y" }}</div>
+                        <div class="text-body-secondary">{{ slot.start_at|date:"H:i" }} – {{ slot.end_at|date:"H:i" }}</div>
+                      </td>
+                      <td class="small">
+                        <span class="fw-semibold">{{ slot.taken_seats }}</span> / {{ slot.total_capacity }}
+                      </td>
+                      <td>
+                        {% if not slot.is_active %}
+                          <span class="badge text-bg-secondary">Blocked</span>
+                        {% elif slot.is_bookable %}
+                          <span class="badge text-bg-success">Bookable</span>
+                        {% elif slot.spots_left == 0 %}
+                          <span class="badge text-bg-warning">Full</span>
+                        {% else %}
+                          <span class="badge text-bg-secondary">Closed</span>
+                        {% endif %}
+                      </td>
+                      <td class="text-end">
+                        <div class="d-inline-flex gap-1">
+                          <form method="post" action="{% url 'shopkeeper:service_slot_toggle' slot.id %}" class="d-inline">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-sm btn-outline-secondary" title="{% if slot.is_active %}Block slot{% else %}Unblock slot{% endif %}">
+                              <i class="fa-solid {% if slot.is_active %}fa-ban{% else %}fa-check{% endif %}"></i>
+                            </button>
+                          </form>
+                          {% if slot.taken_seats == 0 %}
+                            <form method="post" action="{% url 'shopkeeper:service_slot_delete' slot.id %}" class="d-inline" onsubmit="return confirm('Delete this time slot?');">
+                              {% csrf_token %}
+                              <button type="submit" class="btn btn-sm btn-outline-danger" title="Delete slot">
+                                <i class="fa-solid fa-trash"></i>
+                              </button>
+                            </form>
+                          {% endif %}
+                        </div>
+                      </td>
+                    </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+          {% else %}
+            <div class="text-center py-5">
+              <div class="fs-2 text-body-secondary mb-2"><i class="fa-solid fa-calendar-xmark"></i></div>
+              <h5 class="mb-1">No slots found</h5>
+              <p class="text-body-secondary small mb-0">
+                Use the forms on the left to add individual appointment windows or generate a recurring schedule.
+              </p>
+            </div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+{% endif %}
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    if (window.jQuery && $.fn.DataTable && document.getElementById("slotsTable")) {
+      $("#slotsTable").DataTable({
+        pageLength: 10,
+        order: [],
+        columnDefs: [{ orderable: false, targets: [4] }]
+      });
+    }
+  });
+</script>
+{% endblock %}

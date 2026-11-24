@@ -17,9 +17,9 @@ from django.utils import timezone
 from django.views.decorators.http import require_POST
 
 from shopkeeper.context_processors import _resolve_business_mode
-from shopkeeper.forms import DAYS_OF_WEEK, StoreProfileForm, StoreSettingsForm, VerificationComplaintForm, Product, ProductForm
+from shopkeeper.forms import DAYS_OF_WEEK, StoreProfileForm, StoreSettingsForm, VerificationComplaintForm, Product, ProductForm, AvailabilitySlotForm, BulkSlotGeneratorForm, ServiceForm
 from stores.models import Category, Product, Review, Service, Store
-from transactions.models import Booking, Order, VendorNotification
+from transactions.models import AvailabilitySlot, Booking, Order, VendorNotification
 
 ZERO = Decimal("0.00")
 def _get_vendor_store(
@@ -60,6 +60,24 @@ def _require_product_store(request: HttpRequest) -> tuple[Store | None, HttpResp
         messages.warning(
             request,
             "Product catalog management is only available for product-based stores.",
+        )
+        return None, redirect("shopkeeper:home")
+
+    return store, None
+
+def _require_service_store(request: HttpRequest) -> tuple[Store | None, HttpResponse | None]:
+    """
+    Ensures the vendor has a registered store that supports services/bookings
+    (store_type in {'services', 'both'}). Redirects product-only stores away.
+    """
+    store, redirect_response = _get_vendor_store(request)
+    if redirect_response or store is None:
+        return None, redirect_response or redirect("shopkeeper:store_profile")
+
+    if not store.accepts_bookings:
+        messages.warning(
+            request,
+            "Service and appointment slot management is only available for service-based stores.",
         )
         return None, redirect("shopkeeper:home")
 
@@ -1107,28 +1125,483 @@ def order_update_status(request, order_number):
 
 # --- SERVICES ---
 @login_required
-def service_list(request, status="all"):
-    titles = {"all": "All Services", "pending": "Service Approvals"}
-    return render(request, "shopkeeper/services/list.html", {
-        "page_title": titles.get(status, "Services"),
-        "status_filter": status,
-    })
+def service_list(request):
+    """Service catalog management for service-enabled stores."""
+    store, redirect_response = _require_service_store(request)
+    if redirect_response or store is None:
+        return redirect_response or redirect("shopkeeper:store_profile")
+
+    now = timezone.now()
+    qs = (
+        Service.objects.filter(store=store)
+        .select_related("category")
+        .annotate(
+            upcoming_slots_count=Count(
+                "slots",
+                filter=Q(slots__is_active=True, slots__start_at__gt=now),
+                distinct=True,
+            ),
+            total_slots_count=Count("slots", distinct=True),
+        )
+        .order_by("-is_featured", "-created_at")
+    )
+
+    query = (request.GET.get("q") or "").strip()
+    category_id = (request.GET.get("category") or "").strip()
+    availability = (request.GET.get("availability") or "").strip()
+
+    if query:
+        qs = qs.filter(Q(name__icontains=query) | Q(description__icontains=query))
+    if category_id.isdigit():
+        qs = qs.filter(category_id=int(category_id))
+    if availability == "available":
+        qs = qs.filter(is_available=True)
+    elif availability == "hidden":
+        qs = qs.filter(is_available=False)
+    elif availability == "no_slots":
+        qs = qs.filter(upcoming_slots_count=0)
+
+    all_services = Service.objects.filter(store=store)
+    upcoming_slots_total = AvailabilitySlot.objects.filter(
+        service__store=store,
+        is_active=True,
+        start_at__gt=now,
+    ).count()
+
+    stats = {
+        "total_count": all_services.count(),
+        "active_count": all_services.filter(is_available=True).count(),
+        "featured_count": all_services.filter(is_featured=True).count(),
+        "upcoming_slots": upcoming_slots_total,
+    }
+
+    store_categories = (
+        store.categories.all()
+        if store.categories.exists()
+        else Category.objects.filter(services__store=store).distinct()
+    )
+
+    return render(
+        request,
+        "shopkeeper/services/list.html",
+        {
+            "store": store,
+            "services": qs,
+            "stats": stats,
+            "store_categories": store_categories,
+            "filters": {
+                "q": query,
+                "category": category_id,
+                "availability": availability,
+            },
+        },
+    )
 
 
 @login_required
 def service_create(request):
+    """Add a new bookable service to the vendor's store."""
+    store, redirect_response = _require_service_store(request)
+    if redirect_response or store is None:
+        return redirect_response or redirect("shopkeeper:store_profile")
+
     if request.method == "POST":
-        messages.success(request, "Service created and submitted for approval.")
-        return redirect("shopkeeper:service_list")
-    return render(request, "shopkeeper/services/form.html", {"page_title": "Add New Service"})
+        form = ServiceForm(request.POST, request.FILES, store=store)
+        if form.is_valid():
+            service = form.save()
+            messages.success(
+                request,
+                f"Service '{service.name}' created. Add availability slots so customers can book it.",
+            )
+            if request.POST.get("save_and_add_slots"):
+                return redirect(f"{redirect('shopkeeper:create_slots').url}?service={service.id}")
+            return redirect("shopkeeper:service_list")
+    else:
+        form = ServiceForm(store=store, initial={"is_available": True})
+
+    return render(
+        request,
+        "shopkeeper/services/form.html",
+        {
+            "store": store,
+            "form": form,
+            "is_editing": False,
+        },
+    )
+
+
+@login_required
+def service_edit(request, service_id: int):
+    """Edit an existing service belonging to the vendor's store."""
+    store, redirect_response = _require_service_store(request)
+    if redirect_response or store is None:
+        return redirect_response or redirect("shopkeeper:store_profile")
+
+    service = get_object_or_404(Service, pk=service_id, store=store)
+
+    if request.method == "POST":
+        form = ServiceForm(request.POST, request.FILES, instance=service, store=store)
+        if form.is_valid():
+            updated = form.save()
+            messages.success(request, f"Updated service '{updated.name}'.")
+            return redirect("shopkeeper:service_list")
+    else:
+        form = ServiceForm(instance=service, store=store)
+
+    return render(
+        request,
+        "shopkeeper/services/form.html",
+        {
+            "store": store,
+            "service": service,
+            "form": form,
+            "is_editing": True,
+        },
+    )
+
+
+@login_required
+@require_POST
+def service_toggle_availability(request, service_id: int):
+    """Pause or re-enable a service without deleting its slots."""
+    store, redirect_response = _require_service_store(request)
+    if redirect_response or store is None:
+        return redirect_response or redirect("shopkeeper:store_profile")
+
+    service = get_object_or_404(Service, pk=service_id, store=store)
+    service.is_available = not service.is_available
+    service.save(update_fields=["is_available", "updated_at"])
+
+    state = "available for booking" if service.is_available else "paused"
+    messages.info(request, f"'{service.name}' is now {state}.")
+    return redirect("shopkeeper:service_list")
+
+
+@login_required
+@require_POST
+def service_delete(request, service_id: int):
+    """Delete a service from the vendor's store."""
+    store, redirect_response = _require_service_store(request)
+    if redirect_response or store is None:
+        return redirect_response or redirect("shopkeeper:store_profile")
+
+    service = get_object_or_404(Service, pk=service_id, store=store)
+    name = service.name
+    service.delete()
+    messages.success(request, f"Deleted service '{name}'.")
+    return redirect("shopkeeper:service_list")
 
 
 @login_required
 def service_categories(request):
-    return render(request, "shopkeeper/categories.html", {
-        "page_title": "Service Categories",
-        "category_type": "Service",
-    })
+    """
+    Manage which marketplace categories this service store operates under
+    and view service counts per category.
+    """
+    store, redirect_response = _require_service_store(request)
+    if redirect_response or store is None:
+        return redirect_response or redirect("shopkeeper:store_profile")
+
+    if request.method == "POST":
+        selected_ids = request.POST.getlist("categories")
+        valid_categories = Category.objects.filter(pk__in=selected_ids)
+        store.categories.set(valid_categories)
+        messages.success(request, "Store service categories updated.")
+        return redirect("shopkeeper:service_categories")
+
+    all_categories = Category.objects.all().order_by("name")
+    selected_ids = set(store.categories.values_list("id", flat=True))
+    service_counts = dict(
+        Service.objects.filter(store=store, category__isnull=False)
+        .values_list("category_id")
+        .annotate(cnt=Count("id"))
+    )
+
+    category_rows = [
+        {
+            "category": cat,
+            "selected": cat.id in selected_ids,  # type: ignore
+            "service_count": service_counts.get(cat.id, 0),  # type: ignore
+        }
+        for cat in all_categories
+    ]
+
+    return render(
+        request,
+        "shopkeeper/services/categories.html",
+        {
+            "store": store,
+            "category_rows": category_rows,
+        },
+    )
+
+
+@login_required
+def service_approvals(request):
+    """
+    Shows which services are live for bookings vs. paused, missing future slots,
+    or waiting on store activation.
+    """
+    store, redirect_response = _require_service_store(request)
+    if redirect_response or store is None:
+        return redirect_response or redirect("shopkeeper:store_profile")
+
+    now = timezone.now()
+    services = (
+        Service.objects.filter(store=store)
+        .select_related("category")
+        .annotate(
+            upcoming_slots_count=Count(
+                "slots",
+                filter=Q(slots__is_active=True, slots__start_at__gt=now),
+                distinct=True,
+            )
+        )
+        .order_by("is_available", "-created_at")
+    )
+
+    live_services = [
+        s for s in services if store.is_public and s.is_available and s.upcoming_slots_count > 0  # type: ignore
+    ]
+    attention_services = [
+        s for s in services if not (store.is_public and s.is_available and s.upcoming_slots_count > 0)  # type: ignore
+    ]
+
+    return render(
+        request,
+        "shopkeeper/services/service_approvals.html",
+        {
+            "store": store,
+            "live_services": live_services,
+            "attention_services": attention_services,
+        },
+    )
+
+
+# --- SLOTS & SCHEDULE ---
+@login_required
+def manage_slots(request):
+    """
+    Manage all existing AvailabilitySlot entries (filter, block/unblock, delete).
+    """
+    store, redirect_response = _require_service_store(request)
+    if redirect_response or store is None:
+        return redirect_response or redirect("shopkeeper:store_profile")
+
+    services_qs = Service.objects.filter(store=store).order_by("name")
+    selected_service_id = (request.GET.get("service") or "").strip()
+    timeframe = (request.GET.get("timeframe") or "upcoming").strip()
+    now = timezone.now()
+
+    slots_qs = (
+        AvailabilitySlot.objects.filter(service__store=store)
+        .select_related("service")
+        .with_spots()  # type: ignore
+    )
+
+    if selected_service_id.isdigit():
+        slots_qs = slots_qs.filter(service_id=int(selected_service_id))
+
+    if timeframe == "past":
+        slots_qs = slots_qs.filter(start_at__lte=now).order_by("-start_at")
+    elif timeframe == "all":
+        slots_qs = slots_qs.order_by("-start_at")
+    else:
+        slots_qs = slots_qs.filter(start_at__gt=now).order_by("start_at")
+
+    all_store_slots = AvailabilitySlot.objects.filter(service__store=store)
+    stats = {
+        "upcoming_open": all_store_slots.filter(is_active=True, start_at__gt=now).count(),
+        "blocked_upcoming": all_store_slots.filter(is_active=False, start_at__gt=now).count(),
+        "past_total": all_store_slots.filter(start_at__lte=now).count(),
+    }
+
+    return render(
+        request,
+        "shopkeeper/services/manage_slots.html",
+        {
+            "store": store,
+            "services": services_qs,
+            "slots": slots_qs,
+            "stats": stats,
+            "filters": {
+                "service": selected_service_id,
+                "timeframe": timeframe,
+            },
+        },
+    )
+
+
+@login_required
+def create_slots(request):
+    """
+    Create a single AvailabilitySlot (validated via AvailabilitySlot.full_clean())
+    or bulk-generate recurring slots across a date range.
+    """
+    store, redirect_response = _require_service_store(request)
+    if redirect_response or store is None:
+        return redirect_response or redirect("shopkeeper:store_profile")
+
+    services_qs = Service.objects.filter(store=store).order_by("name")
+    selected_service_id = (request.GET.get("service") or request.POST.get("service") or "").strip()
+    initial_service = (
+        services_qs.filter(pk=int(selected_service_id)).first()
+        if selected_service_id.isdigit()
+        else services_qs.first()
+    )
+
+    single_form = AvailabilitySlotForm(
+        store=store,
+        initial={"service": initial_service, "is_active": True},
+    )
+    bulk_form = BulkSlotGeneratorForm(
+        store=store,
+        initial={"service": initial_service},
+    )
+
+    if request.method == "POST":
+        action = request.POST.get("action", "single")
+
+        if action == "bulk":
+            bulk_form = BulkSlotGeneratorForm(request.POST, store=store)
+            if bulk_form.is_valid():
+                slots_to_create = bulk_form.build_slots()
+                if slots_to_create:
+                    AvailabilitySlot.objects.bulk_create(slots_to_create)
+                    messages.success(
+                        request,
+                        f"Generated {len(slots_to_create)} non-overlapping slot(s).",
+                    )
+                    return redirect("shopkeeper:manage_slots")
+                messages.warning(
+                    request,
+                    "No new future slots were created (either times were in the past or overlapped existing slots).",
+                )
+        else:
+            single_form = AvailabilitySlotForm(request.POST, store=store)
+            if single_form.is_valid():
+                slot = single_form.save(commit=False)
+                if slot.service.store_id != store.id:  # type: ignore
+                    messages.error(request, "Invalid service selected.")
+                    return redirect("shopkeeper:create_slots")
+                try:
+                    slot.full_clean()
+                    slot.save()
+                    messages.success(request, f"Created slot: {slot}.")
+                    if request.POST.get("save_and_add_another"):
+                        return redirect(f"{redirect('shopkeeper:create_slots').url}?service={slot.service_id}")
+                    return redirect("shopkeeper:manage_slots")
+                except ValidationError as exc:
+                    for field, errs in exc.message_dict.items():
+                        for err in errs:
+                            if field in single_form.fields:
+                                single_form.add_error(field, err)
+                            else:
+                                single_form.add_error(None, err)
+
+    return render(
+        request,
+        "shopkeeper/services/create_slots.html",
+        {
+            "store": store,
+            "services": services_qs,
+            "single_form": single_form,
+            "bulk_form": bulk_form,
+        },
+    )
+
+
+@login_required
+def working_hours(request):
+    """
+    Manage weekly working hours (`store.opening_hours`) and booking availability
+    (`store.is_accepting_orders`) for service-based stores.
+    """
+    store, redirect_response = _require_service_store(request)
+    if redirect_response or store is None:
+        return redirect_response or redirect("shopkeeper:store_profile")
+
+    if request.method == "POST":
+        hours_payload = {}
+        for code, _label in DAYS_OF_WEEK:
+            is_closed = request.POST.get(f"closed_{code}") == "on"
+            open_time = (request.POST.get(f"open_{code}") or "").strip()
+            close_time = (request.POST.get(f"close_{code}") or "").strip()
+            if is_closed or not open_time or not close_time:
+                hours_payload[code] = None
+            else:
+                hours_payload[code] = f"{open_time}-{close_time}"
+
+        store.opening_hours = hours_payload
+        store.is_accepting_orders = request.POST.get("is_accepting_orders") == "on"
+        store.save(update_fields=["opening_hours", "is_accepting_orders", "updated_at"])
+        messages.success(request, "Working hours and booking availability updated.")
+        return redirect("shopkeeper:working_hours")
+
+    raw_hours = store.opening_hours or {}
+    schedule_rows = []
+    for code, label in DAYS_OF_WEEK:
+        val = raw_hours.get(code)
+        if val and "-" in str(val):
+            open_str, close_str = str(val).split("-", 1)
+            closed = False
+        else:
+            open_str, close_str = "09:00", "17:00"
+            closed = True if code in raw_hours else False
+        schedule_rows.append({
+            "code": code,
+            "label": label,
+            "open": open_str.strip(),
+            "close": close_str.strip(),
+            "closed": closed,
+        })
+
+    return render(
+        request,
+        "shopkeeper/services/working_hours.html",
+        {
+            "store": store,
+            "schedule_rows": schedule_rows,
+        },
+    )
+
+
+@login_required
+@require_POST
+def service_slot_toggle(request, slot_id: int):
+    """Block or unblock an AvailabilitySlot without deleting it."""
+    store, redirect_response = _require_service_store(request)
+    if redirect_response or store is None:
+        return redirect_response or redirect("shopkeeper:store_profile")
+
+    slot = get_object_or_404(AvailabilitySlot, pk=slot_id, service__store=store)
+    slot.is_active = not slot.is_active
+    slot.save(update_fields=["is_active", "updated_at"])
+
+    state = "open for bookings" if slot.is_active else "blocked"
+    messages.info(request, f"Slot ({slot.start_at:%d %b %H:%M}) is now {state}.")
+    return redirect("shopkeeper:manage_slots")
+
+
+@login_required
+@require_POST
+def service_slot_delete(request, slot_id: int):
+    """Delete an unbooked AvailabilitySlot."""
+    store, redirect_response = _require_service_store(request)
+    if redirect_response or store is None:
+        return redirect_response or redirect("shopkeeper:store_profile")
+
+    slot = get_object_or_404(AvailabilitySlot, pk=slot_id, service__store=store)
+    if slot.spots_taken > 0:
+        messages.error(
+            request,
+            "This slot already has active bookings and cannot be deleted. Block it instead or cancel the bookings first.",
+        )
+        return redirect("shopkeeper:manage_slots")
+
+    slot.delete()
+    messages.success(request, "Availability slot removed.")
+    return redirect("shopkeeper:manage_slots")
 
 
 # --- BOOKINGS & SCHEDULE ---
@@ -1274,26 +1747,6 @@ def booking_update_status(request, reference):
     if next_url:
         return redirect(next_url)
     return redirect("shopkeeper:booking_list")
-
-@login_required
-def manage_slots(request):
-    return render(request, "shopkeeper/schedule/manage_slots.html", {"page_title": "Manage Time Slots"})
-
-
-@login_required
-def create_slots(request):
-    if request.method == "POST":
-        messages.success(request, "Time slots generated successfully.")
-        return redirect("shopkeeper:manage_slots")
-    return render(request, "shopkeeper/schedule/create_slots.html", {"page_title": "Create Time Slots"})
-
-
-@login_required
-def working_hours(request):
-    if request.method == "POST":
-        messages.success(request, "Working hours updated.")
-        return redirect("shopkeeper:working_hours")
-    return render(request, "shopkeeper/schedule/working_hours.html", {"page_title": "Working Hours"})
 
 
 # --- SALES & CRM ---

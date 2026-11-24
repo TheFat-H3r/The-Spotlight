@@ -1,0 +1,63 @@
+{% extends "shopkeeper/base.html" %}
+
+{% block title %}Service Categories — {{ store.name }} | The Spotlight{% endblock %}
+{% block header %}Service Categories{% endblock %}
+
+{% block content %}
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-3 my-3">
+  <div>
+    <h2 class="h4 mb-1">Service Categories</h2>
+    <p class="text-body-secondary mb-0">
+      Select which marketplace categories <strong>{{ store.name }}</strong> appears under and organize your service offerings.
+    </p>
+  </div>
+  <a href="{% url 'shopkeeper:service_list' %}" class="btn btn-outline-secondary btn-sm">
+    <i class="fa-solid fa-arrow-left me-1"></i> Back to Services
+  </a>
+</div>
+
+
+<form method="post">
+  {% csrf_token %}
+  <div class="card border-0 shadow-sm my-3">
+    <div class="card-header bg-transparent p-3 d-flex justify-content-between align-items-center">
+      <div>
+        <h5 class="mb-0">Store Categories</h5>
+        <div class="small text-body-secondary">Checked categories appear in your service creation dropdown and help customers discover you.</div>
+      </div>
+      <button type="submit" class="btn btn-primary btn-sm">
+        <i class="fa-solid fa-floppy-disk me-1"></i> Save Categories
+      </button>
+    </div>
+    <div class="card-body p-3">
+      <div class="row g-3">
+        {% for row in category_rows %}
+          <div class="col-md-6 col-lg-4">
+            <label class="border rounded p-3 d-flex justify-content-between align-items-start gap-2 h-100 cursor-pointer bg-body-tertiary">
+              <div class="form-check mb-0">
+                <input
+                  class="form-check-input"
+                  type="checkbox"
+                  name="categories"
+                  value="{{ row.category.id }}"
+                  id="cat_{{ row.category.id }}"
+                  {% if row.selected %}checked{% endif %}
+                >
+                <span class="form-check-label fw-semibold d-block">{{ row.category.name }}</span>
+                {% if row.category.description %}
+                  <span class="small text-body-secondary d-block mt-1">{{ row.category.description|truncatechars:70 }}</span>
+                {% endif %}
+              </div>
+              <span class="badge bg-secondary-subtle text-body-emphasis">
+                {{ row.service_count }} service{{ row.service_count|pluralize }}
+              </span>
+            </label>
+          </div>
+        {% empty %}
+          <div class="col-12 text-body-secondary small">No categories configured by administrators yet.</div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+</form>
+{% endblock %}

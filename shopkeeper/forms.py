@@ -1,6 +1,10 @@
+from datetime import datetime, timedelta
+
 from django import forms
+from django.utils import timezone
 from django.utils.text import slugify
-from stores.models import BusinessType, Category, Product, Store
+from stores.models import BusinessType, Category, Product, Service, Store
+from transactions.models import AvailabilitySlot
 
 
 DAYS_OF_WEEK = [
@@ -248,3 +252,213 @@ class ProductForm(forms.ModelForm):
         if commit:
             product.save()
         return product
+
+
+class ServiceForm(forms.ModelForm):
+    class Meta:
+        model = Service
+        fields = [
+            "name",
+            "category",
+            "starting_price",
+            "image",
+            "description",
+            "is_available",
+            "is_featured",
+        ]
+        widgets = {
+            "name": forms.TextInput(
+                attrs={"class": "form-control", "placeholder": "e.g. Box Braids / 1-on-1 Python Tutoring"}
+            ),
+            "category": forms.Select(attrs={"class": "form-select"}),
+            "starting_price": forms.NumberInput(
+                attrs={"class": "form-control", "step": "0.01", "min": "0", "placeholder": "0.00"}
+            ),
+            "image": forms.ClearableFileInput(
+                attrs={"class": "form-control", "accept": "image/*"}
+            ),
+            "description": forms.Textarea(
+                attrs={
+                    "class": "form-control",
+                    "rows": 3,
+                    "placeholder": "Describe what's included, duration, preparation tips, etc...",
+                }
+            ),
+            "is_available": forms.CheckboxInput(attrs={"class": "form-check-input"}),
+            "is_featured": forms.CheckboxInput(attrs={"class": "form-check-input"}),
+        }
+
+    def __init__(self, *args, **kwargs):
+        self.store = kwargs.pop("store", None)
+        super().__init__(*args, **kwargs)
+
+        if self.store and self.store.categories.exists():
+            self.fields["category"].queryset = self.store.categories.all() # type: ignore
+        else:
+            self.fields["category"].queryset = Category.objects.all() # type: ignore
+        self.fields["category"].empty_label = "— Uncategorized —" # type: ignore
+
+    def clean_starting_price(self):
+        price = self.cleaned_data.get("starting_price")
+        if price is None:
+            return 0
+        if price < 0:
+            raise forms.ValidationError("Starting price cannot be negative.")
+        return price
+
+    def save(self, commit=True):
+        service = super().save(commit=False)
+        if self.store:
+            service.store = self.store
+
+        if not service.slug:
+            base_slug = slugify(service.name)[:250] or "service"
+            slug = base_slug
+            counter = 2
+            qs = Service.objects.all()
+            if service.pk:
+                qs = qs.exclude(pk=service.pk)
+            while qs.filter(slug=slug).exists():
+                slug = f"{base_slug}-{counter}"
+                counter += 1
+            service.slug = slug
+
+        if commit:
+            service.save()
+        return service
+
+
+class AvailabilitySlotForm(forms.ModelForm):
+    class Meta:
+        model = AvailabilitySlot
+        fields = ["service", "start_at", "end_at", "capacity", "is_active"]
+        widgets = {
+            "service": forms.Select(attrs={"class": "form-select"}),
+            "start_at": forms.DateTimeInput(
+                attrs={"class": "form-control", "type": "datetime-local"},
+                format="%Y-%m-%dT%H:%M",
+            ),
+            "end_at": forms.DateTimeInput(
+                attrs={"class": "form-control", "type": "datetime-local"},
+                format="%Y-%m-%dT%H:%M",
+            ),
+            "capacity": forms.NumberInput(
+                attrs={"class": "form-control", "min": "1", "placeholder": "Default: 1"}
+            ),
+            "is_active": forms.CheckboxInput(attrs={"class": "form-check-input"}),
+        }
+
+    def __init__(self, *args, **kwargs):
+        self.store = kwargs.pop("store", None)
+        super().__init__(*args, **kwargs)
+        self.fields["start_at"].input_formats = ["%Y-%m-%dT%H:%M"] # type: ignore
+        self.fields["end_at"].input_formats = ["%Y-%m-%dT%H:%M"] # type: ignore
+        if self.store:
+            self.fields["service"].queryset = Service.objects.filter(store=self.store).order_by("name") # type: ignore
+
+
+class BulkSlotGeneratorForm(forms.Form):
+    """Generates multiple consecutive appointment slots across a date range."""
+
+    service = forms.ModelChoiceField(
+        queryset=Service.objects.none(),
+        widget=forms.Select(attrs={"class": "form-select"}),
+    )
+    start_date = forms.DateField(
+        widget=forms.DateInput(attrs={"class": "form-control", "type": "date"})
+    )
+    end_date = forms.DateField(
+        widget=forms.DateInput(attrs={"class": "form-control", "type": "date"})
+    )
+    day_start_time = forms.TimeField(
+        initial="09:00",
+        widget=forms.TimeInput(attrs={"class": "form-control", "type": "time"}),
+    )
+    day_end_time = forms.TimeField(
+        initial="17:00",
+        widget=forms.TimeInput(attrs={"class": "form-control", "type": "time"}),
+    )
+    slot_duration_minutes = forms.IntegerField(
+        min_value=15,
+        max_value=720,
+        initial=60,
+        widget=forms.NumberInput(attrs={"class": "form-control", "min": "15", "step": "15"}),
+    )
+    break_minutes = forms.IntegerField(
+        min_value=0,
+        max_value=240,
+        initial=0,
+        widget=forms.NumberInput(attrs={"class": "form-control", "min": "0", "step": "5"}),
+    )
+    capacity = forms.IntegerField(
+        required=False,
+        min_value=1,
+        widget=forms.NumberInput(attrs={"class": "form-control", "min": "1", "placeholder": "Default: 1"}),
+    )
+
+    def __init__(self, *args, **kwargs):
+        self.store = kwargs.pop("store", None)
+        super().__init__(*args, **kwargs)
+        if self.store:
+            self.fields["service"].queryset = Service.objects.filter(store=self.store).order_by("name") # type: ignore
+
+    def clean(self):
+        cleaned = super().clean()
+        assert cleaned is not None
+        start_date = cleaned.get("start_date")
+        end_date = cleaned.get("end_date")
+        start_time = cleaned.get("day_start_time")
+        end_time = cleaned.get("day_end_time")
+
+        if start_date and end_date:
+            if end_date < start_date:
+                self.add_error("end_date", "End date cannot be earlier than start date.")
+            elif (end_date - start_date).days > 31:
+                self.add_error("end_date", "Generate up to 31 days at a time.")
+
+        if start_time and end_time and end_time <= start_time:
+            self.add_error("day_end_time", "Daily end time must be after daily start time.")
+
+        return cleaned
+
+    def build_slots(self) -> list[AvailabilitySlot]:
+        service = self.cleaned_data["service"]
+        start_date = self.cleaned_data["start_date"]
+        end_date = self.cleaned_data["end_date"]
+        day_start = self.cleaned_data["day_start_time"]
+        day_end = self.cleaned_data["day_end_time"]
+        duration = timedelta(minutes=self.cleaned_data["slot_duration_minutes"])
+        buffer = timedelta(minutes=self.cleaned_data["break_minutes"])
+        capacity = self.cleaned_data.get("capacity")
+
+        tz = timezone.get_current_timezone()
+        now = timezone.now()
+        created_candidates: list[AvailabilitySlot] = []
+
+        current_day = start_date
+        while current_day <= end_date:
+            cursor = timezone.make_aware(datetime.combine(current_day, day_start), tz)
+            day_limit = timezone.make_aware(datetime.combine(current_day, day_end), tz)
+
+            while cursor + duration <= day_limit:
+                slot_end = cursor + duration
+                if cursor > now:
+                    overlaps = AvailabilitySlot.objects.filter(
+                        service=service,
+                        start_at__lt=slot_end,
+                        end_at__gt=cursor,
+                    ).exists()
+                    if not overlaps:
+                        created_candidates.append(
+                            AvailabilitySlot(
+                                service=service,
+                                start_at=cursor,
+                                end_at=slot_end,
+                                capacity=capacity,
+                                is_active=True,
+                            )
+                        )
+                cursor = slot_end + buffer
+            current_day += timedelta(days=1)
+
+        return created_candidates

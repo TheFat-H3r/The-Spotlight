@@ -37,12 +37,21 @@ urlpatterns = [
     path("orders/<str:order_number>/status/", views.order_update_status, name="order_update_status"),
     path("inventory/", views.inventory_management, name="inventory"),
 
-    # Services
-    path("services/", views.service_list, {"status": "all"}, name="service_list"),
-    path("services/add/", views.service_create, name="service_create"),
+    # Services (Service-based stores only)
+    path("services/", views.service_list, name="service_list"),
+    path("services/new/", views.service_create, name="service_create"),
     path("services/categories/", views.service_categories, name="service_categories"),
-    path("services/approvals/", views.service_list, {"status": "pending"}, name="service_approvals"),
+    path("services/approvals/", views.service_approvals, name="service_approvals"),
+    path("services/<int:service_id>/edit/", views.service_edit, name="service_edit"),
+    path("services/<int:service_id>/toggle/", views.service_toggle_availability, name="service_toggle_availability"),
+    path("services/<int:service_id>/delete/", views.service_delete, name="service_delete"),
 
+    # Slots & Schedule (Service-based stores only)
+    path("slots/", views.manage_slots, name="manage_slots"),
+    path("slots/create/", views.create_slots, name="create_slots"),
+    path("slots/working-hours/", views.working_hours, name="working_hours"),
+    path("slots/<int:slot_id>/toggle/", views.service_slot_toggle, name="service_slot_toggle"),
+    path("slots/<int:slot_id>/delete/", views.service_slot_delete, name="service_slot_delete"),
     # Bookings
     path("bookings/", views.booking_list, {"status": "all"}, name="booking_list"),
     path("bookings/pending/", views.booking_list, {"status": "pending"}, name="booking_pending"),
@@ -50,11 +59,6 @@ urlpatterns = [
     path("bookings/completed/", views.booking_list, {"status": "completed"}, name="booking_completed"),
     path("bookings/cancelled/", views.booking_list, {"status": "cancelled"}, name="booking_cancelled"),
     path("bookings/<str:reference>/status/", views.booking_update_status, name="booking_update_status"),
-
-    # Slots & Schedule
-    path("schedule/slots/", views.manage_slots, name="manage_slots"),
-    path("schedule/slots/create/", views.create_slots, name="create_slots"),
-    path("schedule/working-hours/", views.working_hours, name="working_hours"),
 
     # Sales & CRM
     path("sales/", views.sales_list, name="sales"),
