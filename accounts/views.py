@@ -93,7 +93,7 @@ class RegisterView(View):
                 return redirect('store:store-create')
 
             messages.success(request, "Registration successful! Check your email to activate your account.")
-            return redirect('accounts:verify_email')
+            return redirect('accounts:resend_verification')
 
         return redirect('core:home')
 
@@ -181,7 +181,12 @@ class LoginView(View):
     def get(self, request):
         if request.user.is_authenticated:
             if request.user.is_email_verified:
-                return redirect('core:home')
+                if request.user.role == "customer":
+                    return redirect('core:home')
+                elif request.user.role == "vendor":
+                    return redirect('shopkeeper:home')
+                elif request.user.role == "admin":
+                    return redirect('operations:home')
             return redirect('accounts:resend_verification')
         return render(request, self.template_name)
 
