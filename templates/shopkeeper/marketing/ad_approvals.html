@@ -1,0 +1,125 @@
+{% extends "shopkeeper/base.html" %}
+
+{% block title %}Ad Approvals — {{ store.name }} | The Spotlight{% endblock %}
+{% block header %}Ad Approvals{% endblock %}
+
+{% block content %}
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-3 my-3">
+  <div>
+    <h2 class="h4 mb-1">Advertisement Approvals</h2>
+    <p class="text-body-secondary mb-0">
+      Monitor admin review status for submitted advertisements.
+    </p>
+  </div>
+  <a href="{% url 'shopkeeper:ad_create' %}" class="btn btn-primary btn-sm">
+    <i class="fa-solid fa-plus me-1"></i> Create Advertisement
+  </a>
+</div>
+
+<!-- Pending Review -->
+<div class="card border-0 shadow-sm my-3">
+  <div class="card-header bg-transparent p-3">
+    <h5 class="mb-0">Pending Admin Review ({{ pending_ads|length }})</h5>
+  </div>
+  <div class="card-body p-3">
+    {% if pending_ads %}
+      <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+          <thead>
+            <tr>
+              <th>Campaign</th>
+              <th>Schedule</th>
+              <th>Budget</th>
+              <th>Submitted</th>
+              <th class="text-end">Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for ad in pending_ads %}
+              <tr>
+                <td class="fw-semibold">{{ ad.title }}</td>
+                <td class="small">{{ ad.start_date|date:"d M Y" }} – {{ ad.end_date|date:"d M Y" }}</td>
+                <td>Rs {{ ad.budget }}</td>
+                <td class="small text-body-secondary">{{ ad.created_at|date:"d M Y, H:i" }}</td>
+                <td class="text-end">
+                  <a href="{% url 'shopkeeper:ad_edit' ad.id %}" class="btn btn-sm btn-outline-primary">Edit</a>
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% else %}
+      <p class="text-body-secondary small mb-0">No campaigns currently awaiting approval.</p>
+    {% endif %}
+  </div>
+</div>
+
+<!-- Rejected -->
+{% if rejected_ads %}
+  <div class="card border-0 shadow-sm my-3 border-start border-danger border-4">
+    <div class="card-header bg-transparent p-3">
+      <h5 class="mb-0 text-danger">Rejected Campaigns ({{ rejected_ads|length }})</h5>
+    </div>
+    <div class="card-body p-3">
+      <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+          <thead>
+            <tr>
+              <th>Campaign</th>
+              <th>Last Updated</th>
+              <th class="text-end">Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for ad in rejected_ads %}
+              <tr>
+                <td class="fw-semibold">{{ ad.title }}</td>
+                <td class="small text-body-secondary">{{ ad.updated_at|date:"d M Y, H:i" }}</td>
+                <td class="text-end">
+                  <a href="{% url 'shopkeeper:ad_edit' ad.id %}" class="btn btn-sm btn-outline-primary">
+                    Edit &amp; Resubmit
+                  </a>
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+{% endif %}
+
+<!-- Approved -->
+<div class="card border-0 shadow-sm my-3">
+  <div class="card-header bg-transparent p-3">
+    <h5 class="mb-0">Approved Campaigns ({{ approved_ads|length }})</h5>
+  </div>
+  <div class="card-body p-3">
+    {% if approved_ads %}
+      <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+          <thead>
+            <tr>
+              <th>Campaign</th>
+              <th>Schedule</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for ad in approved_ads %}
+              <tr>
+                <td class="fw-semibold">{{ ad.title }}</td>
+                <td class="small">{{ ad.start_date|date:"d M Y" }} – {{ ad.end_date|date:"d M Y" }}</td>
+                <td><span class="badge text-bg-success">{{ ad.get_status_display }}</span></td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% else %}
+      <p class="text-body-secondary small mb-0">No approved campaigns yet.</p>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

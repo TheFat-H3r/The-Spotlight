@@ -374,9 +374,9 @@
 
 
         <!-- MARKETING -->
-        <li class="nav-title">Marketing & Promotion</li>
+        <li class="nav-title">Marketing &amp; Promotion</li>
 
-        <li class="nav-group {% if current_url in 'ad_campaigns,ad_create,ad_performance,ad_approvals' %}show{% endif %}">
+        <li class="nav-group {% if current_url in 'ad_campaigns,ad_create,ad_edit,ad_performance,ad_approvals' %}show{% endif %}">
           <a class="nav-link nav-group-toggle" href="#">
             <i class="nav-icon fa-solid fa-bullhorn"></i>
             Advertisements
@@ -412,28 +412,28 @@
           </ul>
         </li>
 
-        <li class="nav-item">
-          <a class="nav-link {% if current_url == 'promotions' %}active{% endif %}" href="{% url 'shopkeeper:promotions' %}">
-            <i class="nav-icon fa-solid fa-tags"></i>
-            Promotions & Coupons
-          </a>
-        </li>
-
-        <li class="nav-item">
-          <a class="nav-link {% if current_url == 'featured_listings' %}active{% endif %}" href="{% url 'shopkeeper:featured_listings' %}">
-            <i class="nav-icon fa-solid fa-star"></i>
-            Featured Listings
-          </a>
-        </li>
-
-        <li class="nav-item">
-          <a class="nav-link {% if current_url == 'announcements' %}active{% endif %}" href="{% url 'shopkeeper:announcements' %}">
-            <i class="nav-icon fa-solid fa-bullhorn"></i>
+        <li class="nav-group {% if current_url in 'announcements,announcement_create,announcement_edit' %}show{% endif %}">
+          <a class="nav-link nav-group-toggle" href="#">
+            <i class="nav-icon fa-solid fa-newspaper"></i>
             Announcements
             {% if has_new_announcements %}
               <span class="badge bg-info ms-auto">NEW</span>
             {% endif %}
           </a>
+          <ul class="nav-group-items compact">
+            <li class="nav-item">
+              <a class="nav-link {% if current_url == 'announcements' %}active{% endif %}" href="{% url 'shopkeeper:announcements' %}">
+                <span class="nav-icon"><span class="nav-icon-bullet"></span></span>
+                All Announcements
+              </a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link {% if current_url == 'announcement_create' %}active{% endif %}" href="{% url 'shopkeeper:announcement_create' %}">
+                <span class="nav-icon"><span class="nav-icon-bullet"></span></span>
+                Post Store Announcement
+              </a>
+            </li>
+          </ul>
         </li>
 
 

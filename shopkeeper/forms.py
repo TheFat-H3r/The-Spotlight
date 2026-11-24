@@ -3,6 +3,7 @@ from datetime import datetime, timedelta
 from django import forms
 from django.utils import timezone
 from django.utils.text import slugify
+from marketing.models import Advertisement, Announcement
 from stores.models import BusinessType, Category, Product, Service, Store
 from transactions.models import AvailabilitySlot
 
@@ -462,3 +463,119 @@ class BulkSlotGeneratorForm(forms.Form):
             current_day += timedelta(days=1)
 
         return created_candidates
+
+
+class AdvertisementForm(forms.ModelForm):
+    class Meta:
+        model = Advertisement
+        fields = [
+            "title",
+            "description",
+            "banner_image",
+            "target_url",
+            "start_date",
+            "end_date",
+            "budget",
+            "is_active",
+        ]
+        widgets = {
+            "title": forms.TextInput(
+                attrs={"class": "form-control", "placeholder": "e.g. Weekend Fresh Bake Sale — 20% Off"}
+            ),
+            "description": forms.Textarea(
+                attrs={
+                    "class": "form-control",
+                    "rows": 3,
+                    "placeholder": "Short promotional copy displayed with your banner...",
+                }
+            ),
+            "banner_image": forms.ClearableFileInput(
+                attrs={"class": "form-control", "accept": "image/*"}
+            ),
+            "target_url": forms.URLInput(
+                attrs={"class": "form-control", "placeholder": "https://... (optional; defaults to your store)"}
+            ),
+            "start_date": forms.DateTimeInput(
+                attrs={"class": "form-control", "type": "datetime-local"},
+                format="%Y-%m-%dT%H:%M",
+            ),
+            "end_date": forms.DateTimeInput(
+                attrs={"class": "form-control", "type": "datetime-local"},
+                format="%Y-%m-%dT%H:%M",
+            ),
+            "budget": forms.NumberInput(
+                attrs={"class": "form-control", "step": "0.01", "min": "0", "placeholder": "0.00"}
+            ),
+            "is_active": forms.CheckboxInput(attrs={"class": "form-check-input"}),
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["start_date"].input_formats = ["%Y-%m-%dT%H:%M"] # type: ignore
+        self.fields["end_date"].input_formats = ["%Y-%m-%dT%H:%M"] # type: ignore
+
+    def clean(self):
+        cleaned = super().clean()
+        assert cleaned is not None
+        start_date = cleaned.get("start_date")
+        end_date = cleaned.get("end_date")
+        budget = cleaned.get("budget")
+
+        if start_date and end_date and end_date <= start_date:
+            self.add_error("end_date", "End date & time must be after the start date & time.")
+
+        if budget is not None and budget < 0:
+            self.add_error("budget", "Budget cannot be negative.")
+
+        return cleaned
+
+
+class AnnouncementForm(forms.ModelForm):
+    class Meta:
+        model = Announcement
+        fields = [
+            "title",
+            "content",
+            "banner_image",
+            "start_date",
+            "end_date",
+            "is_active",
+        ]
+        widgets = {
+            "title": forms.TextInput(
+                attrs={"class": "form-control", "placeholder": "e.g. Extended Friday Hours or New Menu Launch"}
+            ),
+            "content": forms.Textarea(
+                attrs={
+                    "class": "form-control",
+                    "rows": 4,
+                    "placeholder": "Write your announcement details for customers...",
+                }
+            ),
+            "banner_image": forms.ClearableFileInput(
+                attrs={"class": "form-control", "accept": "image/*"}
+            ),
+            "start_date": forms.DateTimeInput(
+                attrs={"class": "form-control", "type": "datetime-local"},
+                format="%Y-%m-%dT%H:%M",
+            ),
+            "end_date": forms.DateTimeInput(
+                attrs={"class": "form-control", "type": "datetime-local"},
+                format="%Y-%m-%dT%H:%M",
+            ),
+            "is_active": forms.CheckboxInput(attrs={"class": "form-check-input"}),
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["start_date"].input_formats = ["%Y-%m-%dT%H:%M"] # type: ignore
+        self.fields["end_date"].input_formats = ["%Y-%m-%dT%H:%M"] # type: ignore
+
+    def clean(self):
+        cleaned = super().clean()
+        assert cleaned is not None
+        start_date = cleaned.get("start_date")
+        end_date = cleaned.get("end_date")
+        if start_date and end_date and end_date <= start_date:
+            self.add_error("end_date", "Expiration date & time must be after the start date & time.")
+        return cleaned

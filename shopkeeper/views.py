@@ -16,8 +16,9 @@ from django.template.loader import render_to_string
 from django.utils import timezone
 from django.views.decorators.http import require_POST
 
+from marketing.models import Advertisement, Announcement
 from shopkeeper.context_processors import _resolve_business_mode
-from shopkeeper.forms import DAYS_OF_WEEK, StoreProfileForm, StoreSettingsForm, VerificationComplaintForm, Product, ProductForm, AvailabilitySlotForm, BulkSlotGeneratorForm, ServiceForm
+from shopkeeper.forms import DAYS_OF_WEEK, StoreProfileForm, StoreSettingsForm, VerificationComplaintForm, ProductForm, AvailabilitySlotForm, BulkSlotGeneratorForm, ServiceForm, AdvertisementForm, AnnouncementForm
 from stores.models import Category, Product, Review, Service, Store
 from transactions.models import AvailabilitySlot, Booking, Order, VendorNotification
 
@@ -2235,40 +2236,337 @@ def customers_list(request):
 
 # --- MARKETING & PROMOTION ---
 @login_required
-def ad_campaigns(request, status="all"):
-    titles = {"all": "My Campaigns", "pending": "Ad Approvals"}
-    return render(request, "shopkeeper/marketing/ads_list.html", {
-        "page_title": titles.get(status, "Advertisements"),
-        "status_filter": status,
-    })
+def ad_campaigns(request):
+    """List and filter all Advertisement campaigns for the vendor's store."""
+    store, redirect_response = _get_vendor_store(request)
+    if redirect_response or store is None:
+        return redirect_response or redirect("shopkeeper:store_profile")
+
+    qs = Advertisement.objects.filter(store=store).order_by("-created_at")
+
+    status_filter = (request.GET.get("status") or "").strip()
+    query = (request.GET.get("q") or "").strip()
+
+    if status_filter in dict(Advertisement.Status.choices):
+        qs = qs.filter(status=status_filter)
+    if query:
+        qs = qs.filter(Q(title__icontains=query) | Q(description__icontains=query))
+
+    all_ads = Advertisement.objects.filter(store=store)
+    totals = all_ads.aggregate(
+        total_budget=Sum("budget"),
+        total_clicks=Sum("clicks_count"),
+        total_impressions=Sum("impressions_count"),
+    )
+
+    stats = {
+        "total_count": all_ads.count(),
+        "active_count": all_ads.filter(status=Advertisement.Status.ACTIVE, is_active=True).count(),
+        "pending_count": all_ads.filter(status=Advertisement.Status.PENDING).count(),
+        "total_budget": totals["total_budget"] or Decimal("0.00"),
+    }
+
+    return render(
+        request,
+        "shopkeeper/marketing/ad_campaigns.html",
+        {
+            "store": store,
+            "ads": qs,
+            "stats": stats,
+            "status_choices": Advertisement.Status.choices,
+            "filters": {"status": status_filter, "q": query},
+        },
+    )
 
 
 @login_required
 def ad_create(request):
+    """Create a new Advertisement campaign (submitted with status=PENDING for admin approval)."""
+    store, redirect_response = _get_vendor_store(request)
+    if redirect_response or store is None:
+        return redirect_response or redirect("shopkeeper:store_profile")
+
     if request.method == "POST":
-        messages.success(request, "Advertisement submitted for approval.")
-        return redirect("shopkeeper:ad_campaigns")
-    return render(request, "shopkeeper/marketing/ad_form.html", {"page_title": "Create Advertisement"})
+        form = AdvertisementForm(request.POST, request.FILES)
+        if form.is_valid():
+            ad = form.save(commit=False)
+            ad.user = request.user
+            ad.store = store
+            ad.status = Advertisement.Status.PENDING
+            ad.save()
+            messages.success(
+                request,
+                f"Campaign '{ad.title}' submitted for approval.",
+            )
+            return redirect("shopkeeper:ad_campaigns")
+    else:
+        form = AdvertisementForm(initial={"is_active": True})
+
+    return render(
+        request,
+        "shopkeeper/marketing/ad_form.html",
+        {
+            "store": store,
+            "form": form,
+            "is_editing": False,
+        },
+    )
+
+
+@login_required
+def ad_edit(request, ad_id: int):
+    """Edit an existing Advertisement campaign. Re-queues rejected/active content changes if needed."""
+    store, redirect_response = _get_vendor_store(request)
+    if redirect_response or store is None:
+        return redirect_response or redirect("shopkeeper:store_profile")
+
+    ad = get_object_or_404(Advertisement, pk=ad_id, store=store)
+
+    if request.method == "POST":
+        form = AdvertisementForm(request.POST, request.FILES, instance=ad)
+        if form.is_valid():
+            updated_ad = form.save(commit=False)
+            if updated_ad.status == Advertisement.Status.REJECTED:
+                updated_ad.status = Advertisement.Status.PENDING
+            updated_ad.save()
+            messages.success(request, f"Campaign '{updated_ad.title}' updated.")
+            return redirect("shopkeeper:ad_campaigns")
+    else:
+        form = AdvertisementForm(instance=ad)
+
+    return render(
+        request,
+        "shopkeeper/marketing/ad_form.html",
+        {
+            "store": store,
+            "ad": ad,
+            "form": form,
+            "is_editing": True,
+        },
+    )
+
+
+@login_required
+@require_POST
+def ad_toggle_active(request, ad_id: int):
+    """Pause or resume an approved Advertisement campaign."""
+    store, redirect_response = _get_vendor_store(request)
+    if redirect_response or store is None:
+        return redirect_response or redirect("shopkeeper:store_profile")
+
+    ad = get_object_or_404(Advertisement, pk=ad_id, store=store)
+    ad.is_active = not ad.is_active
+    if ad.status == Advertisement.Status.ACTIVE and not ad.is_active:
+        ad.status = Advertisement.Status.PAUSED
+    elif ad.status == Advertisement.Status.PAUSED and ad.is_active:
+        ad.status = Advertisement.Status.ACTIVE
+    ad.save(update_fields=["is_active", "status", "updated_at"])
+
+    state = "resumed" if ad.is_active else "paused"
+    messages.info(request, f"Campaign '{ad.title}' {state}.")
+    return redirect("shopkeeper:ad_campaigns")
+
+
+@login_required
+@require_POST
+def ad_delete(request, ad_id: int):
+    """Delete an Advertisement campaign belonging to the vendor's store."""
+    store, redirect_response = _get_vendor_store(request)
+    if redirect_response or store is None:
+        return redirect_response or redirect("shopkeeper:store_profile")
+
+    ad = get_object_or_404(Advertisement, pk=ad_id, store=store)
+    title = ad.title
+    ad.delete()
+    messages.success(request, f"Deleted campaign '{title}'.")
+    return redirect("shopkeeper:ad_campaigns")
 
 
 @login_required
 def ad_performance(request):
-    return render(request, "shopkeeper/marketing/ad_performance.html", {"page_title": "Ad Performance"})
+    """Impressions, clicks, CTR, and budget efficiency across the store's advertisements."""
+    store, redirect_response = _get_vendor_store(request)
+    if redirect_response or store is None:
+        return redirect_response or redirect("shopkeeper:store_profile")
+
+    ads = list(Advertisement.objects.filter(store=store).order_by("-clicks_count", "-impressions_count"))
+
+    total_impressions = 0
+    total_clicks = 0
+    total_budget = Decimal("0.00")
+
+    for ad in ads:
+        total_impressions += ad.impressions_count
+        total_clicks += ad.clicks_count
+        total_budget += ad.budget
+        ad.ctr = round((ad.clicks_count / ad.impressions_count) * 100, 2) if ad.impressions_count > 0 else 0.0  # type: ignore
+
+    overall_ctr = round((total_clicks / total_impressions) * 100, 2) if total_impressions > 0 else 0.0
+
+    return render(
+        request,
+        "shopkeeper/marketing/ad_performance.html",
+        {
+            "store": store,
+            "ads": ads,
+            "summary": {
+                "total_impressions": total_impressions,
+                "total_clicks": total_clicks,
+                "overall_ctr": overall_ctr,
+                "total_budget": total_budget,
+            },
+        },
+    )
 
 
 @login_required
-def promotions_coupons(request):
-    return render(request, "shopkeeper/marketing/promotions.html", {"page_title": "Promotions & Coupons"})
+def ad_approvals(request):
+    """Track moderation status (Pending, Approved/Active, Rejected) for submitted advertisements."""
+    store, redirect_response = _get_vendor_store(request)
+    if redirect_response or store is None:
+        return redirect_response or redirect("shopkeeper:store_profile")
+
+    all_ads = Advertisement.objects.filter(store=store).order_by("-updated_at")
+    pending_ads = all_ads.filter(status=Advertisement.Status.PENDING)
+    rejected_ads = all_ads.filter(status=Advertisement.Status.REJECTED)
+    approved_ads = all_ads.filter(
+        status__in=[Advertisement.Status.ACTIVE, Advertisement.Status.PAUSED, Advertisement.Status.EXPIRED]
+    )
+
+    return render(
+        request,
+        "shopkeeper/marketing/ad_approvals.html",
+        {
+            "store": store,
+            "pending_ads": pending_ads,
+            "rejected_ads": rejected_ads,
+            "approved_ads": approved_ads,
+        },
+    )
 
 
-@login_required
-def featured_listings(request):
-    return render(request, "shopkeeper/marketing/featured.html", {"page_title": "Featured Listings"})
-
-
+# --- MARKETING & PROMOTION: ANNOUNCEMENTS ---
 @login_required
 def announcements(request):
-    return render(request, "shopkeeper/marketing/announcements.html", {"page_title": "Platform Announcements"})
+    """
+    View both:
+    1. Store-specific announcements managed by this vendor (`store=store`)
+    2. Active platform-wide announcements from administrators (`store__isnull=True`)
+    """
+    store, redirect_response = _get_vendor_store(request)
+    if redirect_response or store is None:
+        return redirect_response or redirect("shopkeeper:store_profile")
+
+    now = timezone.now()
+    store_announcements = Announcement.objects.filter(store=store).order_by("-created_at")
+    platform_announcements = (
+        Announcement.objects.filter(store__isnull=True, is_active=True)
+        .filter(Q(start_date__isnull=True) | Q(start_date__lte=now))
+        .filter(Q(end_date__isnull=True) | Q(end_date__gte=now))
+        .order_by("-created_at")
+    )
+
+    return render(
+        request,
+        "shopkeeper/marketing/announcements.html",
+        {
+            "store": store,
+            "store_announcements": store_announcements,
+            "platform_announcements": platform_announcements,
+        },
+    )
+
+
+@login_required
+def announcement_create(request):
+    """Publish a store announcement (`store=store`)."""
+    store, redirect_response = _get_vendor_store(request)
+    if redirect_response or store is None:
+        return redirect_response or redirect("shopkeeper:store_profile")
+
+    if request.method == "POST":
+        form = AnnouncementForm(request.POST, request.FILES)
+        if form.is_valid():
+            ann = form.save(commit=False)
+            ann.user = request.user
+            ann.store = store
+            ann.save()
+            messages.success(request, f"Announcement '{ann.title}' published.")
+            return redirect("shopkeeper:announcements")
+    else:
+        form = AnnouncementForm(initial={"is_active": True})
+
+    return render(
+        request,
+        "shopkeeper/marketing/announcement_form.html",
+        {
+            "store": store,
+            "form": form,
+            "is_editing": False,
+        },
+    )
+
+
+@login_required
+def announcement_edit(request, announcement_id: int):
+    """Edit an announcement belonging to the vendor's store."""
+    store, redirect_response = _get_vendor_store(request)
+    if redirect_response or store is None:
+        return redirect_response or redirect("shopkeeper:store_profile")
+
+    ann = get_object_or_404(Announcement, pk=announcement_id, store=store)
+
+    if request.method == "POST":
+        form = AnnouncementForm(request.POST, request.FILES, instance=ann)
+        if form.is_valid():
+            form.save()
+            messages.success(request, f"Updated announcement '{ann.title}'.")
+            return redirect("shopkeeper:announcements")
+    else:
+        form = AnnouncementForm(instance=ann)
+
+    return render(
+        request,
+        "shopkeeper/marketing/announcement_form.html",
+        {
+            "store": store,
+            "announcement": ann,
+            "form": form,
+            "is_editing": True,
+        },
+    )
+
+
+@login_required
+@require_POST
+def announcement_toggle(request, announcement_id: int):
+    """Activate or hide a store announcement."""
+    store, redirect_response = _get_vendor_store(request)
+    if redirect_response or store is None:
+        return redirect_response or redirect("shopkeeper:store_profile")
+
+    ann = get_object_or_404(Announcement, pk=announcement_id, store=store)
+    ann.is_active = not ann.is_active
+    ann.save(update_fields=["is_active", "updated_at"])
+
+    state = "visible" if ann.is_active else "hidden"
+    messages.info(request, f"Announcement '{ann.title}' is now {state}.")
+    return redirect("shopkeeper:announcements")
+
+
+@login_required
+@require_POST
+def announcement_delete(request, announcement_id: int):
+    """Delete a store announcement."""
+    store, redirect_response = _get_vendor_store(request)
+    if redirect_response or store is None:
+        return redirect_response or redirect("shopkeeper:store_profile")
+
+    ann = get_object_or_404(Announcement, pk=announcement_id, store=store)
+    title = ann.title
+    ann.delete()
+    messages.success(request, f"Deleted announcement '{title}'.")
+    return redirect("shopkeeper:announcements")
 
 
 # --- FINANCIAL MANAGEMENT ---

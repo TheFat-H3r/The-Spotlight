@@ -65,14 +65,21 @@ urlpatterns = [
     path("sales/receipt/<str:sale_type>/<int:pk>/", views.sale_receipt, name="sale_receipt"),
     path("customers/", views.customers_list, name="customers"),
 
-    # Marketing & Promotion
-    path("ads/campaigns/", views.ad_campaigns, {"status": "all"}, name="ad_campaigns"),
-    path("ads/create/", views.ad_create, name="ad_create"),
-    path("ads/performance/", views.ad_performance, name="ad_performance"),
-    path("ads/approvals/", views.ad_campaigns, {"status": "pending"}, name="ad_approvals"),
-    path("promotions/", views.promotions_coupons, name="promotions"),
-    path("featured/", views.featured_listings, name="featured_listings"),
-    path("announcements/", views.announcements, name="announcements"),
+    # Marketing: Advertisements
+    path("marketing/ads/", views.ad_campaigns, name="ad_campaigns"),
+    path("marketing/ads/new/", views.ad_create, name="ad_create"),
+    path("marketing/ads/<int:ad_id>/edit/", views.ad_edit, name="ad_edit"),
+    path("marketing/ads/<int:ad_id>/toggle/", views.ad_toggle_active, name="ad_toggle_active"),
+    path("marketing/ads/<int:ad_id>/delete/", views.ad_delete, name="ad_delete"),
+    path("marketing/ads/performance/", views.ad_performance, name="ad_performance"),
+    path("marketing/ads/approvals/", views.ad_approvals, name="ad_approvals"),
+
+    # Marketing: Announcements
+    path("marketing/announcements/", views.announcements, name="announcements"),
+    path("marketing/announcements/new/", views.announcement_create, name="announcement_create"),
+    path("marketing/announcements/<int:announcement_id>/edit/", views.announcement_edit, name="announcement_edit"),
+    path("marketing/announcements/<int:announcement_id>/toggle/", views.announcement_toggle, name="announcement_toggle"),
+    path("marketing/announcements/<int:announcement_id>/delete/", views.announcement_delete, name="announcement_delete"),
 
     # Financial Management
     path("finance/earnings/", views.earnings_overview, name="earnings_overview"),
