@@ -1,0 +1,269 @@
+{% extends "operations/base.html" %}
+
+{% block title %}{{ booking.reference }} | Booking Details{% endblock %}
+{% block breadcrumb %}Booking {{ booking.reference }}{% endblock %}
+{% block page_kicker %}Booking Inspection &amp; Control{% endblock %}
+{% block page_heading %}{{ booking.reference }} — {{ booking.service.name }}{% endblock %}
+{% block page_description %}
+    Store: {{ booking.store.name }} · Booked on {{ booking.created_at|date:"d M Y, H:i" }}
+{% endblock %}
+{% block bookings_nav_class %}active{% endblock %}
+
+{% block extra_css %}
+    <style>
+        .ops-card-header {
+            background: var(--ops-black);
+            border-bottom: 2px solid var(--ops-gold);
+            border-top-left-radius: calc(.85rem - 1px);
+            border-top-right-radius: calc(.85rem - 1px);
+            color: #fff;
+        }
+        .ops-card-header .ops-card-title { color: #fff; font-weight: 700; }
+        .ops-card-header .ops-card-title i { color: var(--ops-gold); }
+        .ops-btn-gold {
+            background: var(--ops-gold);
+            border: 1px solid var(--ops-gold);
+            color: var(--ops-black);
+            font-weight: 700;
+        }
+        .ops-btn-gold:hover {
+            background: #d49b32;
+            border-color: #d49b32;
+            color: var(--ops-black);
+        }
+        .ops-btn-gold-outline {
+            border: 1px solid rgba(228, 173, 67, 0.45);
+            color: var(--ops-gold);
+            font-weight: 600;
+        }
+        .ops-btn-gold-outline:hover {
+            background: var(--ops-gold);
+            border-color: var(--ops-gold);
+            color: var(--ops-black);
+        }
+    </style>
+{% endblock %}
+
+{% block page_actions %}
+    <a class="btn ops-btn-gold-outline" href="{% url 'operations:bookings' %}">
+        <i class="bi bi-arrow-left me-1" aria-hidden="true"></i>All bookings
+    </a>
+{% endblock %}
+
+{% block content %}
+    <div class="row g-4">
+        {# Left Column: Appointment, Customer & Notes #}
+        <div class="col-lg-8">
+            <section class="ops-card mb-4">
+                <div class="ops-card-header px-3 px-lg-4 py-3 d-flex justify-content-between align-items-center">
+                    <h2 class="h5 ops-card-title mb-0">
+                        <i class="bi bi-calendar2-event me-2" aria-hidden="true"></i>Appointment &amp; pricing summary
+                    </h2>
+                    <span class="badge rounded-pill bg-dark border border-warning text-warning">
+                        {{ booking.get_status_display }}
+                    </span>
+                </div>
+                <div class="p-3 p-lg-4">
+                    <div class="row g-3 small mb-3">
+                        <div class="col-sm-6">
+                            <span class="text-secondary d-block">Service</span>
+                            <strong class="fs-6">{{ booking.service.name }}</strong>
+                        </div>
+                        <div class="col-sm-6">
+                            <span class="text-secondary d-block">Vendor Store</span>
+                            <strong class="fs-6">{{ booking.store.name }}</strong>
+                        </div>
+                        <div class="col-sm-4">
+                            <span class="text-secondary d-block">Date</span>
+                            <strong>{{ booking.slot.start_at|date:"l, d M Y" }}</strong>
+                        </div>
+                        <div class="col-sm-4">
+                            <span class="text-secondary d-block">Time Slot</span>
+                            <strong>{{ booking.slot.start_at|date:"H:i" }} – {{ booking.slot.end_at|date:"H:i" }}</strong>
+                        </div>
+                        <div class="col-sm-4">
+                            <span class="text-secondary d-block">Seats Reserved</span>
+                            <strong>{{ booking.seats }} person(s)</strong>
+                            {% if booking.is_holding_seats %}
+                                <span class="badge bg-info-subtle text-info-emphasis ms-1">Holding slot</span>
+                            {% endif %}
+                        </div>
+                        <div class="col-sm-4">
+                            <span class="text-secondary d-block">Total Agreed Price</span>
+                            <strong class="fs-5">MUR {{ booking.total_price|floatformat:2 }}</strong>
+                        </div>
+                    </div>
+
+                    {% if booking.pickup_location or booking.dropoff_location %}
+                        <div class="border-top pt-3 mt-3">
+                            <h3 class="h6 fw-bold mb-2">
+                                <i class="bi bi-geo-alt me-1 text-warning" aria-hidden="true"></i>Transport route details
+                            </h3>
+                            <div class="row g-3 small">
+                                <div class="col-sm-6">
+                                    <span class="text-secondary d-block">Pickup Location</span>
+                                    <strong>{{ booking.pickup_location|default:"—" }}</strong>
+                                </div>
+                                <div class="col-sm-6">
+                                    <span class="text-secondary d-block">Drop-off Location</span>
+                                    <strong>{{ booking.dropoff_location|default:"—" }}</strong>
+                                </div>
+                            </div>
+                        </div>
+                    {% endif %}
+                </div>
+            </section>
+
+            {# Customer & Notes #}
+            <section class="ops-card">
+                <div class="ops-card-header px-3 px-lg-4 py-3">
+                    <h2 class="h5 ops-card-title mb-0">
+                        <i class="bi bi-person-lines-fill me-2" aria-hidden="true"></i>Customer details &amp; notes
+                    </h2>
+                </div>
+                <div class="p-3 p-lg-4">
+                    <div class="row g-3 small mb-3">
+                        <div class="col-sm-4">
+                            <span class="text-secondary d-block">Customer</span>
+                            <strong>{{ booking.customer.get_full_name|default:booking.customer.email }}</strong>
+                        </div>
+                        <div class="col-sm-4">
+                            <span class="text-secondary d-block">Phone</span>
+                            <strong>{{ booking.customer_phone|default:"—" }}</strong>
+                        </div>
+                        <div class="col-sm-4">
+                            <span class="text-secondary d-block">Email</span>
+                            <strong>{{ booking.customer.email }}</strong>
+                        </div>
+                    </div>
+
+                    {% if booking.customer_note %}
+                        <div class="bg-light border rounded-3 p-3 small mb-2">
+                            <strong class="d-block mb-1">Customer note:</strong>
+                            {{ booking.customer_note }}
+                        </div>
+                    {% endif %}
+                    {% if booking.vendor_note %}
+                        <div class="bg-light border rounded-3 p-3 small mb-2">
+                            <strong class="d-block mb-1">Vendor / Admin note:</strong>
+                            {{ booking.vendor_note }}
+                        </div>
+                    {% endif %}
+                    {% if booking.status_reason %}
+                        <div class="alert alert-danger small mb-0">
+                            <strong>Rejection / Cancellation reason:</strong> {{ booking.status_reason }}
+                        </div>
+                    {% endif %}
+                </div>
+            </section>
+        </div>
+
+        {# Right Column: Admin Actions & Timestamps #}
+        <div class="col-lg-4">
+            <section class="ops-card mb-4">
+                <div class="ops-card-header px-3 py-3">
+                    <h2 class="h6 ops-card-title mb-0">
+                        <i class="bi bi-sliders2 me-2" aria-hidden="true"></i>Booking actions
+                    </h2>
+                </div>
+                <div class="p-3">
+                    {% if booking.status == "pending" %}
+                        <form method="post" class="mb-3">
+                            {% csrf_token %}
+                            <input type="hidden" name="action" value="approve">
+                            <input type="hidden" name="booking_id" value="{{ booking.pk }}">
+                            <input type="hidden" name="next" value="{{ request.path }}">
+                            <div class="mb-2">
+                                <label class="form-label small fw-semibold" for="approve-note">Confirmation note</label>
+                                <input type="text" class="form-control form-control-sm" id="approve-note" name="note" placeholder="Optional note for customer">
+                            </div>
+                            <button type="submit" class="btn btn-sm ops-btn-gold w-100">Confirm booking</button>
+                        </form>
+                        <hr>
+                        <form method="post">
+                            {% csrf_token %}
+                            <input type="hidden" name="action" value="reject">
+                            <input type="hidden" name="booking_id" value="{{ booking.pk }}">
+                            <input type="hidden" name="next" value="{{ request.path }}">
+                            <div class="mb-2">
+                                <label class="form-label small fw-semibold" for="reject-reason">Rejection / cancellation reason</label>
+                                <input type="text" class="form-control form-control-sm" id="reject-reason" name="note" placeholder="Reason shown to customer">
+                            </div>
+                            <button type="submit" class="btn btn-sm btn-outline-danger w-100">Reject booking</button>
+                        </form>
+                    {% elif booking.status == "confirmed" %}
+                        {% if has_started %}
+                            <div class="d-grid gap-2 mb-3">
+                                <form method="post">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="action" value="complete">
+                                    <input type="hidden" name="booking_id" value="{{ booking.pk }}">
+                                    <input type="hidden" name="next" value="{{ request.path }}">
+                                    <button type="submit" class="btn btn-sm ops-btn-gold w-100">Mark as Completed</button>
+                                </form>
+                                <form method="post">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="action" value="no_show">
+                                    <input type="hidden" name="booking_id" value="{{ booking.pk }}">
+                                    <input type="hidden" name="next" value="{{ request.path }}">
+                                    <button type="submit" class="btn btn-sm btn-outline-secondary w-100">Mark as No-show</button>
+                                </form>
+                            </div>
+                        {% else %}
+                            <p class="small text-secondary mb-3">
+                                Completion and no-show actions unlock once the slot starts at <strong>{{ booking.slot.start_at|date:"d M Y, H:i" }}</strong>.
+                            </p>
+                        {% endif %}
+                        <hr>
+                        <form method="post">
+                            {% csrf_token %}
+                            <input type="hidden" name="action" value="cancel_vendor">
+                            <input type="hidden" name="booking_id" value="{{ booking.pk }}">
+                            <input type="hidden" name="next" value="{{ request.path }}">
+                            <div class="mb-2">
+                                <label class="form-label small fw-semibold" for="cancel-reason">Cancel booking reason</label>
+                                <input type="text" class="form-control form-control-sm" id="cancel-reason" name="note" placeholder="Reason for cancellation">
+                            </div>
+                            <button type="submit" class="btn btn-sm btn-outline-danger w-100">Cancel booking</button>
+                        </form>
+                    {% else %}
+                        <p class="small text-secondary mb-0">
+                            This booking is in a terminal state (<strong>{{ booking.get_status_display }}</strong>).
+                        </p>
+                    {% endif %}
+                </div>
+            </section>
+
+            {# Lifecycle Timestamps #}
+            <section class="ops-card">
+                <div class="ops-card-header px-3 py-3">
+                    <h2 class="h6 ops-card-title mb-0">
+                        <i class="bi bi-clock-history me-2" aria-hidden="true"></i>Lifecycle timestamps
+                    </h2>
+                </div>
+                <div class="p-3 small">
+                    <div class="d-flex justify-content-between py-1 border-bottom">
+                        <span class="text-secondary">Created</span>
+                        <strong>{{ booking.created_at|date:"d M Y, H:i" }}</strong>
+                    </div>
+                    <div class="d-flex justify-content-between py-1 border-bottom">
+                        <span class="text-secondary">Vendor responded</span>
+                        <strong>{% if booking.responded_at %}{{ booking.responded_at|date:"d M Y, H:i" }}{% else %}—{% endif %}</strong>
+                    </div>
+                    <div class="d-flex justify-content-between py-1 border-bottom">
+                        <span class="text-secondary">Confirmed</span>
+                        <strong>{% if booking.confirmed_at %}{{ booking.confirmed_at|date:"d M Y, H:i" }}{% else %}—{% endif %}</strong>
+                    </div>
+                    <div class="d-flex justify-content-between py-1 border-bottom">
+                        <span class="text-secondary">Completed</span>
+                        <strong>{% if booking.completed_at %}{{ booking.completed_at|date:"d M Y, H:i" }}{% else %}—{% endif %}</strong>
+                    </div>
+                    <div class="d-flex justify-content-between py-1">
+                        <span class="text-secondary">Cancelled</span>
+                        <strong>{% if booking.cancelled_at %}{{ booking.cancelled_at|date:"d M Y, H:i" }}{% else %}—{% endif %}</strong>
+                    </div>
+                </div>
+            </section>
+        </div>
+    </div>
+{% endblock %}

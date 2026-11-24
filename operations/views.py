@@ -999,22 +999,202 @@ def user_form(request, pk=None):
 
 @staff_member_required
 def manage_orders(request):
-    return _placeholder_view(
+    if request.method == "POST":
+        action = request.POST.get("action")
+        order = get_object_or_404(Order, pk=request.POST.get("order_id"))
+        next_url = request.POST.get("next") or "operations:orders"
+
+        if action == "change_status":
+            new_status = request.POST.get("new_status", "").strip()
+            note = request.POST.get("note", "").strip()
+            try:
+                order.change_status(new_status, by=request.user, note=note)
+                messages.success(
+                    request,
+                    f"Order {order.order_number} updated to {order.get_status_display()}.",
+                )
+            except ValidationError as exc:
+                messages.error(request, exc.message)
+            return redirect(next_url)
+
+        if action == "update_payment":
+            payment_status = request.POST.get("payment_status", "").strip()
+            payment_reference = request.POST.get("payment_reference", "").strip()
+            if payment_status in dict(Order.PaymentStatus.choices):
+                order.payment_status = payment_status
+                order.payment_reference = payment_reference
+                order.save(update_fields=["payment_status", "payment_reference", "updated_at"])
+                messages.success(
+                    request,
+                    f"Payment status for {order.order_number} updated to {order.get_payment_status_display()}.", # type: ignore
+                )
+            else:
+                messages.error(request, "Invalid payment status selected.")
+            return redirect(next_url)
+
+    status_filter = request.GET.get("status", "").strip()
+    orders_qs = Order.objects.select_related("store", "customer").prefetch_related("items")
+
+    if status_filter and status_filter in dict(Order.Status.choices):
+        orders = orders_qs.filter(status=status_filter)
+    else:
+        orders = orders_qs.all()
+
+    open_statuses = [
+        Order.Status.PENDING,
+        Order.Status.CONFIRMED,
+        Order.Status.PREPARING,
+        Order.Status.READY,
+    ]
+    open_orders_count = orders_qs.filter(status__in=open_statuses).count()
+    completed_orders_qs = orders_qs.filter(status=Order.Status.COMPLETED)
+    completed_revenue = completed_orders_qs.aggregate(total=Sum("total"))["total"] or Decimal("0.00")
+    unpaid_active_count = orders_qs.filter(
+        status__in=open_statuses,
+        payment_status=Order.PaymentStatus.UNPAID,
+    ).count()
+
+    return render(
         request,
-        "Orders",
-        "View and manage all customer orders across the marketplace.",
-        "orders",
+        "operations/orders.html",
+        {
+            "orders": orders,
+            "status_filter": status_filter,
+            "status_choices": Order.Status.choices,
+            "payment_status_choices": Order.PaymentStatus.choices,
+            "total_orders_count": orders_qs.count(),
+            "open_orders_count": open_orders_count,
+            "completed_orders_count": completed_orders_qs.count(),
+            "completed_revenue": completed_revenue,
+            "unpaid_active_count": unpaid_active_count,
+        },
     )
+
+
+@staff_member_required
+def order_detail(request, pk):
+    order = get_object_or_404(
+        Order.objects.select_related("store", "customer").prefetch_related(
+            "items__product",
+            "status_history__changed_by",
+        ),
+        pk=pk,
+    )
+    status_label_map = dict(Order.Status.choices)
+    allowed_transitions = [
+        (code, status_label_map.get(code, code))
+        for code in order.allowed_next_statuses()
+    ]
+
+    return render(
+        request,
+        "operations/order_detail.html",
+        {
+            "order": order,
+            "items": order.items.all(),
+            "history": order.status_history.all(),
+            "allowed_transitions": allowed_transitions,
+            "payment_status_choices": Order.PaymentStatus.choices,
+        },
+    )
+
 
 @staff_member_required
 def manage_bookings(request):
-    return _placeholder_view(
-        request,
-        "Bookings",
-        "View and manage all customer bookings across the marketplace.",
-        "bookings",
+    if request.method == "POST":
+        action = request.POST.get("action")
+        booking = get_object_or_404(
+            Booking.objects.select_related("service__store", "slot", "customer"),
+            pk=request.POST.get("booking_id"),
+        )
+        next_url = request.POST.get("next") or "operations:bookings"
+        note_or_reason = request.POST.get("note", "").strip()
+
+        try:
+            if action == "approve":
+                booking.approve(note=note_or_reason)
+                messages.success(request, f"Booking {booking.reference} confirmed.")
+            elif action == "reject":
+                booking.reject(reason=note_or_reason)
+                messages.warning(request, f"Booking {booking.reference} rejected.")
+            elif action == "cancel_vendor":
+                booking.cancel_by_vendor(reason=note_or_reason)
+                messages.warning(request, f"Booking {booking.reference} cancelled.")
+            elif action == "complete":
+                booking.complete()
+                messages.success(request, f"Booking {booking.reference} marked as completed.")
+            elif action == "no_show":
+                booking.mark_no_show()
+                messages.warning(request, f"Booking {booking.reference} marked as no-show.")
+            elif action == "update_note":
+                booking.vendor_note = note_or_reason
+                booking.save(update_fields=["vendor_note", "updated_at"])
+                messages.success(request, f"Updated note on booking {booking.reference}.")
+            else:
+                messages.error(request, "Unknown booking action.")
+        except ValidationError as exc:
+            messages.error(request, exc.message)
+
+        return redirect(next_url)
+
+    status_filter = request.GET.get("status", "").strip()
+    bookings_qs = Booking.objects.select_related(
+        "service__store",
+        "slot",
+        "customer",
     )
 
+    if status_filter and status_filter in dict(Booking.Status.choices):
+        bookings = bookings_qs.filter(status=status_filter)
+    else:
+        bookings = bookings_qs.all()
+
+    now = timezone.now()
+    active_bookings_count = bookings_qs.filter(
+        status__in=[Booking.Status.PENDING, Booking.Status.CONFIRMED]
+    ).count()
+    upcoming_confirmed_count = bookings_qs.filter(
+        status=Booking.Status.CONFIRMED,
+        slot__start_at__gte=now,
+    ).count()
+    completed_qs = bookings_qs.filter(status=Booking.Status.COMPLETED)
+    completed_revenue = completed_qs.aggregate(total=Sum("total_price"))["total"] or Decimal("0.00")
+
+    return render(
+        request,
+        "operations/bookings.html",
+        {
+            "bookings": bookings,
+            "status_filter": status_filter,
+            "status_choices": Booking.Status.choices,
+            "total_bookings_count": bookings_qs.count(),
+            "active_bookings_count": active_bookings_count,
+            "upcoming_confirmed_count": upcoming_confirmed_count,
+            "completed_bookings_count": completed_qs.count(),
+            "completed_revenue": completed_revenue,
+            "now": now,
+        },
+    )
+
+
+@staff_member_required
+def booking_detail(request, pk):
+    booking = get_object_or_404(
+        Booking.objects.select_related("service__store", "slot", "customer"),
+        pk=pk,
+    )
+    now = timezone.now()
+    has_started = booking.slot.start_at <= now
+
+    return render(
+        request,
+        "operations/booking_detail.html",
+        {
+            "booking": booking,
+            "has_started": has_started,
+            "now": now,
+        },
+    )
 
 @staff_member_required
 def manage_payouts(request):

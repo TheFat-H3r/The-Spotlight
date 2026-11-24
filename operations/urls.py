@@ -1,5 +1,5 @@
 from django.urls import path
-from .views import admin_home, admin_notification_create, admin_settings, authorize_stores, broadcast_form
+from .views import admin_home, admin_notification_create, admin_settings, authorize_stores, booking_detail, broadcast_form, order_detail
 from .views import business_type_form, catalog_management, categories_management, category_form, complaint_form, complaints
 from .views import manage_bookings, manage_orders, manage_payouts, reviews_management, marketing, marketing_ad_form, marketing_announcement_form
 from .views import notifications_management, payout_detail, product_form, service_form, store_form, stores_management, user_form, users_management
@@ -48,9 +48,15 @@ urlpatterns = [
     path("users/add/", user_form, name="user-add"),
     path("users/<int:pk>/edit/", user_form, name="user-edit"),
 
-    # Transactions & Payouts
+    # Orders
     path("orders/", manage_orders, name="orders"),
+    path("orders/<int:pk>/", order_detail, name="order-detail"),
+
+    # Bookings
     path("bookings/", manage_bookings, name="bookings"),
+    path("bookings/<int:pk>/", booking_detail, name="booking-detail"),
+
+    # Transactions & Payouts
     path("payouts/", manage_payouts, name="payouts"),
     path("payouts/<int:pk>/", payout_detail, name="payout-detail"),
 

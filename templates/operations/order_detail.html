@@ -1,0 +1,310 @@
+{% extends "operations/base.html" %}
+
+{% block title %}{{ order.order_number }} | Order Details{% endblock %}
+{% block breadcrumb %}Order {{ order.order_number }}{% endblock %}
+{% block page_kicker %}Order Inspection &amp; Control{% endblock %}
+{% block page_heading %}{{ order.order_number }} — {{ order.store.name }}{% endblock %}
+{% block page_description %}
+    Placed on {{ order.created_at|date:"d M Y, H:i" }} · Checkout ref: {{ order.checkout_reference }}
+{% endblock %}
+{% block orders_nav_class %}active{% endblock %}
+
+{% block extra_css %}
+    <style>
+        .ops-card-header {
+            background: var(--ops-black);
+            border-bottom: 2px solid var(--ops-gold);
+            border-top-left-radius: calc(.85rem - 1px);
+            border-top-right-radius: calc(.85rem - 1px);
+            color: #fff;
+        }
+        .ops-card-header .ops-card-title { color: #fff; font-weight: 700; }
+        .ops-card-header .ops-card-title i { color: var(--ops-gold); }
+        .ops-btn-gold {
+            background: var(--ops-gold);
+            border: 1px solid var(--ops-gold);
+            color: var(--ops-black);
+            font-weight: 700;
+        }
+        .ops-btn-gold:hover {
+            background: #d49b32;
+            border-color: #d49b32;
+            color: var(--ops-black);
+        }
+        .ops-btn-gold-outline {
+            border: 1px solid rgba(228, 173, 67, 0.45);
+            color: var(--ops-gold);
+            font-weight: 600;
+        }
+        .ops-btn-gold-outline:hover {
+            background: var(--ops-gold);
+            border-color: var(--ops-gold);
+            color: var(--ops-black);
+        }
+        .ops-timeline {
+            border-left: 2px solid var(--ops-gold);
+            margin-left: .5rem;
+            padding-left: 1.25rem;
+        }
+        .ops-timeline-item {
+            position: relative;
+        }
+        .ops-timeline-item::before {
+            background: var(--ops-black);
+            border: 2px solid var(--ops-gold);
+            border-radius: 50%;
+            content: "";
+            height: 11px;
+            left: -1.62rem;
+            position: absolute;
+            top: .3rem;
+            width: 11px;
+        }
+    </style>
+{% endblock %}
+
+{% block page_actions %}
+    <a class="btn ops-btn-gold-outline" href="{% url 'operations:orders' %}">
+        <i class="bi bi-arrow-left me-1" aria-hidden="true"></i>All orders
+    </a>
+{% endblock %}
+
+{% block content %}
+    <div class="row g-4">
+        {# Left Column: Line Items & Notes #}
+        <div class="col-lg-8">
+            <section class="ops-card mb-4">
+                <div class="ops-card-header px-3 px-lg-4 py-3 d-flex justify-content-between align-items-center">
+                    <h2 class="h5 ops-card-title mb-0">
+                        <i class="bi bi-box-seam me-2" aria-hidden="true"></i>Order items ({{ order.item_count }})
+                    </h2>
+                    <span class="badge rounded-pill bg-dark border border-warning text-warning">
+                        {{ order.get_status_display }}
+                    </span>
+                </div>
+                <div class="p-3 p-lg-4">
+                    <div class="table-responsive">
+                        <table class="table align-middle mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Item</th>
+                                    <th>SKU</th>
+                                    <th class="text-end">Unit Price</th>
+                                    <th class="text-center">Qty</th>
+                                    <th class="text-end">Line Total</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for item in items %}
+                                    <tr>
+                                        <td class="fw-semibold">
+                                            {{ item.product_name }}
+                                            {% if item.variant_name %}
+                                                <span class="d-block small text-secondary fw-normal">{{ item.variant_name }}</span>
+                                            {% endif %}
+                                        </td>
+                                        <td class="small text-secondary">{{ item.sku|default:"—" }}</td>
+                                        <td class="text-end text-nowrap">MUR {{ item.unit_price|floatformat:2 }}</td>
+                                        <td class="text-center">{{ item.quantity }}</td>
+                                        <td class="text-end fw-semibold text-nowrap">MUR {{ item.line_total|floatformat:2 }}</td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                            <tfoot class="border-top">
+                                <tr>
+                                    <td colspan="4" class="text-end text-secondary">Subtotal</td>
+                                    <td class="text-end text-nowrap">MUR {{ order.subtotal|floatformat:2 }}</td>
+                                </tr>
+                                {% if order.discount_total > 0 %}
+                                    <tr>
+                                        <td colspan="4" class="text-end text-success">
+                                            Discount {% if order.coupon_code %}({{ order.coupon_code }}){% endif %}
+                                        </td>
+                                        <td class="text-end text-success text-nowrap">- MUR {{ order.discount_total|floatformat:2 }}</td>
+                                    </tr>
+                                {% endif %}
+                                <tr>
+                                    <td colspan="4" class="text-end text-secondary">Delivery fee</td>
+                                    <td class="text-end text-nowrap">MUR {{ order.delivery_fee|floatformat:2 }}</td>
+                                </tr>
+                                <tr>
+                                    <td colspan="4" class="text-end fw-bold fs-6">Total</td>
+                                    <td class="text-end fw-bold fs-6 text-nowrap">MUR {{ order.total|floatformat:2 }}</td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            {# Customer & Fulfilment Details #}
+            <section class="ops-card">
+                <div class="ops-card-header px-3 px-lg-4 py-3">
+                    <h2 class="h5 ops-card-title mb-0">
+                        <i class="bi bi-person-lines-fill me-2" aria-hidden="true"></i>Customer &amp; fulfilment details
+                    </h2>
+                </div>
+                <div class="p-3 p-lg-4">
+                    <div class="row g-3 small mb-3">
+                        <div class="col-sm-4">
+                            <span class="text-secondary d-block">Customer</span>
+                            <strong>{{ order.customer_name|default:order.customer }}</strong>
+                        </div>
+                        <div class="col-sm-4">
+                            <span class="text-secondary d-block">Phone</span>
+                            <strong>{{ order.customer_phone|default:"—" }}</strong>
+                        </div>
+                        <div class="col-sm-4">
+                            <span class="text-secondary d-block">Email</span>
+                            <strong>{{ order.customer_email|default:"—" }}</strong>
+                        </div>
+                        <div class="col-sm-4">
+                            <span class="text-secondary d-block">Method</span>
+                            <strong>{{ order.get_fulfilment_method_display }}</strong>
+                        </div>
+                        <div class="col-sm-8">
+                            <span class="text-secondary d-block">Location / Address</span>
+                            <strong>
+                                {% if order.fulfilment_method == "delivery" %}
+                                    {{ order.delivery_address|default:"—" }}
+                                {% else %}
+                                    {{ order.pickup_location|default:"Store pickup" }}
+                                {% endif %}
+                            </strong>
+                        </div>
+                    </div>
+
+                    {% if order.customer_note %}
+                        <div class="bg-light border rounded-3 p-3 small mb-2">
+                            <strong class="d-block mb-1">Customer note:</strong>
+                            {{ order.customer_note }}
+                        </div>
+                    {% endif %}
+                    {% if order.vendor_note %}
+                        <div class="bg-light border rounded-3 p-3 small mb-2">
+                            <strong class="d-block mb-1">Vendor note:</strong>
+                            {{ order.vendor_note }}
+                        </div>
+                    {% endif %}
+                    {% if order.cancel_reason %}
+                        <div class="alert alert-danger small mb-0">
+                            <strong>Cancellation / Rejection reason:</strong> {{ order.cancel_reason }}
+                        </div>
+                    {% endif %}
+                </div>
+            </section>
+        </div>
+
+        {# Right Column: Admin Actions & Status History #}
+        <div class="col-lg-4">
+            {# Lifecycle Transition Card #}
+            <section class="ops-card mb-4">
+                <div class="ops-card-header px-3 py-3">
+                    <h2 class="h6 ops-card-title mb-0">
+                        <i class="bi bi-arrow-repeat me-2" aria-hidden="true"></i>Update order status
+                    </h2>
+                </div>
+                <div class="p-3">
+                    {% if allowed_transitions %}
+                        <form method="post">
+                            {% csrf_token %}
+                            <input type="hidden" name="action" value="change_status">
+                            <input type="hidden" name="order_id" value="{{ order.pk }}">
+                            <input type="hidden" name="next" value="{{ request.path }}">
+
+                            <div class="mb-3">
+                                <label class="form-label small fw-semibold" for="new-status-select">Next state</label>
+                                <select class="form-select form-select-sm" id="new-status-select" name="new_status" required>
+                                    {% for code, label in allowed_transitions %}
+                                        <option value="{{ code }}">{{ label }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label small fw-semibold" for="status-note">Audit / cancellation note</label>
+                                <input type="text"
+                                       class="form-control form-control-sm"
+                                       id="status-note"
+                                       name="note"
+                                       placeholder="Optional reason or dispatch note">
+                            </div>
+                            <button type="submit" class="btn btn-sm ops-btn-gold w-100">Apply status change</button>
+                        </form>
+                    {% else %}
+                        <p class="small text-secondary mb-0">
+                            This order is in a terminal state (<strong>{{ order.get_status_display }}</strong>) and cannot transition further.
+                        </p>
+                    {% endif %}
+                </div>
+            </section>
+
+            {# Payment Reconciliation Card #}
+            <section class="ops-card mb-4">
+                <div class="ops-card-header px-3 py-3">
+                    <h2 class="h6 ops-card-title mb-0">
+                        <i class="bi bi-credit-card me-2" aria-hidden="true"></i>Payment reconciliation
+                    </h2>
+                </div>
+                <div class="p-3">
+                    <form method="post">
+                        {% csrf_token %}
+                        <input type="hidden" name="action" value="update_payment">
+                        <input type="hidden" name="order_id" value="{{ order.pk }}">
+                        <input type="hidden" name="next" value="{{ request.path }}">
+
+                        <div class="mb-2 small text-secondary">
+                            Method: <strong class="text-dark">{{ order.get_payment_method_display }}</strong>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label small fw-semibold" for="payment-status-select">Payment status</label>
+                            <select class="form-select form-select-sm" id="payment-status-select" name="payment_status">
+                                {% for code, label in payment_status_choices %}
+                                    <option value="{{ code }}" {% if order.payment_status == code %}selected{% endif %}>
+                                        {{ label }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label small fw-semibold" for="payment-ref">Payment reference</label>
+                            <input type="text"
+                                   class="form-control form-control-sm"
+                                   id="payment-ref"
+                                   name="payment_reference"
+                                   value="{{ order.payment_reference }}"
+                                   placeholder="e.g., Juice / gateway ref">
+                        </div>
+                        <button type="submit" class="btn btn-sm btn-dark w-100">Save payment details</button>
+                    </form>
+                </div>
+            </section>
+
+            {# Audit History Timeline #}
+            <section class="ops-card">
+                <div class="ops-card-header px-3 py-3">
+                    <h2 class="h6 ops-card-title mb-0">
+                        <i class="bi bi-clock-history me-2" aria-hidden="true"></i>Status audit trail
+                    </h2>
+                </div>
+                <div class="p-3">
+                    <div class="ops-timeline">
+                        {% for entry in history %}
+                            <div class="ops-timeline-item mb-3">
+                                <span class="d-block small fw-bold">{{ entry.get_to_status_display }}</span>
+                                <span class="d-block text-secondary" style="font-size: .78rem;">
+                                    {{ entry.created_at|date:"d M Y, H:i" }}
+                                    {% if entry.changed_by %} · {{ entry.changed_by }}{% endif %}
+                                </span>
+                                {% if entry.note %}
+                                    <span class="d-block small bg-light border rounded px-2 py-1 mt-1">{{ entry.note }}</span>
+                                {% endif %}
+                            </div>
+                        {% empty %}
+                            <p class="small text-secondary mb-0">No transitions logged yet.</p>
+                        {% endfor %}
+                    </div>
+                </div>
+            </section>
+        </div>
+    </div>
+{% endblock %}
