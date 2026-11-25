@@ -86,6 +86,7 @@ TEMPLATES = [
                 "transactions.context_processors.cart_count",
                 "shopkeeper.context_processors.vendor_dashboard_context",
                 "operations.context_processors.operations_sidebar_counts",
+                "core.context_processors.marketplace_navbar_context",
             ],
         },
     },

@@ -106,6 +106,14 @@
             background: url("{% static 'core/images/homepage-three/style-bg-four.webp' %}") no-repeat center/cover;
         }
 
+        .seller-wrapper {
+            background: url("{% static 'core/images/homepage-one/sallers-cover.png' %}") no-repeat center/cover;
+        }
+
+        .sidebar-shop-section {
+            background: url("{% static 'core/images/homepage-one/sidebar-img.png' %}");
+        }
+
         /* Force #000 across header links, buttons, and icons */
     #header .header-center-section,
     #header .header-center-section a,
@@ -197,14 +205,12 @@
                             </button>
                             <div class="category-dropdown position-absolute" id="subMenu">
                                 <ul class="category-list">
+                                    {% for category in all_categories %}
                                     <li class="category-list-item">
-                                        <a href="#">
+                                        <a href="{% url 'core:category_detail' category.slug %}">
                                             <div class="dropdown-item">
                                                 <div class="dropdown-list-item">
-                                                    <span class="dropdown-img">
-                                                        <img src="{% static 'core/images/homepage-one/category-img/dresses.webp' %}" alt="Food & Dining">
-                                                    </span>
-                                                    <span class="dropdown-text">Food & Dining</span>
+                                                   <span class="dropdown-text">{{ category.name }}</span>
                                                 </div>
                                                 <div class="drop-down-list-icon">
                                                     <span><i class="fa-solid fa-chevron-right"></i></span>
@@ -212,66 +218,7 @@
                                             </div>
                                         </a>
                                     </li>
-                                    <li class="category-list-item">
-                                        <a href="#">
-                                            <div class="dropdown-item d-flex justify-content-between align-items-center">
-                                                <div class="dropdown-list-item d-flex">
-                                                    <span class="dropdown-img">
-                                                        <img src="{% static 'core/images/homepage-one/category-img/bags.webp' %}" alt="Hair & Beauty">
-                                                    </span>
-                                                    <span class="dropdown-text">Hair & Beauty</span>
-                                                </div>
-                                                <div class="drop-down-list-icon">
-                                                    <span><i class="fa-solid fa-chevron-right"></i></span>
-                                                </div>
-                                            </div>
-                                        </a>
-                                    </li>
-                                    <li class="category-list-item">
-                                        <a href="#">
-                                            <div class="dropdown-item d-flex justify-content-between align-items-center">
-                                                <div class="dropdown-list-item d-flex">
-                                                    <span class="dropdown-img">
-                                                        <img src="{% static 'core/images/homepage-one/category-img/sweaters.webp' %}" alt="Fashion & Retail">
-                                                    </span>
-                                                    <span class="dropdown-text">Fashion & Retail</span>
-                                                </div>
-                                                <div class="drop-down-list-icon">
-                                                    <span><i class="fa-solid fa-chevron-right"></i></span>
-                                                </div>
-                                            </div>
-                                        </a>
-                                    </li>
-                                    <li class="category-list-item">
-                                        <a href="#">
-                                            <div class="dropdown-item d-flex justify-content-between align-items-center">
-                                                <div class="dropdown-list-item d-flex">
-                                                    <span class="dropdown-img">
-                                                        <img src="{% static 'core/images/homepage-one/category-img/shoes.webp' %}" alt="Campus Transport">
-                                                    </span>
-                                                    <span class="dropdown-text">Campus Transport</span>
-                                                </div>
-                                                <div class="drop-down-list-icon">
-                                                    <span><i class="fa-solid fa-chevron-right"></i></span>
-                                                </div>
-                                            </div>
-                                        </a>
-                                    </li>
-                                    <li class="category-list-item">
-                                        <a href="#">
-                                            <div class="dropdown-item d-flex justify-content-between align-items-center">
-                                                <div class="dropdown-list-item d-flex">
-                                                    <span class="dropdown-img">
-                                                        <img src="{% static 'core/images/homepage-one/category-img/gift.webp' %}" alt="Tutoring">
-                                                    </span>
-                                                    <span class="dropdown-text">Tutoring</span>
-                                                </div>
-                                                <div class="drop-down-list-icon">
-                                                    <span><i class="fa-solid fa-chevron-right"></i></span>
-                                                </div>
-                                            </div>
-                                        </a>
-                                    </li>
+                                    {% endfor %}
                                 </ul>
                             </div>
                         </div>
