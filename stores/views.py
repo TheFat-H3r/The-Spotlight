@@ -195,6 +195,14 @@ def service_detail(request, slug):
     }
   return render(request, 'stores/service_detail.html', context)
 
+def product_info(request, slug):
+  product = Product.objects.filter(slug=slug).first()
+
+  context = {
+    'product':product
+  }
+  return render(request, 'stores/product_info.html', context )
+
 @login_required
 def submit_store_review(request, slug):
     store = get_object_or_404(Store, slug=slug)

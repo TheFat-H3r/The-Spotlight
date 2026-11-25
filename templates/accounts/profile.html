@@ -34,8 +34,12 @@
         <div class="relative shrink-0">
           {% if user_obj.role == 'vendor' and vendor_profile and vendor_profile.logo %}
             <img src="{{ vendor_profile.logo.url }}" alt="{{ vendor_profile.business_name }}" class="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl object-cover border border-spotlight-border shadow-lg" />
-          {% elif user_obj.role == 'customer' or user_obj.role == 'admin' and user_obj.avatar %}
-            <img src="{{ user_obj.avatar.url }}" alt="{{ user_obj.name }}" class="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl object-cover border border-spotlight-border shadow-lg" />
+          {% elif user_obj.role == 'customer' or user_obj.role == 'admin' %}
+              <img
+                  src="{% if user_obj.avatar %}{{ user_obj.avatar.url }}{% else %}{% static 'img/user-avatar.png' %}{% endif %}"
+                  alt="{{ user_obj.name }}"
+                  class="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl object-cover border border-spotlight-border shadow-lg"
+              />
           {% else %}
             <div class="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-gradient-to-br from-spotlight-cyan to-[#0077B6] flex items-center justify-center text-spotlight-bg font-extrabold text-2xl sm:text-3xl shadow-lg">
               {{ user_obj.full_name|default:user_obj.email|slice:":1"|upper }}
