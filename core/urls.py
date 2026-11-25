@@ -26,8 +26,10 @@ urlpatterns = [
     path('become-vendor/', become_vendor, name='become_vendor'),
 
     # Catalog: Products, Services & Stores
+    path('flash-sales/', product_list, name='flash_sale_list'),
     path('products/', product_list, name='product_list'),
     path('products/<slug:slug>/', product_detail, name='product_detail'),
+    path('categories/', category_detail, name='category_list'),
     path('category/<slug:slug>/', category_detail, name='category_detail'),
     path('services/', service_list, name='service_list'),
     path('services/<slug:slug>/', service_detail, name='service_detail'),

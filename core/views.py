@@ -1,8 +1,36 @@
 from django.shortcuts import render
 
+from marketing.models import Advertisement, Announcement
+from stores.models import Category, Product, Review, Service, Store
+
 # --- Main & Static Pages ---
 def home(request):
-    return render(request, 'core/home.html')
+    products = Product.objects.filter(is_available=True).select_related("store", "store__business_type", "category").order_by("-is_featured", "-created_at")
+    services = Service.objects.filter(is_available=True).select_related("store", "store__business_type", "category").order_by("-is_featured", "-created_at")
+    featured_ads = (Advertisement.objects.filter(is_active=True, status="active").select_related("store").order_by("-created_at")[:4])
+    announcements = (Announcement.objects.filter(is_active=True).order_by("-created_at")[:4])
+    featured_reviews = (Review.objects.filter(status="published").select_related("author", "store").order_by("-overall_rating", "-created_at")[:6])
+    active_ads = Advertisement.objects.filter(is_active=True, status="active").order_by("-created_at")
+    featured_stores = (Store.objects.filter(status="active", is_featured=True).select_related("business_type").order_by("-rating_average", "name"))
+    categories = Category.objects.all()
+    flash_sales = Product.objects.filter(is_available=True, is_featured=True)[:4]
+    
+    context = {
+        # "active_ads": active_ads, #Don't disclose by now
+        "featured_stores": featured_stores[:12],
+        "featured_products": Product.objects.filter(is_available=True, is_featured=True),
+        "all_products": products,
+        "all_services": services,
+        "featured_services": Service.objects.filter(is_available=True, is_featured=True)[:4],
+        "featured_ads": featured_ads,
+        "active_ads": active_ads,
+        "announcements": announcements,
+        "featured_reviews": featured_reviews,
+        "categories": categories,
+        "flash_sales": flash_sales
+    }
+    print(products)
+    return render(request, 'core/home.html', context)
 
 def about(request):
     return render(request, 'core/about.html')

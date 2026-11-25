@@ -29,6 +29,7 @@ class Advertisement(models.Model):
   # Ad Content Details
   title = models.CharField(max_length=200)
   slug = models.SlugField(max_length=220, unique=True, blank=True)
+  # offer = models.CharField(max_length=200, blank=True)
   description = models.TextField(blank=True)
   banner_image = models.ImageField(upload_to='ads/banners/', blank=True, null=True)
   target_url = models.URLField(

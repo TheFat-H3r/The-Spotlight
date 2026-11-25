@@ -245,6 +245,7 @@ class Product(models.Model):
     price = models.DecimalField(
         max_digits=10, decimal_places=2, default=ZERO, blank=True
     )
+    # price_cut = models.DecimalField(max_digits=10, decimal_places=2, default=ZERO, blank=True, null=True)
     image = models.ImageField(upload_to="products/images/", blank=True, null=True)
     stock = models.PositiveIntegerField(default=0)
     is_available = models.BooleanField(default=True)
