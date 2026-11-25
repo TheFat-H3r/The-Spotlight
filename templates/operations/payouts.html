@@ -1,0 +1,605 @@
+{% extends "operations/base.html" %}
+
+{% block title %}Payouts & Commissions | The Spotlight{% endblock %}
+{% block breadcrumb %}Payouts &amp; commissions{% endblock %}
+{% block page_kicker %}Transactions &amp; Settlements{% endblock %}
+{% block page_heading %}Payouts &amp; commissions{% endblock %}
+{% block page_description %}
+    Manage vendor payout statements, track monthly platform commissions, and configure store free trials or grace periods.
+{% endblock %}
+{% block payouts_nav_class %}active{% endblock %}
+
+{% block extra_css %}
+    <link rel="stylesheet" href="https://cdn.datatables.net/2.1.8/css/dataTables.bootstrap5.min.css">
+    <style>
+        .ops-kpi-card {
+            transition: transform .15s ease, border-color .15s ease;
+        }
+
+        .ops-kpi-card:hover {
+            border-color: var(--ops-gold);
+            transform: translateY(-2px);
+        }
+
+        .ops-kpi-value {
+            color: var(--ops-ink);
+            letter-spacing: -.02em;
+        }
+
+        .ops-kpi-icon {
+            align-items: center;
+            background: var(--ops-black);
+            border-radius: .65rem;
+            color: var(--ops-gold);
+            display: inline-flex;
+            height: 3rem;
+            justify-content: center;
+            width: 3rem;
+        }
+
+        .ops-card-header {
+            background: var(--ops-black);
+            border-bottom: 2px solid var(--ops-gold);
+            border-top-left-radius: calc(.85rem - 1px);
+            border-top-right-radius: calc(.85rem - 1px);
+            color: #fff;
+        }
+
+        .ops-card-header .ops-card-title {
+            color: #fff;
+            font-weight: 700;
+            letter-spacing: -.01em;
+        }
+
+        .ops-card-header .ops-card-title i {
+            color: var(--ops-gold);
+        }
+
+        .ops-card-header .ops-card-subtitle {
+            color: #9ba8ba;
+        }
+
+        .ops-btn-gold {
+            background: var(--ops-gold);
+            border: 1px solid var(--ops-gold);
+            color: var(--ops-black);
+            font-weight: 700;
+        }
+
+        .ops-btn-gold:hover {
+            background: #d49b32;
+            border-color: #d49b32;
+            color: var(--ops-black);
+        }
+
+        .ops-btn-gold-outline {
+            border: 1px solid rgba(228, 173, 67, 0.45);
+            color: var(--ops-gold);
+            font-weight: 600;
+            transition: background-color .15s ease, color .15s ease, border-color .15s ease;
+        }
+
+        .ops-btn-gold-outline:hover {
+            background: var(--ops-gold);
+            border-color: var(--ops-gold);
+            color: var(--ops-black);
+        }
+
+        .ops-table thead th {
+            background-color: var(--ops-black-elevated) !important;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+            color: var(--ops-gold) !important;
+            font-size: .74rem;
+            font-weight: 700;
+            letter-spacing: .08em;
+            padding-bottom: .85rem;
+            padding-top: .85rem;
+            text-transform: uppercase;
+            white-space: nowrap;
+        }
+
+        .ops-table thead th span.dt-column-order {
+            opacity: 1 !important;
+        }
+
+        .ops-table thead th span.dt-column-order::before,
+        .ops-table thead th span.dt-column-order::after {
+            color: rgba(255, 255, 255, 0.75) !important;
+            opacity: 1 !important;
+            transition: color .15s ease;
+        }
+
+        .ops-table thead th.dt-orderable-asc:hover span.dt-column-order::before,
+        .ops-table thead th.dt-orderable-desc:hover span.dt-column-order::after,
+        .ops-table thead th.dt-ordering-asc span.dt-column-order::before,
+        .ops-table thead th.dt-ordering-desc span.dt-column-order::after {
+            color: var(--ops-gold) !important;
+        }
+
+        .ops-table tbody td {
+            border-color: var(--ops-border);
+            color: var(--ops-ink);
+            font-size: .9rem;
+            padding-bottom: .8rem;
+            padding-top: .8rem;
+        }
+
+        .ops-table tbody tr[data-href] {
+            cursor: pointer;
+        }
+
+        .ops-table tbody tr:hover td {
+            background-color: rgba(228, 173, 67, 0.07);
+        }
+
+        .ops-row-link {
+            color: var(--ops-ink);
+            text-decoration: none;
+        }
+
+        .ops-table tbody tr:hover .ops-row-link,
+        .ops-row-link:hover {
+            color: #9b711f;
+            text-decoration: underline;
+        }
+
+        .dt-container .dt-search label,
+        .dt-container .dt-length label,
+        .dt-container .dt-info {
+            color: var(--ops-muted);
+            font-size: .84rem;
+        }
+
+        .dt-container .form-control:focus,
+        .dt-container .form-select:focus {
+            border-color: var(--ops-gold);
+            box-shadow: 0 0 0 .2rem var(--ops-gold-soft);
+        }
+
+        .dt-container .pagination .page-item.active .page-link {
+            background-color: var(--ops-black);
+            border-color: var(--ops-black);
+            color: var(--ops-gold);
+            font-weight: 600;
+        }
+
+        .dt-container .pagination .page-link {
+            color: var(--ops-ink);
+            font-size: .85rem;
+        }
+
+        .dt-container .pagination .page-link:hover {
+            background-color: var(--ops-gold-soft);
+            border-color: var(--ops-border);
+            color: var(--ops-black);
+        }
+    </style>
+{% endblock %}
+
+{% block page_actions %}
+    <button type="button" class="btn ops-btn-gold" data-bs-toggle="modal" data-bs-target="#generatePayoutModal">
+        <i class="bi bi-calculator me-1" aria-hidden="true"></i>
+        Generate payouts
+    </button>
+    <a class="btn ops-btn-gold-outline" href="{% url 'admin:index' %}">
+        <i class="bi bi-sliders me-1" aria-hidden="true"></i>
+        Manage plans
+    </a>
+{% endblock %}
+
+{% block content %}
+    {# KPI Summary #}
+    <section class="row g-3 mb-4" aria-label="Payouts summary">
+        <div class="col-sm-6 col-xl-3">
+            <article class="ops-card ops-kpi-card h-100 p-3 p-lg-4">
+                <div class="d-flex align-items-start justify-content-between">
+                    <div>
+                        <p class="small text-secondary fw-medium mb-2">Pending vendor payouts</p>
+                        <p class="fs-3 fw-bold ops-kpi-value mb-0">MUR {{ total_pending_amount|floatformat:2 }}</p>
+                    </div>
+                    <span class="ops-kpi-icon">
+                        <i class="bi bi-hourglass-split fs-5" aria-hidden="true"></i>
+                    </span>
+                </div>
+                <p class="small text-secondary mb-0 mt-3">{{ pending_payout_count }} statement(s) awaiting settlement</p>
+            </article>
+        </div>
+        <div class="col-sm-6 col-xl-3">
+            <article class="ops-card ops-kpi-card h-100 p-3 p-lg-4">
+                <div class="d-flex align-items-start justify-content-between">
+                    <div>
+                        <p class="small text-secondary fw-medium mb-2">Settled commission</p>
+                        <p class="fs-3 fw-bold ops-kpi-value mb-0">MUR {{ total_commission_earned|floatformat:2 }}</p>
+                    </div>
+                    <span class="ops-kpi-icon">
+                        <i class="bi bi-wallet2 fs-5" aria-hidden="true"></i>
+                    </span>
+                </div>
+                <p class="small text-secondary mb-0 mt-3">Platform revenue from paid settlements</p>
+            </article>
+        </div>
+        <div class="col-sm-6 col-xl-3">
+            <article class="ops-card ops-kpi-card h-100 p-3 p-lg-4">
+                <div class="d-flex align-items-start justify-content-between">
+                    <div>
+                        <p class="small text-secondary fw-medium mb-2">Trial / grace exempt sales</p>
+                        <p class="fs-3 fw-bold ops-kpi-value mb-0">MUR {{ total_exempt_sales|floatformat:2 }}</p>
+                    </div>
+                    <span class="ops-kpi-icon">
+                        <i class="bi bi-shield-check fs-5" aria-hidden="true"></i>
+                    </span>
+                </div>
+                <p class="small text-secondary mb-0 mt-3">Sales processed at 0% commission</p>
+            </article>
+        </div>
+        <div class="col-sm-6 col-xl-3">
+            <article class="ops-card ops-kpi-card h-100 p-3 p-lg-4">
+                <div class="d-flex align-items-start justify-content-between">
+                    <div>
+                        <p class="small text-secondary fw-medium mb-2">Stores on trial / grace</p>
+                        <p class="fs-3 fw-bold ops-kpi-value mb-0">{{ waived_store_count }}</p>
+                    </div>
+                    <span class="ops-kpi-icon">
+                        <i class="bi bi-gift fs-5" aria-hidden="true"></i>
+                    </span>
+                </div>
+                <p class="small text-secondary mb-0 mt-3">Out of {{ subscriptions.count }} subscribed stores</p>
+            </article>
+        </div>
+    </section>
+
+    {# Payout Statements Table #}
+    <section class="ops-card mb-4" aria-labelledby="payout-statements-heading">
+        <div class="ops-card-header d-flex flex-wrap align-items-center justify-content-between gap-2 px-3 px-lg-4 py-3">
+            <div>
+                <h2 class="h5 ops-card-title mb-1" id="payout-statements-heading">
+                    <i class="bi bi-cash-stack me-2" aria-hidden="true"></i>Payout statements
+                </h2>
+                <p class="small ops-card-subtitle mb-0">Click any row to inspect line-item orders and bookings</p>
+            </div>
+            <button type="button" class="btn btn-sm ops-btn-gold-outline" data-bs-toggle="modal" data-bs-target="#generatePayoutModal">
+                <i class="bi bi-plus-lg me-1" aria-hidden="true"></i>Run settlement
+            </button>
+        </div>
+        <div class="p-3 p-lg-4">
+            <div class="table-responsive">
+                <table id="payouts-table" class="table ops-table align-middle w-100 mb-0">
+                    <thead>
+                        <tr>
+                            <th scope="col">Reference</th>
+                            <th scope="col">Store</th>
+                            <th scope="col">Period</th>
+                            <th class="text-end" scope="col">Gross Sales</th>
+                            <th class="text-end" scope="col">Exempt (0%)</th>
+                            <th class="text-end" scope="col">Commission</th>
+                            <th class="text-end" scope="col">Net Payout</th>
+                            <th scope="col">Status</th>
+                            <th class="text-end" scope="col" data-orderable="false">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for payout in payouts %}
+                            {% url 'operations:payout-detail' payout.pk as payout_url %}
+                            <tr data-href="{{ payout_url }}">
+                                <td class="fw-semibold">
+                                    <a href="{{ payout_url }}" class="ops-row-link">{{ payout.reference }}</a>
+                                </td>
+                                <td>{{ payout.store.name }}</td>
+                                <td class="text-nowrap" data-order="{{ payout.period_end|date:'U' }}">
+                                    {{ payout.period_start|date:"d M" }} – {{ payout.period_end|date:"d M Y" }}
+                                </td>
+                                <td class="text-end text-nowrap" data-order="{{ payout.gross_sales }}">
+                                    MUR {{ payout.gross_sales|floatformat:2 }}
+                                </td>
+                                <td class="text-end text-nowrap text-secondary" data-order="{{ payout.exempt_sales }}">
+                                    MUR {{ payout.exempt_sales|floatformat:2 }}
+                                </td>
+                                <td class="text-end text-nowrap" data-order="{{ payout.commission_amount }}">
+                                    MUR {{ payout.commission_amount|floatformat:2 }}
+                                    <span class="small text-secondary">({{ payout.applied_commission_rate }}%)</span>
+                                </td>
+                                <td class="text-end fw-bold text-nowrap" data-order="{{ payout.net_payout }}">
+                                    MUR {{ payout.net_payout|floatformat:2 }}
+                                </td>
+                                <td>
+                                    {% if payout.status == "paid" %}
+                                        <span class="badge rounded-pill bg-success-subtle text-success-emphasis">Paid</span>
+                                    {% elif payout.status == "pending" %}
+                                        <span class="badge rounded-pill bg-warning-subtle text-warning-emphasis">Pending</span>
+                                    {% elif payout.status == "processing" %}
+                                        <span class="badge rounded-pill bg-primary-subtle text-primary-emphasis">Processing</span>
+                                    {% elif payout.status == "on_hold" %}
+                                        <span class="badge rounded-pill bg-secondary-subtle text-secondary-emphasis">On Hold</span>
+                                    {% elif payout.status == "failed" %}
+                                        <span class="badge rounded-pill bg-danger-subtle text-danger-emphasis">Failed</span>
+                                    {% else %}
+                                        <span class="badge rounded-pill bg-light text-dark border">{{ payout.get_status_display }}</span>
+                                    {% endif %}
+                                </td>
+                                <td class="text-end text-nowrap">
+                                    {% if payout.status != "paid" %}
+                                        <button type="button"
+                                                class="btn btn-sm btn-dark me-1 mark-paid-btn"
+                                                data-bs-toggle="modal"
+                                                data-bs-target="#markPaidModal"
+                                                data-payout-id="{{ payout.pk }}"
+                                                data-payout-ref="{{ payout.reference }}"
+                                                data-payout-store="{{ payout.store.name }}"
+                                                data-payout-net="{{ payout.net_payout|floatformat:2 }}">
+                                            Settle
+                                        </button>
+                                    {% endif %}
+                                    <a href="{{ payout_url }}" class="btn btn-sm btn-outline-dark" aria-label="View payout {{ payout.reference }}">
+                                        Details <i class="bi bi-chevron-right small ms-1" aria-hidden="true"></i>
+                                    </a>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </section>
+
+    {# Store Subscriptions, Free Trials & Grace Periods #}
+    <section class="ops-card" aria-labelledby="subscriptions-heading">
+        <div class="ops-card-header d-flex flex-wrap align-items-center justify-content-between gap-2 px-3 px-lg-4 py-3">
+            <div>
+                <h2 class="h5 ops-card-title mb-1" id="subscriptions-heading">
+                    <i class="bi bi-percent me-2" aria-hidden="true"></i>Store commission plans, trials &amp; grace periods
+                </h2>
+                <p class="small ops-card-subtitle mb-0">Stores inside a trial or grace window incur 0% commission on completed sales</p>
+            </div>
+        </div>
+        <div class="p-3 p-lg-4">
+            <div class="table-responsive">
+                <table id="subscriptions-table" class="table ops-table align-middle w-100 mb-0">
+                    <thead>
+                        <tr>
+                            <th scope="col">Store</th>
+                            <th scope="col">Plan</th>
+                            <th scope="col">Base Rate</th>
+                            <th scope="col">Effective Rate</th>
+                            <th scope="col">Trial Ends</th>
+                            <th scope="col">Grace Period Ends</th>
+                            <th scope="col">Status</th>
+                            <th class="text-end" scope="col" data-orderable="false">Grace Control</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for sub in subscriptions %}
+                            <tr>
+                                <td class="fw-semibold">{{ sub.store.name }}</td>
+                                <td>{{ sub.plan.name }}</td>
+                                <td>{{ sub.base_commission_rate }}%</td>
+                                <td class="fw-bold">
+                                    {% if sub.effective_commission_rate == 0 %}
+                                        <span class="text-success">0.00% (Waived)</span>
+                                    {% else %}
+                                        {{ sub.effective_commission_rate }}%
+                                    {% endif %}
+                                </td>
+                                <td class="text-nowrap" data-order="{{ sub.trial_ends_at|date:'U'|default:'0' }}">
+                                    {% if sub.trial_ends_at %}
+                                        {{ sub.trial_ends_at|date:"d M Y" }}
+                                    {% else %}
+                                        <span class="text-secondary">—</span>
+                                    {% endif %}
+                                </td>
+                                <td class="text-nowrap" data-order="{{ sub.grace_period_ends_at|date:'U'|default:'0' }}">
+                                    {% if sub.grace_period_ends_at %}
+                                        <span>{{ sub.grace_period_ends_at|date:"d M Y" }}</span>
+                                        {% if sub.grace_reason %}
+                                            <span class="d-block small text-secondary">{{ sub.grace_reason }}</span>
+                                        {% endif %}
+                                    {% else %}
+                                        <span class="text-secondary">—</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if sub.status == "trial" %}
+                                        <span class="badge rounded-pill bg-info-subtle text-info-emphasis">Free Trial</span>
+                                    {% elif sub.status == "grace" %}
+                                        <span class="badge rounded-pill bg-warning-subtle text-warning-emphasis">Grace Period</span>
+                                    {% elif sub.status == "active" %}
+                                        <span class="badge rounded-pill bg-success-subtle text-success-emphasis">Active</span>
+                                    {% else %}
+                                        <span class="badge rounded-pill bg-danger-subtle text-danger-emphasis">{{ sub.get_status_display }}</span>
+                                    {% endif %}
+                                </td>
+                                <td class="text-end text-nowrap">
+                                    <button type="button"
+                                            class="btn btn-sm btn-outline-dark grace-modal-btn"
+                                            data-bs-toggle="modal"
+                                            data-bs-target="#gracePeriodModal"
+                                            data-sub-id="{{ sub.pk }}"
+                                            data-store-name="{{ sub.store.name }}"
+                                            data-grace-date="{{ sub.grace_period_ends_at|date:'Y-m-d' }}"
+                                            data-grace-reason="{{ sub.grace_reason }}">
+                                        <i class="bi bi-clock-history me-1" aria-hidden="true"></i>Grace period
+                                    </button>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </section>
+
+    {# Modal 1: Generate Payout Run #}
+    <div class="modal fade" id="generatePayoutModal" tabindex="-1" aria-labelledby="generatePayoutModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <form method="post" class="modal-content border-0 shadow">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="generate_payout">
+                <div class="modal-header" style="background: var(--ops-black); color: #fff; border-bottom: 2px solid var(--ops-gold);">
+                    <h5 class="modal-title fw-bold" id="generatePayoutModalLabel">
+                        <i class="bi bi-calculator me-2" style="color: var(--ops-gold);" aria-hidden="true"></i>Generate payout statements
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold" for="payout-store-select">Target store</label>
+                        <select class="form-select" id="payout-store-select" name="store_id">
+                            <option value="all" selected>All subscribed stores</option>
+                            {% for sub in subscriptions %}
+                                <option value="{{ sub.store.pk }}">{{ sub.store.name }} ({{ sub.effective_commission_rate }}%)</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="row g-3">
+                        <div class="col-sm-6">
+                            <label class="form-label fw-semibold" for="period-start">Period start</label>
+                            <input type="date" class="form-control" id="period-start" name="period_start" value="{{ default_period_start }}" required>
+                        </div>
+                        <div class="col-sm-6">
+                            <label class="form-label fw-semibold" for="period-end">Period end</label>
+                            <input type="date" class="form-control" id="period-end" name="period_end" value="{{ default_period_end }}" required>
+                        </div>
+                    </div>
+                    <p class="small text-secondary mt-3 mb-0">
+                        Completed orders and bookings within this window will be aggregated. Sales occurring during a store's trial or grace window automatically calculate at <strong>0% commission</strong>.
+                    </p>
+                </div>
+                <div class="modal-footer bg-light">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn ops-btn-gold">Generate statements</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    {# Modal 2: Mark Payout Paid #}
+    <div class="modal fade" id="markPaidModal" tabindex="-1" aria-labelledby="markPaidModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <form method="post" class="modal-content border-0 shadow">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="mark_paid">
+                <input type="hidden" name="payout_id" id="modal-payout-id">
+                <div class="modal-header" style="background: var(--ops-black); color: #fff; border-bottom: 2px solid var(--ops-gold);">
+                    <h5 class="modal-title fw-bold" id="markPaidModalLabel">
+                        <i class="bi bi-check2-circle me-2" style="color: var(--ops-gold);" aria-hidden="true"></i>Confirm vendor settlement
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <p class="mb-3">
+                        Settling <strong id="modal-payout-ref"></strong> for <strong id="modal-payout-store"></strong>:
+                        <span class="d-block fs-4 fw-bold mt-1" style="color: var(--ops-ink);">MUR <span id="modal-payout-net"></span></span>
+                    </p>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold" for="payment-method">Payment method</label>
+                        <select class="form-select" id="payment-method" name="payment_method" required>
+                            <option value="Bank Transfer (MCB)">Bank Transfer (MCB)</option>
+                            <option value="Bank Transfer (SBM)">Bank Transfer (SBM)</option>
+                            <option value="MCB Juice">MCB Juice</option>
+                            <option value="Other / Manual">Other / Manual</option>
+                        </select>
+                    </div>
+                    <div class="mb-0">
+                        <label class="form-label fw-semibold" for="transaction-reference">Transfer / receipt reference</label>
+                        <input type="text" class="form-control" id="transaction-reference" name="transaction_reference" placeholder="e.g., TXN-984312" required>
+                    </div>
+                </div>
+                <div class="modal-footer bg-light">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn ops-btn-gold">Mark as Paid</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    {# Modal 3: Grant / Edit Grace Period #}
+    <div class="modal fade" id="gracePeriodModal" tabindex="-1" aria-labelledby="gracePeriodModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <form method="post" class="modal-content border-0 shadow">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="grant_grace">
+                <input type="hidden" name="subscription_id" id="modal-sub-id">
+                <div class="modal-header" style="background: var(--ops-black); color: #fff; border-bottom: 2px solid var(--ops-gold);">
+                    <h5 class="modal-title fw-bold" id="gracePeriodModalLabel">
+                        <i class="bi bi-clock-history me-2" style="color: var(--ops-gold);" aria-hidden="true"></i>Manage grace period
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <p class="mb-3">Store: <strong id="modal-grace-store"></strong></p>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold" for="grace-period-end">Commission-free until</label>
+                        <input type="date" class="form-control" id="grace-period-end" name="grace_period_ends_at">
+                        <div class="form-text">Leave blank and save to remove an active grace period.</div>
+                    </div>
+                    <div class="mb-0">
+                        <label class="form-label fw-semibold" for="grace-reason">Reason / internal note</label>
+                        <input type="text" class="form-control" id="grace-reason" name="grace_reason" placeholder="e.g., Launch promo extension, onboarding delay">
+                    </div>
+                </div>
+                <div class="modal-footer bg-light">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn ops-btn-gold">Save grace period</button>
+                </div>
+            </form>
+        </div>
+    </div>
+{% endblock %}
+
+{% block extra_js %}
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script src="https://cdn.datatables.net/2.1.8/js/dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/2.1.8/js/dataTables.bootstrap5.min.js"></script>
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            const commonConfig = {
+                pageLength: 10,
+                lengthMenu: [5, 10, 25, 50],
+                order: [],
+            };
+
+            new DataTable("#payouts-table", {
+                ...commonConfig,
+                language: {
+                    emptyTable: "No payout statements generated yet.",
+                    search: "Search payouts:",
+                },
+            });
+
+            new DataTable("#subscriptions-table", {
+                ...commonConfig,
+                language: {
+                    emptyTable: "No store subscriptions configured yet.",
+                    search: "Search stores:",
+                },
+            });
+
+            // Row click navigation
+            document.addEventListener("click", function (event) {
+                const row = event.target.closest("tr[data-href]");
+                if (!row) return;
+                if (event.target.closest("a, button") || window.getSelection().toString()) return;
+                window.location.href = row.dataset.href;
+            });
+
+            // Populate Mark Paid modal
+            document.addEventListener("click", function (event) {
+                const btn = event.target.closest(".mark-paid-btn");
+                if (!btn) return;
+                document.getElementById("modal-payout-id").value = btn.dataset.payoutId;
+                document.getElementById("modal-payout-ref").textContent = btn.dataset.payoutRef;
+                document.getElementById("modal-payout-store").textContent = btn.dataset.payoutStore;
+                document.getElementById("modal-payout-net").textContent = btn.dataset.payoutNet;
+            });
+
+            // Populate Grace Period modal
+            document.addEventListener("click", function (event) {
+                const btn = event.target.closest(".grace-modal-btn");
+                if (!btn) return;
+                document.getElementById("modal-sub-id").value = btn.dataset.subId;
+                document.getElementById("modal-grace-store").textContent = btn.dataset.storeName;
+                document.getElementById("grace-period-end").value = btn.dataset.graceDate || "";
+                document.getElementById("grace-reason").value = btn.dataset.graceReason || "";
+            });
+        });
+    </script>
+{% endblock %}

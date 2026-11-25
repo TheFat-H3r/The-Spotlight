@@ -1,0 +1,82 @@
+{% extends "operations/base.html" %}
+
+{% block title %}{% if broadcast %}Edit Broadcast{% else %}New Broadcast{% endif %} | The Spotlight{% endblock %}
+{% block breadcrumb %}Notifications{% endblock %}
+{% block page_kicker %}Operations{% endblock %}
+{% block page_heading %}{% if broadcast %}Edit broadcast: {{ broadcast.title }}{% else %}Send platform broadcast{% endif %}{% endblock %}
+{% block page_description %}Publish an announcement to all users, customers, or store owners on The Spotlight.{% endblock %}
+{% block notifications_nav_class %}active{% endblock %}
+
+{% block page_actions %}
+    <a class="btn ops-btn-gold-outline" href="{% url 'operations:notifications' %}">
+        <i class="bi bi-arrow-left me-1" aria-hidden="true"></i>
+        Back to notifications
+    </a>
+{% endblock %}
+
+{% block content %}
+    <section class="ops-card w-100" aria-labelledby="broadcast-form-heading">
+        <div class="ops-card-header px-3 px-lg-4 py-3">
+            <h2 class="h5 ops-card-title mb-1" id="broadcast-form-heading">
+                <i class="bi bi-megaphone me-2" aria-hidden="true"></i>Broadcast details
+            </h2>
+            <p class="small ops-card-subtitle mb-0">Fields marked with * are required</p>
+        </div>
+        <div class="p-3 p-lg-4">
+            <form method="post">
+                {% csrf_token %}
+
+                <div class="row g-3 mb-3">
+                    <div class="col-md-8">
+                        <label class="form-label fw-medium" for="title">Announcement title *</label>
+                        <input type="text" id="title" name="title" maxlength="160" value="{{ broadcast.title|default:'' }}" class="form-control" required>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label fw-medium" for="audience">Target audience *</label>
+                        <select id="audience" name="audience" class="form-select" required>
+                            {% for value, label in audiences %}
+                                <option value="{{ value }}" {% if broadcast and broadcast.audience == value %}selected{% endif %}>
+                                    {{ label }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label fw-medium" for="body">Message body *</label>
+                    <textarea id="body" name="body" rows="5" class="form-control" required>{{ broadcast.body|default:'' }}</textarea>
+                </div>
+
+                <div class="row g-3 mb-3">
+                    <div class="col-md-6">
+                        <label class="form-label fw-medium" for="published_at">Publish at</label>
+                        <input type="datetime-local" id="published_at" name="published_at" value="{{ default_published }}" class="form-control">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label fw-medium" for="expires_at">Expires at (optional)</label>
+                        <input type="datetime-local" id="expires_at" name="expires_at" value="{{ default_expires }}" class="form-control">
+                    </div>
+                </div>
+
+                <div class="d-flex flex-wrap gap-4 mb-4">
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="is_pinned" name="is_pinned" {% if broadcast and broadcast.is_pinned %}checked{% endif %}>
+                        <label class="form-check-label fw-medium" for="is_pinned">Pin to top of user feeds / dashboard banners</label>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="send_email" name="send_email" {% if broadcast and broadcast.send_email %}checked{% endif %}>
+                        <label class="form-check-label fw-medium" for="send_email">Also dispatch via email to target audience</label>
+                    </div>
+                </div>
+
+                <div class="d-flex flex-wrap gap-2 pt-3 border-top">
+                    <button type="submit" class="btn btn-dark">
+                        <i class="bi bi-send me-1" aria-hidden="true"></i>Save broadcast
+                    </button>
+                    <a href="{% url 'operations:notifications' %}" class="btn ops-btn-gold-outline">Cancel</a>
+                </div>
+            </form>
+        </div>
+    </section>
+{% endblock %}

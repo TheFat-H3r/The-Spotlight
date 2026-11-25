@@ -1,0 +1,504 @@
+{% extends "operations/base.html" %}
+
+{% block title %}Notifications &amp; Broadcasts | The Spotlight{% endblock %}
+{% block breadcrumb %}Notifications{% endblock %}
+{% block page_kicker %}Operations{% endblock %}
+{% block page_heading %}Notifications &amp; platform broadcasts{% endblock %}
+{% block page_description %}
+    Triage system alerts for the operations team and publish platform-wide announcements to customers or store owners.
+{% endblock %}
+{% block notifications_nav_class %}active{% endblock %}
+
+{% block extra_css %}
+    <link rel="stylesheet" href="https://cdn.datatables.net/2.1.8/css/dataTables.bootstrap5.min.css">
+{% endblock %}
+
+{% block page_actions %}
+    <a class="btn ops-btn-gold-outline" href="{% url 'operations:notification-add' %}">
+        <i class="bi bi-bell-plus me-1" aria-hidden="true"></i>
+        New staff alert
+    </a>
+    <a class="btn btn-dark" href="{% url 'operations:broadcast-add' %}">
+        <i class="bi bi-megaphone me-1" aria-hidden="true"></i>
+        New broadcast
+    </a>
+{% endblock %}
+
+{% block content %}
+    {# KPI Summary Row #}
+    <section class="row g-3 mb-4" aria-label="Notifications summary">
+        <div class="col-sm-6 col-xl-3">
+            <article class="ops-card ops-kpi-card h-100 p-3 p-lg-4">
+                <div class="d-flex align-items-start justify-content-between">
+                    <div>
+                        <p class="small text-secondary fw-medium mb-2">Unread alerts</p>
+                        <p class="fs-2 fw-bold ops-kpi-value mb-0">{{ unread_count }}</p>
+                    </div>
+                    <span class="ops-kpi-icon">
+                        <i class="bi bi-bell fs-5" aria-hidden="true"></i>
+                    </span>
+                </div>
+                <p class="small text-secondary mb-0 mt-3">Awaiting staff acknowledgment</p>
+            </article>
+        </div>
+        <div class="col-sm-6 col-xl-3">
+            <article class="ops-card ops-kpi-card h-100 p-3 p-lg-4">
+                <div class="d-flex align-items-start justify-content-between">
+                    <div>
+                        <p class="small text-secondary fw-medium mb-2">Action / Urgent</p>
+                        <p class="fs-2 fw-bold ops-kpi-value mb-0">{{ urgent_count }}</p>
+                    </div>
+                    <span class="ops-kpi-icon">
+                        <i class="bi bi-exclamation-diamond fs-5" aria-hidden="true"></i>
+                    </span>
+                </div>
+                <p class="small text-secondary mb-0 mt-3">Unread warning &amp; urgent alerts</p>
+            </article>
+        </div>
+        <div class="col-sm-6 col-xl-3">
+            <article class="ops-card ops-kpi-card h-100 p-3 p-lg-4">
+                <div class="d-flex align-items-start justify-content-between">
+                    <div>
+                        <p class="small text-secondary fw-medium mb-2">Active broadcasts</p>
+                        <p class="fs-2 fw-bold ops-kpi-value mb-0">{{ active_broadcast_count }}</p>
+                    </div>
+                    <span class="ops-kpi-icon">
+                        <i class="bi bi-megaphone fs-5" aria-hidden="true"></i>
+                    </span>
+                </div>
+                <p class="small text-secondary mb-0 mt-3">Currently live to target audiences</p>
+            </article>
+        </div>
+        <div class="col-sm-6 col-xl-3">
+            <article class="ops-card ops-kpi-card h-100 p-3 p-lg-4">
+                <div class="d-flex align-items-start justify-content-between">
+                    <div>
+                        <p class="small text-secondary fw-medium mb-2">Pinned banners</p>
+                        <p class="fs-2 fw-bold ops-kpi-value mb-0">{{ pinned_broadcast_count }}</p>
+                    </div>
+                    <span class="ops-kpi-icon">
+                        <i class="bi bi-pin-angle fs-5" aria-hidden="true"></i>
+                    </span>
+                </div>
+                <p class="small text-secondary mb-0 mt-3">Highlighted at top of user feeds</p>
+            </article>
+        </div>
+    </section>
+
+    {# 1. Unread Operations Alerts #}
+    <section class="ops-card mb-4" aria-labelledby="unread-alerts-heading">
+        <div class="ops-card-header d-flex flex-wrap align-items-center justify-content-between gap-2 px-3 px-lg-4 py-3">
+            <div>
+                <h2 class="h5 ops-card-title mb-1" id="unread-alerts-heading">
+                    <i class="bi bi-bell-fill me-2" aria-hidden="true"></i>Unread operations alerts
+                </h2>
+                <p class="small ops-card-subtitle mb-0">{{ unread_count }} unread system notifications</p>
+            </div>
+            {% if unread_count %}
+                <form method="post" class="d-inline">
+                    {% csrf_token %}
+                    <input type="hidden" name="item_type" value="notification">
+                    <button type="submit" name="action" value="mark_all_read" class="btn btn-sm ops-btn-gold-outline">
+                        <i class="bi bi-check2-all me-1" aria-hidden="true"></i>Mark all read
+                    </button>
+                </form>
+            {% endif %}
+        </div>
+        <div class="p-3 p-lg-4">
+            <div class="table-responsive">
+                <table id="unread-alerts-table" class="table ops-table align-middle w-100 mb-0">
+                    <thead>
+                        <tr>
+                            <th scope="col">Alert</th>
+                            <th scope="col">Category</th>
+                            <th scope="col">Level</th>
+                            <th scope="col">Scope</th>
+                            <th scope="col">Received</th>
+                            <th class="text-end" scope="col" data-orderable="false">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in unread_alerts %}
+                            <tr>
+                                <td class="fw-semibold">
+                                    <a href="#"
+                                       class="ops-row-link js-notif-preview"
+                                       data-bs-toggle="modal"
+                                       data-bs-target="#notifPreviewModal"
+                                       data-kind="Operations Alert"
+                                       data-item-type="notification"
+                                       data-item-id="{{ item.pk }}"
+                                       data-is-read="false"
+                                       data-title="{{ item.title }}"
+                                       data-meta1="{{ item.get_category_display }} · {{ item.get_level_display }}"
+                                       data-meta2="{% if item.recipient %}Assigned to {{ item.recipient.full_name|default:item.recipient.email }}{% else %}Shared across all staff{% endif %}"
+                                       data-meta3="Received {{ item.created_at|date:'d M Y, H:i' }}"
+                                       data-action-url="{{ item.action_url }}"
+                                       data-body="{{ item.message|default:'No additional details provided.' }}">
+                                        {{ item.title }}
+                                    </a>
+                                </td>
+                                <td>{{ item.get_category_display }}</td>
+                                <td>
+                                    {% if item.level == "danger" %}
+                                        <span class="badge rounded-pill bg-danger-subtle text-danger-emphasis">{{ item.get_level_display }}</span>
+                                    {% elif item.level == "warning" %}
+                                        <span class="badge rounded-pill bg-warning-subtle text-warning-emphasis">{{ item.get_level_display }}</span>
+                                    {% elif item.level == "success" %}
+                                        <span class="badge rounded-pill bg-success-subtle text-success-emphasis">{{ item.get_level_display }}</span>
+                                    {% else %}
+                                        <span class="badge rounded-pill bg-info-subtle text-info-emphasis">{{ item.get_level_display }}</span>
+                                    {% endif %}
+                                </td>
+                                <td class="small text-secondary">
+                                    {% if item.recipient %}
+                                        {{ item.recipient.full_name|default:item.recipient.email }}
+                                    {% else %}
+                                        All staff
+                                    {% endif %}
+                                </td>
+                                <td class="text-nowrap" data-order="{{ item.created_at|date:'U' }}">
+                                    {{ item.created_at|date:"d M Y, H:i" }}
+                                </td>
+                                <td class="text-end text-nowrap">
+                                    <div class="d-inline-flex gap-1">
+                                        {% if item.action_url %}
+                                            <a href="{{ item.action_url }}" class="btn btn-sm btn-outline-dark">Open</a>
+                                        {% endif %}
+                                        <button type="button"
+                                                class="btn btn-sm btn-outline-dark js-notif-preview"
+                                                data-bs-toggle="modal"
+                                                data-bs-target="#notifPreviewModal"
+                                                data-kind="Operations Alert"
+                                                data-item-type="notification"
+                                                data-item-id="{{ item.pk }}"
+                                                data-is-read="false"
+                                                data-title="{{ item.title }}"
+                                                data-meta1="{{ item.get_category_display }} · {{ item.get_level_display }}"
+                                                data-meta2="{% if item.recipient %}Assigned to {{ item.recipient.full_name|default:item.recipient.email }}{% else %}Shared across all staff{% endif %}"
+                                                data-meta3="Received {{ item.created_at|date:'d M Y, H:i' }}"
+                                                data-action-url="{{ item.action_url }}"
+                                                data-body="{{ item.message|default:'No additional details provided.' }}">
+                                            View
+                                        </button>
+                                        <form method="post" class="d-inline">
+                                            {% csrf_token %}
+                                            <input type="hidden" name="item_type" value="notification">
+                                            <input type="hidden" name="item_id" value="{{ item.pk }}">
+                                            <button type="submit" name="action" value="mark_read" class="btn btn-sm btn-success">Mark read</button>
+                                        </form>
+                                    </div>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </section>
+
+    {# 2. Outgoing Broadcast Announcements #}
+    <section class="ops-card mb-4" aria-labelledby="broadcasts-heading">
+        <div class="ops-card-header d-flex flex-wrap align-items-center justify-content-between gap-2 px-3 px-lg-4 py-3">
+            <div>
+                <h2 class="h5 ops-card-title mb-1" id="broadcasts-heading">
+                    <i class="bi bi-megaphone me-2" aria-hidden="true"></i>Outgoing platform broadcasts
+                </h2>
+                <p class="small ops-card-subtitle mb-0">{{ broadcasts|length }} announcements scheduled or published</p>
+            </div>
+        </div>
+        <div class="p-3 p-lg-4">
+            <div class="table-responsive">
+                <table id="broadcasts-table" class="table ops-table align-middle w-100 mb-0">
+                    <thead>
+                        <tr>
+                            <th scope="col">Announcement</th>
+                            <th scope="col">Audience</th>
+                            <th scope="col">Channels</th>
+                            <th scope="col">Published</th>
+                            <th scope="col">Expires</th>
+                            <th class="text-end" scope="col" data-orderable="false">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for b in broadcasts %}
+                            <tr>
+                                <td class="fw-semibold">
+                                    <a href="#"
+                                       class="ops-row-link js-notif-preview"
+                                       data-bs-toggle="modal"
+                                       data-bs-target="#notifPreviewModal"
+                                       data-kind="Platform Broadcast"
+                                       data-item-type="broadcast"
+                                       data-item-id="{{ b.pk }}"
+                                       data-is-read="true"
+                                       data-title="{{ b.title }}"
+                                       data-meta1="Audience: {{ b.get_audience_display }}"
+                                       data-meta2="Sent by {% if b.sent_by %}{{ b.sent_by.full_name|default:b.sent_by.email }}{% else %}System{% endif %}"
+                                       data-meta3="Published {{ b.published_at|date:'d M Y, H:i' }}{% if b.expires_at %} · Expires {{ b.expires_at|date:'d M Y, H:i' }}{% endif %}"
+                                       data-action-url=""
+                                       data-body="{{ b.body }}">
+                                        {{ b.title }}
+                                    </a>
+                                    {% if b.is_pinned %}
+                                        <span class="badge rounded-pill bg-warning-subtle text-warning-emphasis ms-1">Pinned</span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ b.get_audience_display }}</td>
+                                <td class="small text-secondary text-nowrap">
+                                    In-app feed{% if b.send_email %} + Email{% endif %}
+                                </td>
+                                <td class="text-nowrap" data-order="{{ b.published_at|date:'U' }}">
+                                    {{ b.published_at|date:"d M Y, H:i" }}
+                                </td>
+                                <td class="text-nowrap text-secondary small">
+                                    {% if b.expires_at %}
+                                        {{ b.expires_at|date:"d M Y, H:i" }}
+                                    {% else %}
+                                        No expiry
+                                    {% endif %}
+                                </td>
+                                <td class="text-end text-nowrap">
+                                    <div class="d-inline-flex gap-1">
+                                        <button type="button"
+                                                class="btn btn-sm btn-outline-dark js-notif-preview"
+                                                data-bs-toggle="modal"
+                                                data-bs-target="#notifPreviewModal"
+                                                data-kind="Platform Broadcast"
+                                                data-item-type="broadcast"
+                                                data-item-id="{{ b.pk }}"
+                                                data-is-read="true"
+                                                data-title="{{ b.title }}"
+                                                data-meta1="Audience: {{ b.get_audience_display }}"
+                                                data-meta2="Sent by {% if b.sent_by %}{{ b.sent_by.full_name|default:b.sent_by.email }}{% else %}System{% endif %}"
+                                                data-meta3="Published {{ b.published_at|date:'d M Y, H:i' }}{% if b.expires_at %} · Expires {{ b.expires_at|date:'d M Y, H:i' }}{% endif %}"
+                                                data-action-url=""
+                                                data-body="{{ b.body }}">
+                                            View
+                                        </button>
+                                        <a href="{% url 'operations:broadcast-edit' b.pk %}" class="btn btn-sm btn-outline-dark">Edit</a>
+                                        <form method="post" class="d-inline">
+                                            {% csrf_token %}
+                                            <input type="hidden" name="item_type" value="broadcast">
+                                            <input type="hidden" name="item_id" value="{{ b.pk }}">
+                                            <button type="submit" name="action" value="toggle_pin" class="btn btn-sm btn-outline-secondary">
+                                                {% if b.is_pinned %}Unpin{% else %}Pin{% endif %}
+                                            </button>
+                                            <button type="submit" name="action" value="delete" class="btn btn-sm btn-outline-danger" onclick="return confirm('Delete this broadcast announcement?');">
+                                                Delete
+                                            </button>
+                                        </form>
+                                    </div>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </section>
+
+    {# 3. Read Alert History #}
+    <section class="ops-card" aria-labelledby="read-alerts-heading">
+        <div class="ops-card-header px-3 px-lg-4 py-3">
+            <h2 class="h5 ops-card-title mb-1" id="read-alerts-heading">
+                <i class="bi bi-check2-circle me-2" aria-hidden="true"></i>Acknowledged alerts
+            </h2>
+            <p class="small ops-card-subtitle mb-0">Recent system alerts already reviewed by staff</p>
+        </div>
+        <div class="p-3 p-lg-4">
+            <div class="table-responsive">
+                <table id="read-alerts-table" class="table ops-table align-middle w-100 mb-0">
+                    <thead>
+                        <tr>
+                            <th scope="col">Alert</th>
+                            <th scope="col">Category</th>
+                            <th scope="col">Read By</th>
+                            <th scope="col">Read At</th>
+                            <th class="text-end" scope="col" data-orderable="false">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in read_alerts %}
+                            <tr>
+                                <td class="fw-medium">
+                                    <a href="#"
+                                       class="ops-row-link js-notif-preview"
+                                       data-bs-toggle="modal"
+                                       data-bs-target="#notifPreviewModal"
+                                       data-kind="Operations Alert (Read)"
+                                       data-item-type="notification"
+                                       data-item-id="{{ item.pk }}"
+                                       data-is-read="true"
+                                       data-title="{{ item.title }}"
+                                       data-meta1="{{ item.get_category_display }} · {{ item.get_level_display }}"
+                                       data-meta2="Read by {% if item.read_by %}{{ item.read_by.full_name|default:item.read_by.email }}{% else %}Staff{% endif %}"
+                                       data-meta3="Created {{ item.created_at|date:'d M Y, H:i' }}"
+                                       data-action-url="{{ item.action_url }}"
+                                       data-body="{{ item.message|default:'No additional details provided.' }}">
+                                        {{ item.title }}
+                                    </a>
+                                </td>
+                                <td>{{ item.get_category_display }}</td>
+                                <td class="small text-secondary">
+                                    {% if item.read_by %}
+                                        {{ item.read_by.full_name|default:item.read_by.email }}
+                                    {% else %}
+                                        —
+                                    {% endif %}
+                                </td>
+                                <td class="text-nowrap small text-secondary" data-order="{% if item.read_at %}{{ item.read_at|date:'U' }}{% else %}0{% endif %}">
+                                    {% if item.read_at %}{{ item.read_at|date:"d M Y, H:i" }}{% else %}—{% endif %}
+                                </td>
+                                <td class="text-end text-nowrap">
+                                    <form method="post" class="d-inline">
+                                        {% csrf_token %}
+                                        <input type="hidden" name="item_type" value="notification">
+                                        <input type="hidden" name="item_id" value="{{ item.pk }}">
+                                        <button type="submit" name="action" value="delete" class="btn btn-sm btn-outline-danger">Delete</button>
+                                    </form>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </section>
+
+    {# Shared Notification & Broadcast Inspection Modal #}
+    <div class="modal fade" id="notifPreviewModal" tabindex="-1" aria-labelledby="notifModalTitle" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content ops-card border-0">
+                <div class="ops-card-header d-flex align-items-start justify-content-between gap-2 px-3 px-lg-4 py-3">
+                    <div>
+                        <span id="notifModalKind" class="badge rounded-pill bg-secondary-subtle text-secondary-emphasis mb-1"></span>
+                        <h3 class="h5 ops-card-title mb-0" id="notifModalTitle"></h3>
+                    </div>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+
+                <form method="post">
+                    {% csrf_token %}
+                    <input type="hidden" name="item_type" id="notifModalItemType">
+                    <input type="hidden" name="item_id" id="notifModalItemId">
+
+                    <div class="modal-body p-3 p-lg-4">
+                        <div class="row g-3 mb-3 small text-secondary">
+                            <div class="col-sm-4">
+                                <strong class="text-dark d-block">Classification</strong>
+                                <span id="notifModalMeta1"></span>
+                            </div>
+                            <div class="col-sm-4">
+                                <strong class="text-dark d-block">Target / Attribution</strong>
+                                <span id="notifModalMeta2"></span>
+                            </div>
+                            <div class="col-sm-4">
+                                <strong class="text-dark d-block">Schedule / Timestamp</strong>
+                                <span id="notifModalMeta3"></span>
+                            </div>
+                        </div>
+
+                        <div class="p-3 bg-light rounded">
+                            <strong class="d-block small text-uppercase text-secondary mb-1">Message</strong>
+                            <p id="notifModalBody" class="mb-0" style="white-space: pre-line;"></p>
+                        </div>
+                    </div>
+
+                    <div class="modal-footer border-top d-flex flex-wrap justify-content-between gap-2 px-3 px-lg-4 py-3">
+                        <div class="d-flex flex-wrap gap-2">
+                            <a id="notifModalJumpLink" href="#" class="btn btn-sm btn-dark d-none">Go to item</a>
+                            <button id="notifModalMarkReadBtn" type="submit" name="action" value="mark_read" class="btn btn-sm btn-success d-none">Mark as read</button>
+                            <button id="notifModalPinBtn" type="submit" name="action" value="toggle_pin" class="btn btn-sm ops-btn-gold-outline d-none">Toggle pin</button>
+                        </div>
+                        <button type="button" class="btn btn-sm btn-outline-secondary ms-auto" data-bs-dismiss="modal">Close</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block extra_js %}
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script src="https://cdn.datatables.net/2.1.8/js/dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/2.1.8/js/dataTables.bootstrap5.min.js"></script>
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            const commonConfig = {
+                pageLength: 10,
+                lengthMenu: [5, 10, 25, 50],
+                order: [],
+            };
+
+            new DataTable("#unread-alerts-table", {
+                ...commonConfig,
+                language: {
+                    emptyTable: "All caught up — no unread operations alerts.",
+                    search: "Search alerts:",
+                },
+            });
+
+            new DataTable("#broadcasts-table", {
+                ...commonConfig,
+                language: {
+                    emptyTable: "No broadcast announcements published yet.",
+                    search: "Search broadcasts:",
+                },
+            });
+
+            new DataTable("#read-alerts-table", {
+                ...commonConfig,
+                language: {
+                    emptyTable: "No acknowledged alerts yet.",
+                    search: "Search history:",
+                },
+            });
+
+            const modal = document.getElementById("notifPreviewModal");
+            if (modal) {
+                modal.addEventListener("show.bs.modal", function (event) {
+                    const btn = event.relatedTarget;
+                    if (!btn) return;
+
+                    const itemType = btn.dataset.itemType || "";
+                    const isRead = btn.dataset.isRead === "true";
+                    const actionUrl = btn.dataset.actionUrl || "";
+
+                    document.getElementById("notifModalItemType").value = itemType;
+                    document.getElementById("notifModalItemId").value = btn.dataset.itemId || "";
+                    document.getElementById("notifModalKind").textContent = btn.dataset.kind || "";
+                    document.getElementById("notifModalTitle").textContent = btn.dataset.title || "";
+                    document.getElementById("notifModalMeta1").textContent = btn.dataset.meta1 || "";
+                    document.getElementById("notifModalMeta2").textContent = btn.dataset.meta2 || "";
+                    document.getElementById("notifModalMeta3").textContent = btn.dataset.meta3 || "";
+                    document.getElementById("notifModalBody").textContent = btn.dataset.body || "";
+
+                    const jumpLink = document.getElementById("notifModalJumpLink");
+                    if (actionUrl) {
+                        jumpLink.href = actionUrl;
+                        jumpLink.classList.remove("d-none");
+                    } else {
+                        jumpLink.href = "#";
+                        jumpLink.classList.add("d-none");
+                    }
+
+                    const markReadBtn = document.getElementById("notifModalMarkReadBtn");
+                    const pinBtn = document.getElementById("notifModalPinBtn");
+
+                    if (itemType === "notification" && !isRead) {
+                        markReadBtn.classList.remove("d-none");
+                    } else {
+                        markReadBtn.classList.add("d-none");
+                    }
+
+                    if (itemType === "broadcast") {
+                        pinBtn.classList.remove("d-none");
+                    } else {
+                        pinBtn.classList.add("d-none");
+                    }
+                });
+            }
+        });
+    </script>
+{% endblock %}

@@ -1,0 +1,353 @@
+{% extends "operations/base.html" %}
+
+{% block title %}Reviews &amp; Ratings | The Spotlight{% endblock %}
+{% block breadcrumb %}Reviews{% endblock %}
+{% block page_kicker %}Moderation{% endblock %}
+{% block page_heading %}Reviews &amp; ratings{% endblock %}
+{% block page_description %}
+    Audit verified customer reviews, inspect vendor replies, and hide or remove abusive feedback.
+{% endblock %}
+{% block reviews_nav_class %}active{% endblock %}
+
+{% block extra_css %}
+    <link rel="stylesheet" href="https://cdn.datatables.net/2.1.8/css/dataTables.bootstrap5.min.css">
+{% endblock %}
+
+
+{% block content %}
+    {# KPI Summary Row #}
+    <section class="row g-3 mb-4" aria-label="Reviews summary">
+        <div class="col-sm-6 col-xl-3">
+            <article class="ops-card ops-kpi-card h-100 p-3 p-lg-4">
+                <div class="d-flex align-items-start justify-content-between">
+                    <div>
+                        <p class="small text-secondary fw-medium mb-2">Platform average</p>
+                        <p class="fs-2 fw-bold ops-kpi-value mb-0">{{ average_rating }} ★</p>
+                    </div>
+                    <span class="ops-kpi-icon">
+                        <i class="bi bi-star-fill fs-5" aria-hidden="true"></i>
+                    </span>
+                </div>
+                <p class="small text-secondary mb-0 mt-3">Across {{ published_count }} published reviews</p>
+            </article>
+        </div>
+        <div class="col-sm-6 col-xl-3">
+            <article class="ops-card ops-kpi-card h-100 p-3 p-lg-4">
+                <div class="d-flex align-items-start justify-content-between">
+                    <div>
+                        <p class="small text-secondary fw-medium mb-2">Published reviews</p>
+                        <p class="fs-2 fw-bold ops-kpi-value mb-0">{{ published_count }}</p>
+                    </div>
+                    <span class="ops-kpi-icon">
+                        <i class="bi bi-chat-square-quote fs-5" aria-hidden="true"></i>
+                    </span>
+                </div>
+                <p class="small text-secondary mb-0 mt-3">Counting toward store &amp; product scores</p>
+            </article>
+        </div>
+        <div class="col-sm-6 col-xl-3">
+            <article class="ops-card ops-kpi-card h-100 p-3 p-lg-4">
+                <div class="d-flex align-items-start justify-content-between">
+                    <div>
+                        <p class="small text-secondary fw-medium mb-2">Low ratings (1–2 ★)</p>
+                        <p class="fs-2 fw-bold ops-kpi-value mb-0">{{ low_rating_count }}</p>
+                    </div>
+                    <span class="ops-kpi-icon">
+                        <i class="bi bi-exclamation-circle fs-5" aria-hidden="true"></i>
+                    </span>
+                </div>
+                <p class="small text-secondary mb-0 mt-3">Published critical customer feedback</p>
+            </article>
+        </div>
+        <div class="col-sm-6 col-xl-3">
+            <article class="ops-card ops-kpi-card h-100 p-3 p-lg-4">
+                <div class="d-flex align-items-start justify-content-between">
+                    <div>
+                        <p class="small text-secondary fw-medium mb-2">Hidden by admin</p>
+                        <p class="fs-2 fw-bold ops-kpi-value mb-0">{{ hidden_count }}</p>
+                    </div>
+                    <span class="ops-kpi-icon">
+                        <i class="bi bi-eye-slash fs-5" aria-hidden="true"></i>
+                    </span>
+                </div>
+                <p class="small text-secondary mb-0 mt-3">Excluded from public aggregates</p>
+            </article>
+        </div>
+    </section>
+
+    {# Reviews Moderation Table #}
+    <section class="ops-card" aria-labelledby="reviews-heading">
+        <div class="ops-card-header d-flex flex-wrap align-items-center justify-content-between gap-2 px-3 px-lg-4 py-3">
+            <div>
+                <h2 class="h5 ops-card-title mb-1" id="reviews-heading">
+                    <i class="bi bi-star-half me-2" aria-hidden="true"></i>Verified customer reviews
+                </h2>
+                <p class="small ops-card-subtitle mb-0">{{ total_review_count }} total verified reviews</p>
+            </div>
+        </div>
+        <div class="p-3 p-lg-4">
+            <div class="table-responsive">
+                <table id="reviews-table" class="table ops-table align-middle w-100 mb-0">
+                    <thead>
+                        <tr>
+                            <th scope="col">Rating &amp; Summary</th>
+                            <th scope="col">Store &amp; Target</th>
+                            <th scope="col">Author</th>
+                            <th scope="col">Reply</th>
+                            <th scope="col">Status</th>
+                            <th scope="col">Date</th>
+                            <th class="text-end" scope="col" data-orderable="false">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for rev in reviews %}
+                            <tr>
+                                <td>
+                                    <div class="d-flex align-items-center gap-2">
+                                        {% if rev.overall_rating >= 4 %}
+                                            <span class="badge rounded-pill bg-success-subtle text-success-emphasis">{{ rev.overall_rating }} ★</span>
+                                        {% elif rev.overall_rating == 3 %}
+                                            <span class="badge rounded-pill bg-warning-subtle text-warning-emphasis">{{ rev.overall_rating }} ★</span>
+                                        {% else %}
+                                            <span class="badge rounded-pill bg-danger-subtle text-danger-emphasis">{{ rev.overall_rating }} ★</span>
+                                        {% endif %}
+                                        <a href="#"
+                                           class="ops-row-link fw-semibold js-review-preview"
+                                           data-bs-toggle="modal"
+                                           data-bs-target="#reviewPreviewModal"
+                                           data-id="{{ rev.pk }}"
+                                           data-rating="{{ rev.overall_rating }} ★ out of 5"
+                                           data-title="{{ rev.title|default:'Verified Customer Review' }}"
+                                           data-store="{{ rev.store.name }}"
+                                           data-target="{% if rev.product %}Product: {{ rev.product.name }}{% elif rev.service %}Service: {{ rev.service.name }}{% else %}Storefront{% endif %}"
+                                           data-source="{% if rev.order_item %}Order Item #{{ rev.order_item.pk }}{% elif rev.booking %}Booking #{{ rev.booking.pk }}{% else %}Verified Purchase{% endif %}"
+                                           data-author="{% if rev.author %}{{ rev.author.full_name }} ({{ rev.author.email }}){% else %}{{ rev.author_name|default:'Deleted user' }} (Public: {{ rev.display_author }}){% endif %}"
+                                           data-status="{{ rev.status }}"
+                                           data-status-label="{{ rev.get_status_display }}"
+                                           data-date="{{ rev.created_at|date:'d M Y, H:i' }}"
+                                           data-body="{{ rev.body|default:'No written comment provided.' }}"
+                                           data-has-reply="{% if rev.has_reply %}true{% else %}false{% endif %}"
+                                           data-reply-text="{{ rev.reply_text }}"
+                                           data-reply-meta="{% if rev.replied_by %}{{ rev.replied_by.full_name|default:rev.replied_by.email }}{% else %}Store Owner{% endif %}{% if rev.replied_at %} · {{ rev.replied_at|date:'d M Y, H:i' }}{% endif %}">
+                                            {{ rev.title|default:rev.body|default:"Rating only"|truncatechars:48 }}
+                                        </a>
+                                    </div>
+                                    {% if rev.title and rev.body %}
+                                        <div class="small text-secondary text-truncate" style="max-width: 280px;">
+                                            {{ rev.body }}
+                                        </div>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <div class="fw-medium">{{ rev.store.name }}</div>
+                                    <small class="text-secondary">
+                                        {% if rev.product %}
+                                            Product: {{ rev.product.name }}
+                                        {% elif rev.service %}
+                                            Service: {{ rev.service.name }}
+                                        {% else %}
+                                            General storefront
+                                        {% endif %}
+                                    </small>
+                                </td>
+                                <td>
+                                    <div>
+                                        {% if rev.author %}
+                                            {{ rev.author.full_name|default:rev.author.email }}
+                                        {% else %}
+                                            {{ rev.author_name|default:"Unknown" }}
+                                        {% endif %}
+                                    </div>
+                                    <small class="text-secondary">Shown as: {{ rev.display_author }}</small>
+                                </td>
+                                <td class="small">
+                                    {% if rev.has_reply %}
+                                        <span class="badge rounded-pill bg-info-subtle text-info-emphasis">Replied</span>
+                                    {% else %}
+                                        <span class="text-secondary">No reply</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if rev.status == "published" %}
+                                        <span class="badge rounded-pill bg-success-subtle text-success-emphasis">{{ rev.get_status_display }}</span>
+                                    {% else %}
+                                        <span class="badge rounded-pill bg-secondary-subtle text-secondary-emphasis">{{ rev.get_status_display }}</span>
+                                    {% endif %}
+                                </td>
+                                <td class="text-nowrap" data-order="{{ rev.created_at|date:'U' }}">
+                                    {{ rev.created_at|date:"d M Y" }}
+                                </td>
+                                <td class="text-end text-nowrap">
+                                    <div class="d-inline-flex gap-1">
+                                        <button type="button"
+                                                class="btn btn-sm btn-outline-dark js-review-preview"
+                                                data-bs-toggle="modal"
+                                                data-bs-target="#reviewPreviewModal"
+                                                data-id="{{ rev.pk }}"
+                                                data-rating="{{ rev.overall_rating }} ★ out of 5"
+                                                data-title="{{ rev.title|default:'Verified Customer Review' }}"
+                                                data-store="{{ rev.store.name }}"
+                                                data-target="{% if rev.product %}Product: {{ rev.product.name }}{% elif rev.service %}Service: {{ rev.service.name }}{% else %}Storefront{% endif %}"
+                                                data-source="{% if rev.order_item %}Order Item #{{ rev.order_item.pk }}{% elif rev.booking %}Booking #{{ rev.booking.pk }}{% else %}Verified Purchase{% endif %}"
+                                                data-author="{% if rev.author %}{{ rev.author.full_name }} ({{ rev.author.email }}){% else %}{{ rev.author_name|default:'Deleted user' }} (Public: {{ rev.display_author }}){% endif %}"
+                                                data-status="{{ rev.status }}"
+                                                data-status-label="{{ rev.get_status_display }}"
+                                                data-date="{{ rev.created_at|date:'d M Y, H:i' }}"
+                                                data-body="{{ rev.body|default:'No written comment provided.' }}"
+                                                data-has-reply="{% if rev.has_reply %}true{% else %}false{% endif %}"
+                                                data-reply-text="{{ rev.reply_text }}"
+                                                data-reply-meta="{% if rev.replied_by %}{{ rev.replied_by.full_name|default:rev.replied_by.email }}{% else %}Store Owner{% endif %}{% if rev.replied_at %} · {{ rev.replied_at|date:'d M Y, H:i' }}{% endif %}">
+                                            View
+                                        </button>
+                                        <form method="post" class="d-inline">
+                                            {% csrf_token %}
+                                            <input type="hidden" name="review_id" value="{{ rev.pk }}">
+                                            {% if rev.status == "published" %}
+                                                <button type="submit" name="action" value="hide" class="btn btn-sm btn-outline-secondary">Hide</button>
+                                            {% else %}
+                                                <button type="submit" name="action" value="publish" class="btn btn-sm btn-success">Publish</button>
+                                            {% endif %}
+                                            <button type="submit" name="action" value="delete" class="btn btn-sm btn-outline-danger" onclick="return confirm('Delete this review permanently? Ratings will recalculate.');">
+                                                Delete
+                                            </button>
+                                        </form>
+                                    </div>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </section>
+
+    {# Review Inspection & Moderation Modal #}
+    <div class="modal fade" id="reviewPreviewModal" tabindex="-1" aria-labelledby="revModalTitle" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content ops-card border-0">
+                <div class="ops-card-header d-flex align-items-start justify-content-between gap-2 px-3 px-lg-4 py-3">
+                    <div>
+                        <div class="d-flex align-items-center gap-2 mb-1">
+                            <span id="revModalRating" class="badge rounded-pill bg-warning-subtle text-warning-emphasis"></span>
+                            <span id="revModalStatusBadge" class="badge rounded-pill bg-secondary-subtle text-secondary-emphasis"></span>
+                        </div>
+                        <h3 class="h5 ops-card-title mb-0" id="revModalTitle"></h3>
+                    </div>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+
+                <form method="post">
+                    {% csrf_token %}
+                    <input type="hidden" name="review_id" id="revModalId">
+
+                    <div class="modal-body p-3 p-lg-4">
+                        <div class="row g-3 mb-3 small text-secondary">
+                            <div class="col-sm-6">
+                                <strong class="text-dark d-block">Store &amp; Item</strong>
+                                <span id="revModalStore"></span> · <span id="revModalTarget"></span>
+                            </div>
+                            <div class="col-sm-6">
+                                <strong class="text-dark d-block">Verified Source</strong>
+                                <span id="revModalSource"></span>
+                            </div>
+                            <div class="col-sm-6">
+                                <strong class="text-dark d-block">Author</strong>
+                                <span id="revModalAuthor"></span>
+                            </div>
+                            <div class="col-sm-6">
+                                <strong class="text-dark d-block">Submitted</strong>
+                                <span id="revModalDate"></span>
+                            </div>
+                        </div>
+
+                        <div class="p-3 bg-light rounded mb-3">
+                            <strong class="d-block small text-uppercase text-secondary mb-1">Customer Review</strong>
+                            <p id="revModalBody" class="mb-0" style="white-space: pre-line;"></p>
+                        </div>
+
+                        <div id="revModalReplyBox" class="p-3 border rounded d-none">
+                            <div class="d-flex align-items-center justify-content-between mb-1">
+                                <strong class="small text-uppercase text-secondary">Vendor Reply</strong>
+                                <span id="revModalReplyMeta" class="small text-secondary"></span>
+                            </div>
+                            <p id="revModalReplyText" class="mb-0" style="white-space: pre-line;"></p>
+                        </div>
+                    </div>
+
+                    <div class="modal-footer border-top d-flex flex-wrap justify-content-between gap-2 px-3 px-lg-4 py-3">
+                        <div class="d-flex flex-wrap gap-2">
+                            <button id="revModalPublishBtn" type="submit" name="action" value="publish" class="btn btn-sm btn-success">Publish review</button>
+                            <button id="revModalHideBtn" type="submit" name="action" value="hide" class="btn btn-sm btn-outline-dark">Hide review</button>
+                            <button id="revModalRemoveReplyBtn" type="submit" name="action" value="remove_reply" class="btn btn-sm ops-btn-gold-outline d-none">Remove vendor reply</button>
+                            <button type="submit" name="action" value="delete" class="btn btn-sm btn-outline-danger" onclick="return confirm('Delete this review permanently?');">Delete</button>
+                        </div>
+                        <button type="button" class="btn btn-sm btn-outline-secondary ms-auto" data-bs-dismiss="modal">Close</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block extra_js %}
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script src="https://cdn.datatables.net/2.1.8/js/dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/2.1.8/js/dataTables.bootstrap5.min.js"></script>
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            new DataTable("#reviews-table", {
+                pageLength: 10,
+                lengthMenu: [5, 10, 25, 50],
+                order: [],
+                language: {
+                    emptyTable: "No customer reviews submitted yet.",
+                    search: "Search reviews:",
+                },
+            });
+
+            const modal = document.getElementById("reviewPreviewModal");
+            if (modal) {
+                modal.addEventListener("show.bs.modal", function (event) {
+                    const btn = event.relatedTarget;
+                    if (!btn) return;
+
+                    const status = btn.dataset.status || "published";
+                    const hasReply = btn.dataset.hasReply === "true";
+
+                    document.getElementById("revModalId").value = btn.dataset.id || "";
+                    document.getElementById("revModalRating").textContent = btn.dataset.rating || "";
+                    document.getElementById("revModalStatusBadge").textContent = btn.dataset.statusLabel || "";
+                    document.getElementById("revModalTitle").textContent = btn.dataset.title || "";
+                    document.getElementById("revModalStore").textContent = btn.dataset.store || "";
+                    document.getElementById("revModalTarget").textContent = btn.dataset.target || "";
+                    document.getElementById("revModalSource").textContent = btn.dataset.source || "";
+                    document.getElementById("revModalAuthor").textContent = btn.dataset.author || "";
+                    document.getElementById("revModalDate").textContent = btn.dataset.date || "";
+                    document.getElementById("revModalBody").textContent = btn.dataset.body || "";
+
+                    const replyBox = document.getElementById("revModalReplyBox");
+                    const removeReplyBtn = document.getElementById("revModalRemoveReplyBtn");
+                    if (hasReply) {
+                        document.getElementById("revModalReplyText").textContent = btn.dataset.replyText || "";
+                        document.getElementById("revModalReplyMeta").textContent = btn.dataset.replyMeta || "";
+                        replyBox.classList.remove("d-none");
+                        removeReplyBtn.classList.remove("d-none");
+                    } else {
+                        replyBox.classList.add("d-none");
+                        removeReplyBtn.classList.add("d-none");
+                    }
+
+                    const publishBtn = document.getElementById("revModalPublishBtn");
+                    const hideBtn = document.getElementById("revModalHideBtn");
+                    if (status === "published") {
+                        publishBtn.classList.add("d-none");
+                        hideBtn.classList.remove("d-none");
+                    } else {
+                        hideBtn.classList.add("d-none");
+                        publishBtn.classList.remove("d-none");
+                    }
+                });
+            }
+        });
+    </script>
+{% endblock %}

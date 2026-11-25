@@ -1,0 +1,162 @@
+{% extends "operations/base.html" %}
+
+{% block title %}Categories &amp; Business Types | The Spotlight{% endblock %}
+{% block breadcrumb %}Categories{% endblock %}
+{% block page_kicker %}Administration{% endblock %}
+{% block page_heading %}Categories &amp; business types{% endblock %}
+{% block page_description %}
+    Manage public browsing categories and business classifications that control store order and booking capabilities.
+{% endblock %}
+{% block categories_nav_class %}active{% endblock %}
+
+{% block extra_css %}
+    <link rel="stylesheet" href="https://cdn.datatables.net/2.1.8/css/dataTables.bootstrap5.min.css">
+{% endblock %}
+
+{% block page_actions %}
+    <a class="btn ops-btn-gold-outline" href="{% url 'operations:business-type-add' %}">
+        <i class="bi bi-plus-lg me-1" aria-hidden="true"></i>
+        New business type
+    </a>
+    <a class="btn btn-dark" href="{% url 'operations:category-add' %}">
+        <i class="bi bi-plus-lg me-1" aria-hidden="true"></i>
+        New category
+    </a>
+{% endblock %}
+
+{% block content %}
+    {# 1. Public Browsing Categories #}
+    <section class="ops-card mb-4" aria-labelledby="categories-heading">
+        <div class="ops-card-header d-flex flex-wrap align-items-center justify-content-between gap-2 px-3 px-lg-4 py-3">
+            <div>
+                <h2 class="h5 ops-card-title mb-1" id="categories-heading">
+                    <i class="bi bi-tags me-2" aria-hidden="true"></i>Browsing categories
+                </h2>
+                <p class="small ops-card-subtitle mb-0">{{ category_count }} public storefront tags</p>
+            </div>
+        </div>
+        <div class="p-3 p-lg-4">
+            <div class="table-responsive">
+                <table id="categories-table" class="table ops-table align-middle w-100 mb-0">
+                    <thead>
+                        <tr>
+                            <th scope="col">Name</th>
+                            <th scope="col">Slug</th>
+                            <th scope="col">Stores Linked</th>
+                            <th class="text-end" scope="col" data-orderable="false">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for cat in categories %}
+                            <tr>
+                                <td class="fw-semibold">{{ cat.name }}</td>
+                                <td class="text-secondary small"><code>{{ cat.slug }}</code></td>
+                                <td>{{ cat.store_count }}</td>
+                                <td class="text-end text-nowrap">
+                                    <div class="d-inline-flex gap-1">
+                                        <a href="{% url 'operations:category-edit' cat.pk %}" class="btn btn-sm btn-outline-dark">Edit</a>
+                                        <form method="post" class="d-inline">
+                                            {% csrf_token %}
+                                            <input type="hidden" name="item_type" value="category">
+                                            <input type="hidden" name="item_id" value="{{ cat.pk }}">
+                                            <button type="submit" name="action" value="delete" class="btn btn-sm btn-outline-danger" onclick="return confirm('Delete category {{ cat.name }}?');">
+                                                Delete
+                                            </button>
+                                        </form>
+                                    </div>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </section>
+
+    {# 2. Business Types #}
+    <section class="ops-card" aria-labelledby="business-types-heading">
+        <div class="ops-card-header d-flex flex-wrap align-items-center justify-content-between gap-2 px-3 px-lg-4 py-3">
+            <div>
+                <h2 class="h5 ops-card-title mb-1" id="business-types-heading">
+                    <i class="bi bi-diagram-3 me-2" aria-hidden="true"></i>Business types
+                </h2>
+                <p class="small ops-card-subtitle mb-0">{{ business_type_count }} store catalog classifications</p>
+            </div>
+        </div>
+        <div class="p-3 p-lg-4">
+            <div class="table-responsive">
+                <table id="business-types-table" class="table ops-table align-middle w-100 mb-0">
+                    <thead>
+                        <tr>
+                            <th scope="col">Business Type</th>
+                            <th scope="col">Catalog Mode</th>
+                            <th scope="col">Stores Using</th>
+                            <th class="text-end" scope="col" data-orderable="false">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for bt in business_types %}
+                            <tr>
+                                <td class="fw-semibold">{{ bt.name }}</td>
+                                <td>
+                                    {% if bt.store_type == "products" %}
+                                        <span class="badge rounded-pill bg-primary-subtle text-primary-emphasis">{{ bt.get_store_type_display }}</span>
+                                    {% elif bt.store_type == "services" %}
+                                        <span class="badge rounded-pill bg-info-subtle text-info-emphasis">{{ bt.get_store_type_display }}</span>
+                                    {% else %}
+                                        <span class="badge rounded-pill bg-success-subtle text-success-emphasis">{{ bt.get_store_type_display }}</span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ bt.store_count }}</td>
+                                <td class="text-end text-nowrap">
+                                    <div class="d-inline-flex gap-1">
+                                        <a href="{% url 'operations:business-type-edit' bt.pk %}" class="btn btn-sm btn-outline-dark">Edit</a>
+                                        <form method="post" class="d-inline">
+                                            {% csrf_token %}
+                                            <input type="hidden" name="item_type" value="business_type">
+                                            <input type="hidden" name="item_id" value="{{ bt.pk }}">
+                                            <button type="submit" name="action" value="delete" class="btn btn-sm btn-outline-danger" onclick="return confirm('Delete business type {{ bt.name }}?');">
+                                                Delete
+                                            </button>
+                                        </form>
+                                    </div>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </section>
+{% endblock %}
+
+{% block extra_js %}
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script src="https://cdn.datatables.net/2.1.8/js/dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/2.1.8/js/dataTables.bootstrap5.min.js"></script>
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            const commonConfig = {
+                pageLength: 10,
+                lengthMenu: [5, 10, 25, 50],
+                order: [],
+            };
+
+            new DataTable("#categories-table", {
+                ...commonConfig,
+                language: {
+                    emptyTable: "No browsing categories created yet.",
+                    search: "Search categories:",
+                },
+            });
+
+            new DataTable("#business-types-table", {
+                ...commonConfig,
+                language: {
+                    emptyTable: "No business types created yet.",
+                    search: "Search business types:",
+                },
+            });
+        });
+    </script>
+{% endblock %}
