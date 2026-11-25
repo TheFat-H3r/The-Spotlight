@@ -102,11 +102,7 @@ def send_password_reset_email(user_email: str, user_name: str, reset_url: str) -
 def redirect_by_role(user):
     
     if user.role == User.Role.ADMIN or user.is_superuser:
-<<<<<<< HEAD
-        return redirect('/portal')
-=======
         return redirect('/portal/')
->>>>>>> main
 
     if user.role == User.Role.VENDOR:
         has_store = hasattr(user, 'stores')
@@ -115,11 +111,7 @@ def redirect_by_role(user):
         if not has_store:
             return redirect('store:create-store')
 
-<<<<<<< HEAD
-        return redirect('/shopkeeper')
-=======
         return redirect('/shopkeeper/')
->>>>>>> main
 
     # Default: CUSTOMER
     return redirect('core:home')
