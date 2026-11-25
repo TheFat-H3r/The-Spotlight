@@ -22,7 +22,6 @@
 
 html {
   font-size: 10px;
-  overflow-x: hidden;
 }
 
 body {
@@ -31,7 +30,6 @@ body {
   box-sizing: border-box;
   font-family: "Poppins", sans-serif;
   background: #f8f8f8;
-  overflow-x: hidden;
 }
 
 h1,
@@ -395,6 +393,238 @@ button {
   background-color: #AE1C9A;
   color: #FFFFFF;
 }
+
+
+
+
+/* Spotlight Full-Image Hero Ads Banner */
+#spotlight-ads-hero.spotlight-ads-section {
+  background: #0d0d0d;
+  padding: 2.4rem 0;
+  height: auto;
+}
+
+.spotlight-ads-outer {
+  width: 100%;
+}
+
+#spotlightAdsSwiper.spotlight-ads-swiper {
+  width: 100%;
+  height: auto;
+  border-radius: 1.6rem;
+  overflow: hidden;
+  border: 1px solid rgba(212, 175, 55, 0.35);
+}
+
+/* Override Shopus's global .swiper-slide padding: 10px */
+#spotlightAdsSwiper .swiper-slide.spotlight-ads-slide {
+  padding: 0;
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+/* Main Full-Bleed Image Stage */
+.spotlight-ads-banner {
+  position: relative;
+  width: 100%;
+  height: 52rem;
+  background: #141414;
+  overflow: hidden;
+}
+
+.spotlight-ads-bg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+  display: block;
+}
+
+/* Dark Bottom-Left Gradient Scrim for Contrast */
+.spotlight-ads-scrim {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    to top,
+    rgba(0, 0, 0, 0.9) 0%,
+    rgba(0, 0, 0, 0.55) 48%,
+    rgba(0, 0, 0, 0.18) 100%
+  );
+  pointer-events: none;
+}
+
+/* Top-Left "Featured" Pill */
+.spotlight-ads-badge {
+  position: absolute;
+  top: 2.4rem;
+  left: 2.8rem;
+  z-index: 2;
+  background: rgba(13, 13, 13, 0.82);
+  backdrop-filter: blur(6px);
+  border: 1px solid #D4AF37;
+  color: #D4AF37;
+  font-size: 1.1rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  padding: 0.6rem 1.4rem;
+  border-radius: 999px;
+}
+
+/* Bottom-Left Highlight, Title, Description & Button */
+.spotlight-ads-overlay {
+  position: absolute;
+  left: 2.8rem;
+  right: 2.8rem;
+  bottom: 4.4rem;
+  z-index: 2;
+  max-width: 64rem;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.spotlight-ads-highlight {
+  color: #D4AF37;
+  font-size: clamp(1.3rem, 1.6vw, 1.6rem);
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  margin-bottom: 0.6rem;
+}
+
+.spotlight-ads-title {
+  color: #ffffff;
+  font-size: clamp(2.2rem, 3.4vw, 3.8rem);
+  font-weight: 700;
+  line-height: 1.15;
+  margin: 0 0 0.8rem 0;
+}
+
+.spotlight-ads-desc {
+  color: #e5e7eb;
+  font-size: clamp(1.3rem, 1.4vw, 1.5rem);
+  line-height: 1.5;
+  margin: 0 0 1.8rem 0;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.spotlight-ads-cta {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.1rem 2.6rem;
+  background: #D4AF37;
+  color: #111111;
+  font-size: 1.4rem;
+  font-weight: 700;
+  border-radius: 0.8rem;
+  transition: background-color 0.2s ease, transform 0.2s ease;
+}
+
+.spotlight-ads-cta:hover {
+  background: #e6c44c;
+  color: #111111;
+  transform: translateY(-1px);
+}
+
+/* Manual Prev / Next Arrows */
+.spotlight-ads-nav {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 3;
+  width: 4rem;
+  height: 4rem;
+  border-radius: 50%;
+  background: rgba(13, 13, 13, 0.72);
+  border: 1px solid rgba(212, 175, 55, 0.55);
+  color: #ffffff;
+  font-size: 1.6rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.spotlight-ads-nav:hover {
+  background: #D4AF37;
+  color: #111111;
+}
+
+.spotlight-ads-prev {
+  left: 1.6rem;
+}
+
+.spotlight-ads-next {
+  right: 1.6rem;
+}
+
+/* Pagination Dots */
+#spotlightAdsPagination.spotlight-ads-pagination {
+  bottom: 1.4rem;
+  z-index: 3;
+}
+
+#spotlightAdsPagination .swiper-pagination-bullet {
+  width: 2.6rem;
+  height: 0.5rem;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.45);
+  opacity: 1;
+}
+
+#spotlightAdsPagination .swiper-pagination-bullet-active {
+  background-color: #D4AF37;
+}
+
+/* Tablet */
+@media (max-width: 991.98px) {
+  .spotlight-ads-banner {
+    height: 44rem;
+  }
+}
+
+/* Mobile */
+@media (max-width: 767.98px) {
+  #spotlight-ads-hero.spotlight-ads-section {
+    padding: 1.4rem 0;
+  }
+
+  .spotlight-ads-banner {
+    height: 38rem;
+  }
+
+  .spotlight-ads-badge {
+    top: 1.6rem;
+    left: 1.6rem;
+    font-size: 1rem;
+    padding: 0.5rem 1.1rem;
+  }
+
+  .spotlight-ads-overlay {
+    left: 1.6rem;
+    right: 1.6rem;
+    bottom: 3.6rem;
+  }
+
+  .spotlight-ads-cta {
+    padding: 0.9rem 2rem;
+    font-size: 1.3rem;
+  }
+
+  .spotlight-ads-nav {
+    display: none;
+  }
+}
+
 
 .section-title {
   margin-bottom: 2rem;
