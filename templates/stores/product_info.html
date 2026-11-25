@@ -1,0 +1,142 @@
+
+{% extends "core/base.html" %}
+{% load static %}
+
+{% block title %}{{ product.name }} | The Spotlight{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'marketplace/css/marketplace.css' %}">
+{% endblock %}
+
+{% block content %}
+
+<main class="product-details-page">
+
+    <!-- Breadcrumb -->
+    <div class="product-breadcrumb">
+        <a href="{% url 'core:home' %}">Marketplace</a>
+        <span>/</span>
+        <span>Product Details</span>
+    </div>
+
+    <!-- Main Product Section -->
+    <section class="product-details-container">
+
+        <!-- Product Image -->
+        <div class="product-gallery">
+            <div class="product-main-image">
+                {% if product.image %}
+                    <img src="{{ product.image.url }}"
+                         alt="{{ product.name }}">
+                {% else %}
+                    <div class="product-image-placeholder">
+                        <span>Product image unavailable</span>
+                    </div>
+                {% endif %}
+
+                <span class="product-category-badge">
+                    {{ product.category }}
+                </span>
+            </div>
+
+            <p class="image-caption">
+                Product image provided by the vendor.
+            </p>
+        </div>
+
+        <!-- Product Information -->
+        <div class="product-information">
+
+            <div class="product-store-label">
+                <span class="store-indicator"></span>
+                Sold by
+                <strong>{{ product.store.name }}</strong>
+            </div>
+
+            <h1 class="product-title">
+                {{ product.name }}
+            </h1>
+
+            <!-- Rating -->
+            <div class="product-rating">
+                <span class="rating-star">★</span>
+                <strong>{{ product.rating|default:"Not rated yet" }}</strong>
+                <span class="rating-description">Customer rating</span>
+            </div>
+
+            <div class="product-divider"></div>
+
+            <!-- Price -->
+            <div class="product-price-section">
+                <span class="price-label">Price</span>
+                <div class="product-price">
+                    <span class="currency">MUR</span>
+                    {{ product.price|floatformat:2 }}
+                </div>
+                <span class="price-note">
+                    Price set by the vendor.
+                </span>
+            </div>
+
+            <!-- Availability -->
+            <div class="product-availability">
+                <span class="availability-label">Availability</span>
+                <span class="availability-value">
+                    <span class="availability-dot"></span>
+                    {{ product.availability_status }}
+                </span>
+            </div>
+
+            <div class="product-divider"></div>
+
+            <!-- Description -->
+            <div class="product-description-section">
+                <h2>About this item</h2>
+                <p>{{ product.description }}</p>
+            </div>
+
+            <!-- Product Actions -->
+            <div class="product-actions">
+                <button type="button" class="product-cart-button">
+                    <span>＋</span>
+                    Add to Cart
+                </button>
+
+                <a href="{% url 'core:home' %}"
+                   class="continue-shopping-button">
+                    Continue Shopping
+                </a>
+            </div>
+
+            <p class="product-action-note">
+                Product orders and cart functionality will be connected
+                during backend integration.
+            </p>
+
+        </div>
+    </section>
+
+    <!-- Vendor Information -->
+    <section class="product-vendor-section">
+
+        <div class="vendor-section-icon">✦</div>
+
+        <div class="vendor-section-content">
+            <span class="vendor-section-label">MEET THE VENDOR</span>
+            <h2>{{ product.store.name }}</h2>
+            <p>
+                Discover more products and services from this vendor
+                on The Spotlight marketplace.
+            </p>
+        </div>
+
+        <a href="{% url 'store:store-profile' product.store.slug %}"
+           class="vendor-visit-button">
+            Visit Store <span>→</span>
+        </a>
+
+    </section>
+
+</main>
+
+{% endblock %}

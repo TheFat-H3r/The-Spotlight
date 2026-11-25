@@ -1,4 +1,15 @@
-from .views import RegisterView, LoginView, logout_view, PasswordResetConfirmView, PasswordResetRequestView, ProfileView, ResendVerificationEmailView, VerifyEmailConfirmView
+from .views import (
+    RegisterView, 
+    LoginView, 
+    logout_view, 
+    PasswordResetConfirmView, 
+    PasswordResetRequestView, 
+    ProfileView, 
+    ResendVerificationEmailView, 
+    VerifyEmailConfirmView,
+    user_settings
+)
+
 from django.urls import path
 
 app_name = 'accounts'
@@ -13,4 +24,6 @@ urlpatterns = [
     path('profile/', ProfileView.as_view(), name='profile'),
     path('password-reset/', PasswordResetRequestView.as_view(), name='password_reset'),
     path('password-reset/confirm/<str:token>/', PasswordResetConfirmView.as_view(), name='password_reset_confirm'),
+    path('user-settings/', user_settings, name='user-settings')
+    
 ]
