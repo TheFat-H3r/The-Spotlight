@@ -36,6 +36,7 @@ class BusinessType(models.Model):
         BOTH = "both", "Products & services"
 
     name = models.CharField(max_length=100, unique=True)
+    slug = models.SlugField(max_length=110, unique=True, blank=True, null=True)
     store_type = models.CharField(
         max_length=10,
         choices=StoreType.choices,
@@ -45,6 +46,11 @@ class BusinessType(models.Model):
 
     def __str__(self):
         return self.name
+
+    def save(self, *args, **kwargs):
+            if not self.slug:
+                self.slug = unique_slug(Category, self.name, self, max_length=110)
+            super().save(*args, **kwargs)
 
 
 class Category(models.Model):

@@ -187,7 +187,7 @@
                         <!-- Logo -->
                         <div class="logo">
                             <a href="{% url 'core:home' %}">
-                                <img src="{% static 'img/logo-small.png' %}" alt="The Spotlight Logo">
+                                <img src="{% static 'img/logo-white-small.png' %}" alt="The Spotlight Logo">
                             </a>
                         </div>
                     </div>
@@ -210,13 +210,19 @@
                                         <a href="{% url 'core:category_detail' category.slug %}">
                                             <div class="dropdown-item">
                                                 <div class="dropdown-list-item">
-                                                   <span class="dropdown-text">{{ category.name }}</span>
+                                                <span class="dropdown-text">{{ category.name }}</span>
                                                 </div>
                                                 <div class="drop-down-list-icon">
                                                     <span><i class="fa-solid fa-chevron-right"></i></span>
                                                 </div>
                                             </div>
                                         </a>
+                                    </li>
+                                    {% empty %}
+                                    <li class="category-list-item">
+                                        <div class="dropdown-item">
+                                            <span class="dropdown-text text-muted">No categories available</span>
+                                        </div>
                                     </li>
                                     {% endfor %}
                                 </ul>
@@ -232,32 +238,32 @@
                                     </a>
                                 </li>
                                 <li>
-                                    <a href="#">
-                                        <span class="list-text">Shops</span>
+                                    <a href="{% url 'core:store_list' %}">
+                                        <span class="list-text">Stores</span>
                                     </a>
                                 </li>
                                 <li>
-                                    <a href="#">
+                                    <a href="{% url 'core:product_list' %}">
                                         <span class="list-text">Products</span>
                                     </a>
                                 </li>
                                 <li>
-                                    <a href="#">
+                                    <a href="{% url 'core:service_list' %}">
                                         <span class="list-text">Services</span>
                                     </a>
                                 </li>
                                 <li>
-                                    <a href="#">
+                                    <a href="{% url 'core:faq' %}">
                                         <span class="list-text">Support</span>
                                     </a>
                                 </li>
                                 <li>
-                                    <a href="#">
+                                    <a href="{% url 'core:about' %}">
                                         <span class="list-text">About</span>
                                     </a>
                                 </li>
                                 <li>
-                                    <a href="#">
+                                    <a href="{% url 'core:contact' %}">
                                         <span class="list-text">Contact</span>
                                     </a>
                                 </li>
@@ -265,7 +271,7 @@
                         </div>
                     </div>
 
-                    <!-- Right: Search Popup Trigger + Conditional (Cart & User vs. Become a Vendor) -->
+                    <!-- Right: Search Popup Trigger + Conditional (Cart & Dashboard vs. Become a Vendor) -->
                     <div class="header-cart-items d-flex align-items-center gap-3 flex-shrink-0">
                         
                         <!-- Search Popup Trigger (Always visible on Desktop & Mobile) -->
@@ -284,12 +290,12 @@
                                         </span>
                                     </div>
                                     <div class="wrapper-main">
-                                        <div class="search-section">
-                                            <input type="text" placeholder="Search products, services, or shops..." style="color: #000;">
+                                        <form action="{% url 'core:product_list' %}" method="get" class="search-section">
+                                            <input type="text" name="q" placeholder="Search products, services, or shops..." style="color: #000;">
                                             <div class="divider"></div>
                                             <button type="button" style="color: #000;">All Categories</button>
-                                            <a href="#" class="shop-btn">Search</a>
-                                        </div>
+                                            <button type="submit" class="shop-btn border-0">Search</button>
+                                        </form>
                                     </div>
                                 </div>
                             </div>
@@ -299,50 +305,67 @@
                         {% if user.is_authenticated %}
                             <!-- Cart -->
                             <div class="header-cart">
-                                <a href="#" class="cart-item">
+                                <a href="{% url 'core:cart' %}" class="cart-item">
                                     <span>
                                         <i class="fa-solid fa-cart-shopping" style="color: #000;"></i>
                                     </span>
                                     <span class="cart-text d-none d-xl-inline">
-                                        Cart
+                                        Cart {% if navbar_cart_count %}({{ navbar_cart_count }}){% endif %}
                                     </span>
                                 </a>
                                 <div class="cart-submenu">
                                     <div class="cart-wrapper-item">
+                                        {% for item in navbar_cart_items %}
                                         <div class="wrapper">
                                             <div class="wrapper-item">
                                                 <div class="wrapper-img">
-                                                    <img src="{% static 'core/images/homepage-one/product-img/product-img-1.webp' %}" alt="img">
+                                                    {% if item.product.image %}
+                                                        <img src="{{ item.product.image.url }}" alt="{{ item.product.name }}">
+                                                    {% else %}
+                                                        <img src="{% static 'core/images/homepage-one/product-img/product-img-1.webp' %}" alt="{{ item.product.name }}">
+                                                    {% endif %}
                                                 </div>
                                                 <div class="wrapper-content">
-                                                    <h5 class="wrapper-title">Classic Design Skart</h5>
+                                                    <h5 class="wrapper-title">{{ item.product.name }}</h5>
                                                     <div class="price">
-                                                        <p class="new-price">$20.00</p>
+                                                        <p class="new-price">MUR {{ item.product.price|floatformat:2 }} &times; {{ item.quantity }}</p>
                                                     </div>
                                                 </div>
                                             </div>
-                                            <span class="close-btn">
-                                                <i class="fa-solid fa-xmark"></i>
-                                            </span>
                                         </div>
+                                        {% empty %}
+                                        <div class="p-3 text-center">
+                                            <p class="mb-0 text-muted small">Your cart is currently empty.</p>
+                                        </div>
+                                        {% endfor %}
                                     </div>
                                     <div class="cart-wrapper-section">
                                         <div class="wrapper-line"></div>
                                         <div class="wrapper-subtotal">
                                             <h5 class="wrapper-title">Subtotal</h5>
-                                            <h5 class="wrapper-title">$20.00</h5>
+                                            <h5 class="wrapper-title">MUR {{ navbar_cart_subtotal|floatformat:2 }}</h5>
                                         </div>
                                         <div class="cart-btn">
-                                            <a href="#" class="shop-btn view-btn">View Cart</a>
-                                            <a href="#" class="shop-btn checkout-btn">Checkout Now</a>
+                                            <a href="{% url 'core:cart' %}" class="shop-btn view-btn">View Cart</a>
+                                            <a href="{% url 'core:checkout' %}" class="shop-btn checkout-btn">Checkout Now</a>
                                         </div>
                                     </div>
                                 </div>
                             </div>
 
-                            <!-- User Profile / Dashboard -->
-                            <div class="header-user">
-                                <a href="#" aria-label="User Profile">
+                            <!-- View My Dashboard Button -->
+                            <div class="header-vendor-btn d-none d-sm-block">
+                                <a href="{% url 'core:user_profile' %}" class="shop-btn">
+                                    <span class="list-text shop-text">Dashboard</span>
+                                    <span class="icon">
+                                        <i class="fa-solid fa-gauge"></i>
+                                    </span>
+                                </a>
+                            </div>
+
+                            <!-- User Profile Icon (Mobile fallback when button is hidden on xs) -->
+                            <div class="header-user d-sm-none">
+                                <a href="{% url 'core:user_profile' %}" aria-label="View My Dashboard">
                                     <span>
                                         <i class="fa-solid fa-user" style="color: #000;"></i>
                                     </span>
@@ -351,7 +374,7 @@
                         {% else %}
                             <!-- Become a Vendor Button -->
                             <div class="header-vendor-btn d-none d-sm-block">
-                                <a href="#" class="shop-btn">
+                                <a href="{% url 'core:become_vendor' %}" class="shop-btn">
                                     <span class="list-text shop-text">Become a Vendor</span>
                                     <span class="icon">
                                         <i class="fa-solid fa-arrow-right"></i>
@@ -370,7 +393,7 @@
             <div class="offcanvas-body">
                 <div class="header-top d-flex justify-content-between align-items-center mb-3">
                     <a href="{% url 'core:home' %}" class="mobile-header-logo">
-                        <img src="{% static 'img/logo-small.png' %}" alt="logo" style="max-height: 36px;">
+                        <img src="{% static 'img/logo-white-small.png' %}" alt="logo" style="max-height: 36px;">
                     </a>
                     <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
                 </div>
@@ -386,25 +409,29 @@
                 <!-- Mobile Navigation Links -->
                 <ul class="list-unstyled d-flex flex-column gap-2 mb-4">
                     <li><a href="{% url 'core:home' %}" class="fw-semibold text-decoration-none d-block py-1">Home</a></li>
-                    <li><a href="#" class="fw-semibold text-decoration-none d-block py-1">Shops</a></li>
-                    <li><a href="#" class="fw-semibold text-decoration-none d-block py-1">Products</a></li>
-                    <li><a href="#" class="fw-semibold text-decoration-none d-block py-1">Services</a></li>
-                    <li><a href="#" class="fw-semibold text-decoration-none d-block py-1">Contact</a></li>
-                    <li><a href="#" class="fw-semibold text-decoration-none d-block py-1">About</a></li>
+                    <li><a href="{% url 'core:store_list' %}" class="fw-semibold text-decoration-none d-block py-1">Stores</a></li>
+                    <li><a href="{% url 'core:product_list' %}" class="fw-semibold text-decoration-none d-block py-1">Products</a></li>
+                    <li><a href="{% url 'core:service_list' %}" class="fw-semibold text-decoration-none d-block py-1">Services</a></li>
+                    <li><a href="{% url 'core:faq' %}" class="fw-semibold text-decoration-none d-block py-1">Support</a></li>
+                    <li><a href="{% url 'core:about' %}" class="fw-semibold text-decoration-none d-block py-1">About</a></li>
+                    <li><a href="{% url 'core:contact' %}" class="fw-semibold text-decoration-none d-block py-1">Contact</a></li>
                 </ul>
 
                 <!-- Mobile All Categories -->
                 <h6 class="text-uppercase small fw-bold mb-2" style="color: #000;">All Categories</h6>
                 <div class="category-dropdown mb-4">
                     <ul class="category-list">
+                        {% for category in all_categories %}
                         <li class="category-list-item">
-                            <a href="#">
+                            <a href="{% url 'core:category_detail' category.slug %}">
                                 <div class="dropdown-item d-flex justify-content-between align-items-center">
                                     <div class="dropdown-list-item d-flex">
+                                        {% if category.image %}
                                         <span class="dropdown-img">
-                                            <img src="{% static 'core/images/homepage-one/category-img/dresses.webp' %}" alt="Food & Dining">
+                                            <img src="{{ category.image.url }}" alt="{{ category.name }}">
                                         </span>
-                                        <span class="dropdown-text">Food & Dining</span>
+                                        {% endif %}
+                                        <span class="dropdown-text">{{ category.name }}</span>
                                     </div>
                                     <div class="drop-down-list-icon">
                                         <span><i class="fa-solid fa-chevron-right"></i></span>
@@ -412,47 +439,24 @@
                                 </div>
                             </a>
                         </li>
+                        {% empty %}
                         <li class="category-list-item">
-                            <a href="#">
-                                <div class="dropdown-item d-flex justify-content-between align-items-center">
-                                    <div class="dropdown-list-item d-flex">
-                                        <span class="dropdown-img">
-                                            <img src="{% static 'core/images/homepage-one/category-img/bags.webp' %}" alt="Hair & Beauty">
-                                        </span>
-                                        <span class="dropdown-text">Hair & Beauty</span>
-                                    </div>
-                                    <div class="drop-down-list-icon">
-                                        <span><i class="fa-solid fa-chevron-right"></i></span>
-                                    </div>
-                                </div>
-                            </a>
+                            <div class="dropdown-item">
+                                <span class="dropdown-text text-muted">No categories available</span>
+                            </div>
                         </li>
-                        <li class="category-list-item">
-                            <a href="#">
-                                <div class="dropdown-item d-flex justify-content-between align-items-center">
-                                    <div class="dropdown-list-item d-flex">
-                                        <span class="dropdown-img">
-                                            <img src="{% static 'core/images/homepage-one/category-img/sweaters.webp' %}" alt="Fashion & Retail">
-                                        </span>
-                                        <span class="dropdown-text">Fashion & Retail</span>
-                                    </div>
-                                    <div class="drop-down-list-icon">
-                                        <span><i class="fa-solid fa-chevron-right"></i></span>
-                                    </div>
-                                </div>
-                            </a>
-                        </li>
+                        {% endfor %}
                     </ul>
                 </div>
 
                 <!-- Mobile Conditional Footer CTA -->
                 {% if user.is_authenticated %}
-                    <div class="d-flex gap-2">
-                        <a href="#" class="shop-btn">Dashboard</a>
-                        <a href="#" class="shop-btn">Cart</a>
+                    <div class="d-flex flex-column gap-2">
+                        <a href="{% url 'core:user_profile' %}" class="shop-btn text-center">View My Dashboard</a>
+                        <a href="{% url 'core:cart' %}" class="shop-btn text-center">Cart {% if navbar_cart_count %}({{ navbar_cart_count }}){% endif %}</a>
                     </div>
                 {% else %}
-                    <a href="#" class="shop-btn">
+                    <a href="{% url 'core:become_vendor' %}" class="shop-btn text-center">
                         <span class="list-text shop-text">Become a Vendor</span>
                     </a>
                 {% endif %}
@@ -496,7 +500,7 @@
                             </div>
                             <div class="service-content">
                                 <h5 class="service-info service-title">Free Shipping</h5>
-                                <p class="service-info service-details">When ordering over $100</p>
+                                <p class="service-info service-details">When ordering over MUR100</p>
                             </div>
                         </div>
                     </div>
