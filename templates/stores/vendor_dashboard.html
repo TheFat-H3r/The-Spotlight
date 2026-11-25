@@ -1,0 +1,522 @@
+
+{% extends "core/base.html" %}
+{% load static %}
+
+{% block title %}Vendor Dashboard | The Spotlight{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/vendor_dashboard.css' %}">
+{% endblock %}
+
+{% block content %}
+
+<main class="vendor-dashboard" id="vendor-dashboard">
+
+    <!-- Dashboard heading -->
+    <header class="vendor-heading">
+        <div>
+            <span class="vendor-eyebrow">VENDOR WORKSPACE</span>
+            <h1>Welcome back, {{ user.full_name }}.</h1>
+            <p>Manage your store, keep track of activity and grow your business.</p>
+        </div>
+
+        <div class="vendor-heading-actions">
+            <span class="vendor-status">
+                <span class="vendor-status-dot"></span>
+                Vendor account
+            </span>
+            <a href="#store-management" class="vendor-outline-button">
+                <span>↗</span> Manage store
+            </a>
+        </div>
+    </header>
+
+    <!-- Store overview -->
+    <section class="vendor-store-banner" id="store-management">
+        <div class="vendor-store-identity">
+            <div class="vendor-store-avatar">
+                {% if store and store.name %}
+                    {{ store.name|first|upper }}
+                {% else %}
+                    S
+                {% endif %}
+            </div>
+
+            <div>
+                <span class="vendor-banner-label">YOUR BUSINESS</span>
+                <h2>
+                    {% if store %}
+                        {{ store.name|default:"Your store" }}
+                    {% else %}
+                        Your store
+                    {% endif %}
+                </h2>
+                <p>
+                    {% if store and store.description %}
+                        {{ store.description|truncatechars:100 }}
+                    {% else %}
+                        Add a description to introduce your business to customers.
+                    {% endif %}
+                </p>
+            </div>
+        </div>
+
+        <div class="vendor-store-actions">
+            <a href="#store-management" class="vendor-banner-link">
+                Store details <span>→</span>
+            </a>
+            <span class="vendor-store-separator"></span>
+            <span class="vendor-store-label">THE SPOTLIGHT</span>
+        </div>
+    </section>
+
+    <!-- Quick statistics -->
+    <section class="vendor-stat-grid" aria-label="Store statistics">
+
+        <article class="vendor-stat-card">
+            <div class="vendor-stat-top">
+                <span class="vendor-stat-icon">▣</span>
+                <span class="vendor-stat-label">PRODUCTS</span>
+            </div>
+            <strong class="vendor-stat-value">
+                {{ total_products|default:"—" }}
+            </strong>
+            <p>Listed products</p>
+            <a href="#products">Manage products <span>→</span></a>
+        </article>
+
+        <article class="vendor-stat-card">
+            <div class="vendor-stat-top">
+                <span class="vendor-stat-icon">◇</span>
+                <span class="vendor-stat-label">SERVICES</span>
+            </div>
+            <strong class="vendor-stat-value">
+                {{ total_services|default:"—" }}
+            </strong>
+            <p>Available services</p>
+            <a href="#services">Manage services <span>→</span></a>
+        </article>
+
+        <article class="vendor-stat-card">
+            <div class="vendor-stat-top">
+                <span class="vendor-stat-icon">▤</span>
+                <span class="vendor-stat-label">ORDERS</span>
+            </div>
+            <strong class="vendor-stat-value">
+                {{ pending_orders|default:"—" }}
+            </strong>
+            <p>Orders awaiting action</p>
+            <a href="#orders">View orders <span>→</span></a>
+        </article>
+
+        <article class="vendor-stat-card">
+            <div class="vendor-stat-top">
+                <span class="vendor-stat-icon">◷</span>
+                <span class="vendor-stat-label">BOOKINGS</span>
+            </div>
+            <strong class="vendor-stat-value">
+                {{ upcoming_bookings|default:"—" }}
+            </strong>
+            <p>Upcoming bookings</p>
+            <a href="#bookings">View bookings <span>→</span></a>
+        </article>
+
+    </section>
+
+    <!-- Quick actions -->
+    <section class="vendor-quick-actions">
+        <div class="vendor-section-heading">
+            <div>
+                <span class="vendor-section-label">GET THINGS DONE</span>
+                <h2>Quick actions</h2>
+                <p>Shortcuts to the tools you use most.</p>
+            </div>
+        </div>
+
+        <div class="vendor-action-grid">
+
+            <a href="#products" class="vendor-action-card">
+                <span class="vendor-action-icon">＋</span>
+                <span>
+                    <strong>Add a product</strong>
+                    <small>Create a new product listing</small>
+                </span>
+                <span class="vendor-action-arrow">→</span>
+            </a>
+
+            <a href="#services" class="vendor-action-card">
+                <span class="vendor-action-icon">✳</span>
+                <span>
+                    <strong>Add a service</strong>
+                    <small>Publish a service offering</small>
+                </span>
+                <span class="vendor-action-arrow">→</span>
+            </a>
+
+            <a href="#availability" class="vendor-action-card">
+                <span class="vendor-action-icon">◷</span>
+                <span>
+                    <strong>Manage slots</strong>
+                    <small>Set your booking availability</small>
+                </span>
+                <span class="vendor-action-arrow">→</span>
+            </a>
+
+            <a href="#marketing" class="vendor-action-card">
+                <span class="vendor-action-icon">✧</span>
+                <span>
+                    <strong>Create promotion</strong>
+                    <small>Publish an ad or announcement</small>
+                </span>
+                <span class="vendor-action-arrow">→</span>
+            </a>
+
+        </div>
+    </section>
+
+    <!-- Orders and bookings -->
+    <section class="vendor-activity-grid">
+
+        <!-- Recent orders -->
+        <article class="vendor-panel" id="orders">
+
+            <div class="vendor-panel-heading">
+                <div>
+                    <span class="vendor-section-label">SALES ACTIVITY</span>
+                    <h2>Recent orders</h2>
+                    <p>Keep track of customer purchases.</p>
+                </div>
+                <a href="#orders" class="vendor-view-all">View all →</a>
+            </div>
+
+            <div class="vendor-table-wrap">
+                <table class="vendor-table">
+                    <thead>
+                        <tr>
+                            <th>ORDER</th>
+                            <th>CUSTOMER</th>
+                            <th>AMOUNT</th>
+                            <th>STATUS</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+
+                    <tbody>
+                        {% for order in orders %}
+                        <tr>
+                            <td>
+                                <strong>#{{ order.id }}</strong>
+                            </td>
+                            <td>
+                                {{ order.customer_name|default:"Customer" }}
+                            </td>
+                            <td>
+                                {{ order.total_amount|default:"—" }}
+                            </td>
+                            <td>
+                                <span class="vendor-order-status">
+                                    {{ order.status|default:"Pending" }}
+                                </span>
+                            </td>
+                            <td>
+                                <a href="#orders" class="vendor-row-link">Review</a>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="5">
+                                <div class="vendor-empty-state">
+                                    <span>▤</span>
+                                    <strong>No orders to display</strong>
+                                    <p>Your customer orders will appear here.</p>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+        </article>
+
+        <!-- Recent bookings -->
+        <article class="vendor-panel" id="bookings">
+
+            <div class="vendor-panel-heading">
+                <div>
+                    <span class="vendor-section-label">APPOINTMENTS</span>
+                    <h2>Recent bookings</h2>
+                    <p>Review your upcoming appointments.</p>
+                </div>
+                <a href="#bookings" class="vendor-view-all">View all →</a>
+            </div>
+
+            <div class="vendor-booking-list">
+
+                {% for booking in bookings %}
+                <div class="vendor-booking-item">
+                    <div class="vendor-booking-date">
+                        <span>{{ booking.date|date:"d" }}</span>
+                        <small>{{ booking.date|date:"M" }}</small>
+                    </div>
+
+                    <div class="vendor-booking-info">
+                        <strong>
+                            {{ booking.service_name|default:"Service booking" }}
+                        </strong>
+                        <p>
+                            {{ booking.customer_name|default:"Customer" }}
+                        </p>
+                        <span>{{ booking.status|default:"Pending" }}</span>
+                    </div>
+
+                    <a href="#bookings" class="vendor-row-link">Review</a>
+                </div>
+                {% empty %}
+                <div class="vendor-empty-state">
+                    <span>◷</span>
+                    <strong>No bookings to display</strong>
+                    <p>Customer bookings will appear here.</p>
+                </div>
+                {% endfor %}
+
+            </div>
+
+        </article>
+
+    </section>
+
+    <!-- Products -->
+    <section class="vendor-panel vendor-listing-panel" id="products">
+
+        <div class="vendor-panel-heading">
+            <div>
+                <span class="vendor-section-label">YOUR CATALOGUE</span>
+                <h2>Products</h2>
+                <p>Manage the products customers can discover in your store.</p>
+            </div>
+
+            <a href="#products" class="vendor-primary-button">
+                ＋ Add product
+            </a>
+        </div>
+
+        <div class="vendor-listing-grid">
+
+            {% for product in products %}
+            <article class="vendor-listing-card">
+
+                <div class="vendor-listing-image">
+                    {% if product.image %}
+                        <img src="{{ product.image.url }}"
+                             alt="{{ product.name }}"
+                             loading="lazy">
+                    {% else %}
+                        <span>PRODUCT</span>
+                    {% endif %}
+                </div>
+
+                <div class="vendor-listing-details">
+                    <div class="vendor-listing-title">
+                        <h3>{{ product.name }}</h3>
+                        <span class="vendor-listing-status">
+                            {{ product.availability_status|default:"Listed" }}
+                        </span>
+                    </div>
+
+                    <p>{{ product.description|default:"No description added."|truncatechars:75 }}</p>
+
+                    <div class="vendor-listing-footer">
+                        <strong>{{ product.price|default:"Price not set" }}</strong>
+                        <a href="#products">Edit listing →</a>
+                    </div>
+                </div>
+
+            </article>
+            {% empty %}
+            <div class="vendor-empty-state vendor-full-empty">
+                <span>▣</span>
+                <strong>Your product catalogue is empty</strong>
+                <p>Add your first product to start showcasing it on The Spotlight.</p>
+                <a href="#products" class="vendor-text-link">Add your first product →</a>
+            </div>
+            {% endfor %}
+
+        </div>
+
+    </section>
+
+    <!-- Services -->
+    <section class="vendor-panel vendor-listing-panel" id="services">
+
+        <div class="vendor-panel-heading">
+            <div>
+                <span class="vendor-section-label">WHAT YOU OFFER</span>
+                <h2>Services</h2>
+                <p>Manage the services customers can book from your business.</p>
+            </div>
+
+            <a href="#services" class="vendor-primary-button">
+                ＋ Add service
+            </a>
+        </div>
+
+        <div class="vendor-service-list">
+
+            {% for service in services %}
+            <article class="vendor-service-item">
+
+                <div class="vendor-service-icon">✳</div>
+
+                <div class="vendor-service-info">
+                    <strong>{{ service.name }}</strong>
+                    <p>{{ service.description|default:"No description added."|truncatechars:90 }}</p>
+                </div>
+
+                <div class="vendor-service-price">
+                    <span>PRICE</span>
+                    <strong>{{ service.price|default:"Not set" }}</strong>
+                </div>
+
+                <span class="vendor-listing-status">
+                    {{ service.availability_status|default:"Listed" }}
+                </span>
+
+                <a href="#services" class="vendor-row-link">Edit</a>
+
+            </article>
+            {% empty %}
+            <div class="vendor-empty-state vendor-full-empty">
+                <span>◇</span>
+                <strong>No services added yet</strong>
+                <p>Showcase your services and allow customers to discover them.</p>
+                <a href="#services" class="vendor-text-link">Add your first service →</a>
+            </div>
+            {% endfor %}
+
+        </div>
+
+    </section>
+
+    <!-- Availability management -->
+    <section class="vendor-panel" id="availability">
+
+        <div class="vendor-panel-heading">
+            <div>
+                <span class="vendor-section-label">BOOKING MANAGEMENT</span>
+                <h2>Availability and slots</h2>
+                <p>Control when customers can book your services.</p>
+            </div>
+
+            <a href="#availability" class="vendor-primary-button">
+                ＋ Add availability
+            </a>
+        </div>
+
+        <div class="vendor-availability-placeholder">
+            <div class="vendor-availability-icon">◷</div>
+            <div>
+                <strong>Manage your booking schedule</strong>
+                <p>
+                    Your available days, time slots and booking limits
+                    will be displayed here once availability management
+                    is connected.
+                </p>
+            </div>
+            <span class="vendor-coming-soon">Backend integration pending</span>
+        </div>
+
+    </section>
+
+    <!-- Marketing -->
+    <section class="vendor-panel" id="marketing">
+
+        <div class="vendor-panel-heading">
+            <div>
+                <span class="vendor-section-label">GROW YOUR BUSINESS</span>
+                <h2>Marketing and announcements</h2>
+                <p>Share updates and promote your business on the marketplace.</p>
+            </div>
+
+            <a href="#marketing" class="vendor-primary-button">
+                ＋ Create announcement
+            </a>
+        </div>
+
+        <div class="vendor-marketing-grid">
+
+            <div class="vendor-marketing-card">
+                <span class="vendor-marketing-icon">✧</span>
+                <h3>Advertisements</h3>
+                <p>
+                    Promote your business through sponsored placements
+                    on The Spotlight.
+                </p>
+                <a href="#marketing">Manage advertisements →</a>
+            </div>
+
+            <div class="vendor-marketing-card">
+                <span class="vendor-marketing-icon">▤</span>
+                <h3>Announcements</h3>
+                <p>
+                    Share important news, offers and updates with
+                    marketplace visitors.
+                </p>
+                <a href="#marketing">Manage announcements →</a>
+            </div>
+
+        </div>
+
+        <div class="vendor-announcement-list">
+            <h3>Your recent announcements</h3>
+
+            {% for announcement in announcements %}
+            <div class="vendor-announcement-item">
+                <div>
+                    <strong>{{ announcement.title }}</strong>
+                    <p>{{ announcement.created_at|date:"d M Y" }}</p>
+                </div>
+                <span>{{ announcement.status|default:"Draft" }}</span>
+            </div>
+            {% empty %}
+            <p class="vendor-muted-message">
+                Your announcements will appear here once you create them.
+            </p>
+            {% endfor %}
+        </div>
+
+    </section>
+
+    <!-- Store management -->
+    <section class="vendor-panel" id="store-settings">
+
+        <div class="vendor-panel-heading">
+            <div>
+                <span class="vendor-section-label">BUSINESS INFORMATION</span>
+                <h2>Store management</h2>
+                <p>Keep your business information accurate and up to date.</p>
+            </div>
+        </div>
+
+        <div class="vendor-store-management">
+            <div>
+                <span class="vendor-store-management-icon">▣</span>
+                <strong>Store profile</strong>
+                <p>Update your store name, description, contact details and images.</p>
+            </div>
+
+            <a href="#store-management" class="vendor-secondary-button">
+                Edit store details →
+            </a>
+        </div>
+
+    </section>
+
+    <footer class="vendor-dashboard-footer">
+        <span>THE SPOTLIGHT</span>
+        <p>Vendor workspace · Manage your business with confidence.</p>
+    </footer>
+
+</main>
+
+{% endblock %}

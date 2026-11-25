@@ -1,0 +1,110 @@
+{% extends "shopkeeper/base.html" %}
+
+{% block title %}Announcements — {{ store.name }} | The Spotlight{% endblock %}
+{% block header %}Announcements{% endblock %}
+
+{% block content %}
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-3 my-3">
+  <div>
+    <h2 class="h4 mb-1">Announcements</h2>
+    <p class="text-body-secondary mb-0">
+      Read platform updates and manage public announcements for <strong>{{ store.name }}</strong>.
+    </p>
+  </div>
+  <a href="{% url 'shopkeeper:announcement_create' %}" class="btn btn-primary btn-sm">
+    <i class="fa-solid fa-plus me-1"></i> Post Store Announcement
+  </a>
+</div>
+
+<!-- Platform-Wide Announcements -->
+<div class="card border-0 shadow-sm my-3">
+  <div class="card-header bg-transparent p-3">
+    <h5 class="mb-0"><i class="fa-solid fa-bullhorn text-info me-2"></i>Platform Announcements</h5>
+  </div>
+  <div class="card-body p-3">
+    {% if platform_announcements %}
+      <div class="d-flex flex-column gap-3">
+        {% for ann in platform_announcements %}
+          <div class="border rounded p-3 bg-body-tertiary">
+            <div class="d-flex justify-content-between align-items-start gap-2 mb-1">
+              <h6 class="mb-0 fw-bold">{{ ann.title }}</h6>
+              <span class="small text-body-secondary">{{ ann.created_at|date:"d M Y" }}</span>
+            </div>
+            <p class="small mb-0 text-body-secondary">{{ ann.content|linebreaksbr }}</p>
+          </div>
+        {% endfor %}
+      </div>
+    {% else %}
+      <p class="text-body-secondary small mb-0">No active platform announcements at the moment.</p>
+    {% endif %}
+  </div>
+</div>
+
+<!-- Store Announcements -->
+<div class="card border-0 shadow-sm my-3">
+  <div class="card-header bg-transparent p-3">
+    <h5 class="mb-0">My Store Announcements ({{ store_announcements|length }})</h5>
+  </div>
+  <div class="card-body p-3">
+    {% if store_announcements %}
+      <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+          <thead>
+            <tr>
+              <th>Announcement</th>
+              <th>Schedule</th>
+              <th>Status</th>
+              <th class="text-end">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for ann in store_announcements %}
+              <tr>
+                <td>
+                  <div class="fw-semibold">{{ ann.title }}</div>
+                  <div class="small text-body-secondary">{{ ann.content|truncatechars:75 }}</div>
+                </td>
+                <td class="small">
+                  {% if ann.start_date or ann.end_date %}
+                    {{ ann.start_date|date:"d M Y"|default:"Now" }} – {{ ann.end_date|date:"d M Y"|default:"No expiry" }}
+                  {% else %}
+                    Always active
+                  {% endif %}
+                </td>
+                <td>
+                  {% if ann.is_active %}
+                    <span class="badge text-bg-success">Active</span>
+                  {% else %}
+                    <span class="badge text-bg-secondary">Hidden</span>
+                  {% endif %}
+                </td>
+                <td class="text-end">
+                  <div class="d-inline-flex gap-1">
+                    <a href="{% url 'shopkeeper:announcement_edit' ann.id %}" class="btn btn-sm btn-outline-primary" title="Edit">
+                      <i class="fa-solid fa-pen"></i>
+                    </a>
+                    <form method="post" action="{% url 'shopkeeper:announcement_toggle' ann.id %}" class="d-inline">
+                      {% csrf_token %}
+                      <button type="submit" class="btn btn-sm btn-outline-secondary" title="{% if ann.is_active %}Hide{% else %}Show{% endif %}">
+                        <i class="fa-solid {% if ann.is_active %}fa-eye-slash{% else %}fa-eye{% endif %}"></i>
+                      </button>
+                    </form>
+                    <form method="post" action="{% url 'shopkeeper:announcement_delete' ann.id %}" class="d-inline" onsubmit="return confirm('Delete announcement {{ ann.title|escapejs }}?');">
+                      {% csrf_token %}
+                      <button type="submit" class="btn btn-sm btn-outline-danger" title="Delete">
+                        <i class="fa-solid fa-trash"></i>
+                      </button>
+                    </form>
+                  </div>
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% else %}
+      <p class="text-body-secondary small mb-0">You haven't posted any store announcements yet.</p>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

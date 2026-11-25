@@ -1,0 +1,32 @@
+{% extends "shopkeeper/base.html" %}
+{% block title %}{{ page_title }}{% endblock %}
+
+{% block content %}
+<h4 class="mb-4">{{ page_title }}</h4>
+<div class="card col-md-6">
+  <div class="card-body">
+    <form method="post">
+      {% csrf_token %}
+      <div class="mb-3">
+        <label class="form-label">Service</label>
+        <select name="service" class="form-select"></select>
+      </div>
+      <div class="mb-3">
+        <label class="form-label">Date</label>
+        <input type="date" name="date" class="form-control" required>
+      </div>
+      <div class="row g-2 mb-3">
+        <div class="col">
+          <label class="form-label">Start Time</label>
+          <input type="time" name="start_time" class="form-control" required>
+        </div>
+        <div class="col">
+          <label class="form-label">End Time</label>
+          <input type="time" name="end_time" class="form-control" required>
+        </div>
+      </div>
+      <button type="submit" class="btn btn-primary">Generate Slots</button>
+    </form>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,342 @@
+{% extends "shopkeeper/base.html" %}
+{% block title %}{{ page_title }}{% endblock %}
+
+{% block extra_css %}
+<style>
+  #notificationsTable tbody tr.notif-row {
+    cursor: pointer;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Header & Bulk Actions -->
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
+  <div>
+    <h4 class="mb-1">Notifications</h4>
+    <p class="text-body-secondary small mb-0">
+      Stay updated on new orders, booking requests, client cancellations, and customer reviews for <strong>{{ store.name }}</strong>.
+    </p>
+  </div>
+
+  <div class="d-flex align-items-center gap-2">
+    {% if counts.unread > 0 %}
+      <form method="post" action="{% url 'shopkeeper:notification_mark_all_read' %}" class="m-0">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-sm btn-primary">
+          <i class="fa-solid fa-check-double me-1"></i>Mark All as Read ({{ counts.unread }})
+        </button>
+      </form>
+    {% endif %}
+  </div>
+</div>
+
+<!-- Category Filter Tabs -->
+<div class="btn-group btn-group-sm mb-4" role="group" aria-label="Notification categories">
+  <a href="{% url 'shopkeeper:notifications' %}" class="btn btn-outline-secondary {% if category_filter == 'all' %}active{% endif %}">
+    All <span class="badge bg-secondary ms-1">{{ counts.all }}</span>
+  </a>
+  <a href="{% url 'shopkeeper:notifications' %}?category=unread" class="btn btn-outline-secondary {% if category_filter == 'unread' %}active{% endif %}">
+    Unread
+    {% if counts.unread %}
+      <span class="badge bg-danger ms-1">{{ counts.unread }}</span>
+    {% endif %}
+  </a>
+  {% if is_product_business or counts.orders %}
+    <a href="{% url 'shopkeeper:notifications' %}?category=orders" class="btn btn-outline-secondary {% if category_filter == 'orders' %}active{% endif %}">
+      Orders <span class="badge bg-secondary ms-1">{{ counts.orders }}</span>
+    </a>
+  {% endif %}
+  {% if is_service_business or counts.bookings %}
+    <a href="{% url 'shopkeeper:notifications' %}?category=bookings" class="btn btn-outline-secondary {% if category_filter == 'bookings' %}active{% endif %}">
+      Bookings <span class="badge bg-secondary ms-1">{{ counts.bookings }}</span>
+    </a>
+  {% endif %}
+  <a href="{% url 'shopkeeper:notifications' %}?category=reviews" class="btn btn-outline-secondary {% if category_filter == 'reviews' %}active{% endif %}">
+    Reviews <span class="badge bg-secondary ms-1">{{ counts.reviews }}</span>
+  </a>
+</div>
+
+<!-- DataTables Notifications Table -->
+<div class="card">
+  <div class="card-body">
+    <div class="table-responsive">
+      <table
+        id="notificationsTable"
+        class="table table-hover align-middle mb-0 datatable w-100"
+        data-empty-text="No notifications in this category yet."
+      >
+        <thead class="bg-body-tertiary">
+          <tr>
+            <th>Type</th>
+            <th>Update</th>
+            <th>Received</th>
+            <th>Status</th>
+            <th class="text-end no-sort">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for notif in notifications %}
+            {% with title_lower=notif.title|lower %}
+              <tr
+                class="notif-row {% if not notif.is_read %}fw-semibold{% endif %}"
+                data-detail-modal="#notifModal-{{ notif.pk }}"
+                role="button"
+                tabindex="0"
+              >
+                <!-- Category Badge -->
+                <td>
+                  {% if notif.order_id or 'order' in title_lower %}
+                    <span class="badge bg-primary-subtle text-primary-emphasis">
+                      <i class="fa-solid fa-cart-shopping me-1"></i>Order
+                    </span>
+                  {% elif 'booking' in title_lower %}
+                    <span class="badge bg-info-subtle text-info-emphasis">
+                      <i class="fa-solid fa-calendar-check me-1"></i>Booking
+                    </span>
+                  {% elif 'review' in title_lower %}
+                    <span class="badge bg-warning-subtle text-warning-emphasis">
+                      <i class="fa-solid fa-star me-1"></i>Review
+                    </span>
+                  {% else %}
+                    <span class="badge bg-secondary-subtle text-secondary-emphasis">
+                      <i class="fa-solid fa-bell me-1"></i>Store
+                    </span>
+                  {% endif %}
+                </td>
+
+                <!-- Title & Message -->
+                <td>
+                  <div>
+                    <a
+                      href="#notifModal-{{ notif.pk }}"
+                      class="text-decoration-none text-reset"
+                      data-coreui-toggle="modal"
+                      data-coreui-target="#notifModal-{{ notif.pk }}"
+                    >
+                      {{ notif.title }}
+                    </a>
+                    {% if notif.order %}
+                      <span class="badge bg-secondary ms-1">#{{ notif.order.order_number }}</span>
+                    {% endif %}
+                  </div>
+                  <div class="small text-body-secondary fw-normal mt-1">
+                    {{ notif.message|truncatechars:170 }}
+                  </div>
+                </td>
+
+                <!-- Timestamp -->
+                <td data-order="{{ notif.created_at|date:'U' }}">
+                  <div class="small">{{ notif.created_at|timesince }} ago</div>
+                  <div class="small text-body-secondary fw-normal">{{ notif.created_at|date:"M d, Y · H:i" }}</div>
+                </td>
+
+                <!-- Read / Unread State -->
+                <td data-order="{% if notif.is_read %}1{% else %}0{% endif %}">
+                  {% if notif.is_read %}
+                    <span class="badge bg-secondary">Read</span>
+                  {% else %}
+                    <span class="badge bg-danger">Unread</span>
+                  {% endif %}
+                </td>
+
+                <!-- Actions -->
+                <td class="text-end row-actions">
+                  <div class="d-inline-flex align-items-center gap-1">
+                    <!-- View Details Modal Button -->
+                    <button
+                      type="button"
+                      class="btn btn-sm btn-outline-secondary"
+                      data-coreui-toggle="modal"
+                      data-coreui-target="#notifModal-{{ notif.pk }}"
+                      title="View Details"
+                    >
+                      <i class="fa-solid fa-eye"></i>
+                    </button>
+
+                    {% if not notif.is_read %}
+                      <form method="post" action="{% url 'shopkeeper:notification_mark_read' notif.pk %}" class="d-inline">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-sm btn-outline-success" title="Mark as Read">
+                          <i class="fa-solid fa-check"></i>
+                        </button>
+                      </form>
+                    {% endif %}
+
+                    <form method="post" action="{% url 'shopkeeper:notification_delete' notif.pk %}" class="d-inline">
+                      {% csrf_token %}
+                      <button type="submit" class="btn btn-sm btn-outline-danger" title="Delete">
+                        <i class="fa-solid fa-trash-can"></i>
+                      </button>
+                    </form>
+                  </div>
+                </td>
+              </tr>
+            {% endwith %}
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- Notification Detail Modals -->
+{% for notif in notifications %}
+  {% with title_lower=notif.title|lower %}
+    <div class="modal fade" id="notifModal-{{ notif.pk }}" tabindex="-1" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-content">
+          <div class="modal-header">
+            <div class="d-flex align-items-center gap-2">
+              {% if notif.order_id or 'order' in title_lower %}
+                <span class="badge bg-primary-subtle text-primary-emphasis">
+                  <i class="fa-solid fa-cart-shopping me-1"></i>Order
+                </span>
+              {% elif 'booking' in title_lower %}
+                <span class="badge bg-info-subtle text-info-emphasis">
+                  <i class="fa-solid fa-calendar-check me-1"></i>Booking
+                </span>
+              {% elif 'review' in title_lower %}
+                <span class="badge bg-warning-subtle text-warning-emphasis">
+                  <i class="fa-solid fa-star me-1"></i>Review
+                </span>
+              {% else %}
+                <span class="badge bg-secondary-subtle text-secondary-emphasis">
+                  <i class="fa-solid fa-bell me-1"></i>Store
+                </span>
+              {% endif %}
+              <h5 class="modal-title mb-0">{{ notif.title }}</h5>
+            </div>
+            <button type="button" class="btn-close" data-coreui-dismiss="modal" aria-label="Close"></button>
+          </div>
+
+          <div class="modal-body">
+            <div class="d-flex justify-content-between align-items-center small text-body-secondary mb-3">
+              <span>
+                <i class="fa-regular fa-clock me-1"></i>{{ notif.created_at|date:"M d, Y · H:i" }} ({{ notif.created_at|timesince }} ago)
+              </span>
+              {% if notif.is_read %}
+                <span class="badge bg-secondary">Read</span>
+              {% else %}
+                <span class="badge bg-danger">Unread</span>
+              {% endif %}
+            </div>
+
+            <div class="p-3 rounded bg-body-tertiary border mb-3">
+              <p class="mb-0" style="white-space: pre-line;">{{ notif.message }}</p>
+            </div>
+
+            {% if notif.order %}
+              <div class="border rounded p-3 small">
+                <div class="fw-semibold mb-2">Linked Order Details</div>
+                <div class="d-flex justify-content-between mb-1">
+                  <span class="text-body-secondary">Order Number:</span>
+                  <span class="fw-semibold">#{{ notif.order.order_number }}</span>
+                </div>
+                <div class="d-flex justify-content-between mb-1">
+                  <span class="text-body-secondary">Customer:</span>
+                  <span>{{ notif.order.customer_name|default:"Guest Customer" }}</span>
+                </div>
+                <div class="d-flex justify-content-between mb-1">
+                  <span class="text-body-secondary">Status:</span>
+                  <span>{{ notif.order.get_status_display }}</span>
+                </div>
+                <div class="d-flex justify-content-between">
+                  <span class="text-body-secondary">Total:</span>
+                  <span class="fw-semibold">Rs {{ notif.order.total|floatformat:2 }}</span>
+                </div>
+              </div>
+            {% endif %}
+          </div>
+
+          <div class="modal-footer justify-content-between">
+            <form method="post" action="{% url 'shopkeeper:notification_delete' notif.pk %}" class="m-0">
+              {% csrf_token %}
+              <button type="submit" class="btn btn-sm btn-outline-danger">
+                <i class="fa-solid fa-trash-can me-1"></i>Delete
+              </button>
+            </form>
+
+            <div class="d-flex align-items-center gap-2">
+              {% if not notif.is_read %}
+                <form method="post" action="{% url 'shopkeeper:notification_mark_read' notif.pk %}" class="m-0">
+                  {% csrf_token %}
+                  <button type="submit" class="btn btn-sm btn-outline-success">
+                    <i class="fa-solid fa-check me-1"></i>Mark as Read
+                  </button>
+                </form>
+              {% endif %}
+
+              {% if notif.order_id or 'order' in title_lower %}
+                <form method="post" action="{% url 'shopkeeper:notification_mark_read' notif.pk %}" class="m-0">
+                  {% csrf_token %}
+                  <input type="hidden" name="next" value="{% url 'shopkeeper:order_list' %}">
+                  <button type="submit" class="btn btn-sm btn-primary">
+                    Go to Orders <i class="fa-solid fa-arrow-right ms-1"></i>
+                  </button>
+                </form>
+              {% elif 'booking' in title_lower %}
+                <form method="post" action="{% url 'shopkeeper:notification_mark_read' notif.pk %}" class="m-0">
+                  {% csrf_token %}
+                  <input type="hidden" name="next" value="{% url 'shopkeeper:booking_list' %}">
+                  <button type="submit" class="btn btn-sm btn-primary">
+                    Go to Bookings <i class="fa-solid fa-arrow-right ms-1"></i>
+                  </button>
+                </form>
+              {% elif 'review' in title_lower %}
+                <form method="post" action="{% url 'shopkeeper:notification_mark_read' notif.pk %}" class="m-0">
+                  {% csrf_token %}
+                  <input type="hidden" name="next" value="{% url 'shopkeeper:reviews' %}">
+                  <button type="submit" class="btn btn-sm btn-primary">
+                    Go to Reviews <i class="fa-solid fa-arrow-right ms-1"></i>
+                  </button>
+                </form>
+              {% endif %}
+
+              <button type="button" class="btn btn-sm btn-secondary" data-coreui-dismiss="modal">Close</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  {% endwith %}
+{% endfor %}
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    const tableBody = document.querySelector("#notificationsTable tbody");
+    if (!tableBody) return;
+
+    function openRowModal(row) {
+      const modalSelector = row.getAttribute("data-detail-modal");
+      if (!modalSelector) return;
+      const modalEl = document.querySelector(modalSelector);
+      if (modalEl && window.coreui) {
+        coreui.Modal.getOrCreateInstance(modalEl).show();
+      }
+    }
+
+    // Event delegation ensures rows across all DataTables pages remain clickable
+    tableBody.addEventListener("click", function (event) {
+      if (event.target.closest(".row-actions, button, form, input")) return;
+      const row = event.target.closest("tr.notif-row");
+      if (row) {
+        event.preventDefault();
+        openRowModal(row);
+      }
+    });
+
+    tableBody.addEventListener("keydown", function (event) {
+      if (event.key === "Enter" || event.key === " ") {
+        const row = event.target.closest("tr.notif-row");
+        if (row && !event.target.closest(".row-actions, button, form")) {
+          event.preventDefault();
+          openRowModal(row);
+        }
+      }
+    });
+  });
+</script>
+{% endblock %}

@@ -1,4 +1,3 @@
-
 /* =====================================================
    THE SPOTLIGHT - ACCOUNT SETTINGS
    Theme: Black | White | Peach | Warm Orange
@@ -89,17 +88,17 @@
 }
 
 /* =====================================================
-   SETTINGS SIDEBAR
+   SETTINGS SIDEBAR (DARK BROWN)
 ===================================================== */
 
 .settings-sidebar {
     position: sticky;
     top: 25px;
     padding: 20px 15px;
-    background: var(--white);
-    border: 1px solid var(--border-color);
+    background: var(--dark-charcoal);
+    border: 1px solid #382E26;
     border-radius: 14px;
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.025);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18);
 }
 
 .settings-user-card {
@@ -107,7 +106,7 @@
     align-items: center;
     gap: 12px;
     padding: 4px 5px 20px;
-    border-bottom: 1px solid var(--border-color);
+    border-bottom: 1px solid #382E26;
 }
 
 .settings-avatar {
@@ -123,6 +122,13 @@
     border-radius: 50%;
     font-size: 17px;
     font-weight: 800;
+    overflow: hidden;
+}
+
+.settings-avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
 }
 
 .settings-avatar.large {
@@ -140,7 +146,7 @@
 
 .settings-user-details strong {
     overflow: hidden;
-    color: var(--primary-black);
+    color: var(--white);
     font-size: 13px;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -148,7 +154,7 @@
 
 .settings-user-details span {
     overflow: hidden;
-    color: var(--muted-text);
+    color: #B8A99A;
     font-size: 11px;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -165,7 +171,7 @@
 
 .settings-nav-label {
     margin: 13px 10px 7px;
-    color: #A0A0A0;
+    color: #9E8B7B;
     font-size: 9px;
     font-weight: 800;
     letter-spacing: 1.2px;
@@ -176,7 +182,7 @@
     align-items: center;
     gap: 11px;
     padding: 12px 11px;
-    color: #555555;
+    color: #D6C7B8;
     border-radius: 8px;
     font-size: 12px;
     font-weight: 600;
@@ -185,14 +191,14 @@
 }
 
 .settings-nav-link:hover {
-    color: var(--orange);
-    background: var(--peach-light);
+    color: var(--peach);
+    background: rgba(255, 193, 142, 0.12);
 }
 
 .settings-nav-link.active {
-    color: var(--primary-black);
-    background: var(--peach-light);
-    box-shadow: inset 3px 0 0 var(--orange);
+    color: var(--peach);
+    background: rgba(255, 193, 142, 0.16);
+    box-shadow: inset 3px 0 0 var(--peach);
 }
 
 .settings-nav-icon {
@@ -200,52 +206,68 @@
     align-items: center;
     justify-content: center;
     width: 20px;
-    color: var(--orange);
+    color: var(--peach);
     font-size: 16px;
 }
 
 .settings-nav-link.danger-link {
-    color: var(--danger);
+    color: #F28B82;
 }
 
 .settings-nav-link.danger-link .settings-nav-icon {
-    color: var(--danger);
+    color: #F28B82;
 }
 
 .settings-nav-link.danger-link:hover {
-    background: #FFF1F1;
+    color: #FFB4AB;
+    background: rgba(217, 71, 71, 0.18);
 }
 
 /* Sidebar support */
 
 .settings-help {
     padding: 16px;
-    background: var(--light-background);
-    border: 1px solid var(--border-color);
+    background: #171310;
+    border: 1px solid #382E26;
     border-radius: 10px;
 }
 
+.settings-help-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 22px;
+    height: 22px;
+    margin-bottom: 8px;
+    color: var(--peach);
+    background: rgba(255, 193, 142, 0.14);
+    border-radius: 50%;
+    font-size: 12px;
+    font-weight: 800;
+}
+
 .settings-help strong {
-    color: var(--primary-black);
+    display: block;
+    color: var(--white);
     font-size: 12px;
 }
 
 .settings-help p {
     margin: 7px 0 10px;
-    color: var(--muted-text);
+    color: #B8A99A;
     font-size: 11px;
     line-height: 1.6;
 }
 
 .settings-help a {
-    color: var(--orange);
+    color: var(--peach);
     font-size: 11px;
     font-weight: 700;
     text-decoration: none;
 }
 
 .settings-help a:hover {
-    color: var(--orange-hover);
+    color: #FFD5A8;
 }
 
 /* =====================================================
@@ -614,6 +636,25 @@
     border-radius: 10px;
 }
 
+.settings-danger-icon {
+    display: flex;
+    flex-shrink: 0;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    color: var(--danger);
+    background: #FFE5E5;
+    border-radius: 8px;
+    font-size: 16px;
+    font-weight: 800;
+}
+
+.settings-danger-info {
+    flex: 1;
+    min-width: 0;
+}
+
 .settings-danger-card strong {
     color: #B83232;
     font-size: 12px;
@@ -737,5 +778,59 @@
     .settings-page *::after {
         scroll-behavior: auto !important;
         transition: none !important;
+    }
+}
+
+/* =====================================================
+   RESPONSIVE SMOOTH SCROLL & PERFORMANCE
+===================================================== */
+
+.settings-page {
+    scroll-behavior: smooth;
+    overscroll-behavior-y: contain;
+}
+
+.settings-section {
+    scroll-margin-top: 90px; /* Clears sticky site headers cleanly */
+    content-visibility: auto;
+    contain-intrinsic-size: auto 420px;
+}
+
+.settings-sidebar {
+    top: 90px;
+    will-change: transform;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.14);
+}
+
+.settings-nav-link,
+.settings-primary-button,
+.settings-secondary-button,
+.settings-danger-button {
+    touch-action: manipulation;
+    transition:
+        color 150ms ease,
+        background-color 150ms ease,
+        border-color 150ms ease,
+        transform 150ms ease;
+}
+
+@media (max-width: 700px) {
+    .settings-sidebar {
+        position: static;
+        will-change: auto;
+    }
+
+    .settings-section {
+        scroll-margin-top: 24px;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .settings-page {
+        scroll-behavior: auto;
+    }
+
+    .settings-section {
+        content-visibility: visible;
     }
 }

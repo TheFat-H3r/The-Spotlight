@@ -1,0 +1,400 @@
+{% extends "shopkeeper/base.html" %}
+{% block title %}{{ page_title }}{% endblock %}
+
+{% block content %}
+<!-- Header & Status Tabs -->
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
+  <div>
+    <h4 class="mb-1">{{ page_title }}</h4>
+    <p class="text-body-secondary small mb-0">
+      Manage incoming customer orders, fulfilment, and status transitions for <strong>{{ store.name }}</strong>.
+    </p>
+  </div>
+
+  <div class="btn-group btn-group-sm" role="group" aria-label="Order status filters">
+    <a href="{% url 'shopkeeper:order_list' %}" class="btn btn-outline-secondary {% if status_filter == 'all' %}active{% endif %}">
+      All <span class="badge bg-secondary ms-1">{{ counts.all }}</span>
+    </a>
+    <a href="{% url 'shopkeeper:order_pending' %}" class="btn btn-outline-secondary {% if status_filter == 'pending' %}active{% endif %}">
+      Pending
+      {% if counts.pending %}
+        <span class="badge bg-warning text-dark ms-1">{{ counts.pending }}</span>
+      {% endif %}
+    </a>
+    <a href="{% url 'shopkeeper:order_completed' %}" class="btn btn-outline-secondary {% if status_filter == 'completed' %}active{% endif %}">
+      Completed <span class="badge bg-success ms-1">{{ counts.completed }}</span>
+    </a>
+    <a href="{% url 'shopkeeper:order_cancelled' %}" class="btn btn-outline-secondary {% if status_filter == 'cancelled' %}active{% endif %}">
+      Cancelled <span class="badge bg-danger ms-1">{{ counts.cancelled }}</span>
+    </a>
+  </div>
+</div>
+
+<!-- Quick KPI Strip -->
+<div class="row g-3 mb-4">
+  <div class="col-6 col-lg-3">
+    <div class="card h-100">
+      <div class="card-body py-3">
+        <div class="text-body-secondary small">Awaiting Action</div>
+        <div class="fs-4 fw-bold text-warning">{{ counts.pending }}</div>
+      </div>
+    </div>
+  </div>
+  <div class="col-6 col-lg-3">
+    <div class="card h-100">
+      <div class="card-body py-3">
+        <div class="text-body-secondary small">In Progress</div>
+        <div class="fs-4 fw-bold text-info">{{ counts.in_progress }}</div>
+      </div>
+    </div>
+  </div>
+  <div class="col-6 col-lg-3">
+    <div class="card h-100">
+      <div class="card-body py-3">
+        <div class="text-body-secondary small">Completed Orders</div>
+        <div class="fs-4 fw-bold text-success">{{ counts.completed }}</div>
+      </div>
+    </div>
+  </div>
+  <div class="col-6 col-lg-3">
+    <div class="card h-100">
+      <div class="card-body py-3">
+        <div class="text-body-secondary small">Completed Revenue</div>
+        <div class="fs-4 fw-bold">Rs {{ counts.completed_revenue|floatformat:2 }}</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Optional Dropdown Filters -->
+<div class="card mb-4">
+  <div class="card-body py-3">
+    <form method="get" class="row g-2 align-items-center">
+      <div class="col-6 col-md-4">
+        <select name="fulfilment" class="form-select form-select-sm">
+          <option value="">All Fulfilment Methods</option>
+          {% for val, label in fulfilment_choices %}
+            <option value="{{ val }}" {% if fulfilment_filter == val %}selected{% endif %}>{{ label }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-6 col-md-4">
+        <select name="payment" class="form-select form-select-sm">
+          <option value="">All Payment Statuses</option>
+          {% for val, label in payment_choices %}
+            <option value="{{ val }}" {% if payment_filter == val %}selected{% endif %}>{{ label }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-12 col-md-4 d-flex gap-2">
+        <button type="submit" class="btn btn-sm btn-primary w-100">Apply Filters</button>
+        {% if fulfilment_filter or payment_filter %}
+          <a href="{{ request.path }}" class="btn btn-sm btn-outline-secondary">Reset</a>
+        {% endif %}
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- DataTables Orders Table -->
+<div class="card">
+  <div class="card-body">
+    <div class="table-responsive">
+      <table
+        id="ordersTable"
+        class="table table-hover align-middle mb-0 datatable w-100"
+        data-empty-text="No {% if status_filter != 'all' %}{{ status_filter }} {% endif %}orders found."
+      >
+        <thead class="table-light">
+          <tr>
+            <th>Order #</th>
+            <th>Customer</th>
+            <th>Items</th>
+            <th>Fulfilment</th>
+            <th>Payment</th>
+            <th>Total</th>
+            <th>Status</th>
+            <th class="text-end no-sort">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for order in orders %}
+            <tr>
+              <!-- Sort chronologically by Unix timestamp -->
+              <td data-order="{{ order.created_at|date:'U' }}">
+                <div class="fw-semibold">#{{ order.order_number }}</div>
+                <div class="small text-body-secondary">{{ order.created_at|date:"M d, Y · H:i" }}</div>
+              </td>
+
+              <!-- Customer Snapshot -->
+              <td>
+                <div class="fw-medium">
+                  {{ order.customer_name|default:order.customer.get_full_name|default:"Guest Customer" }}
+                </div>
+                {% if order.customer_phone %}
+                  <div class="small text-body-secondary">
+                    <i class="fa-solid fa-phone fa-xs me-1"></i>{{ order.customer_phone }}
+                  </div>
+                {% endif %}
+              </td>
+
+              <!-- Line Items Preview -->
+              <td>
+                <div class="small">
+                  {% for item in order.items.all|slice:":2" %}
+                    <div>{{ item.quantity }}× {{ item.display_name }}</div>
+                  {% endfor %}
+                  {% if order.items.count > 2 %}
+                    <span class="text-body-secondary">+{{ order.items.count|add:"-2" }} more item(s)</span>
+                  {% endif %}
+                </div>
+              </td>
+
+              <!-- Fulfilment -->
+              <td>
+                {% if order.fulfilment_method == 'delivery' %}
+                  <span class="badge bg-info-subtle text-info-emphasis">
+                    <i class="fa-solid fa-truck-fast me-1"></i>Delivery
+                  </span>
+                  {% if order.delivery_address %}
+                    <div class="small text-body-secondary text-truncate" style="max-width: 160px;" title="{{ order.delivery_address }}">
+                      {{ order.delivery_address }}
+                    </div>
+                  {% endif %}
+                {% else %}
+                  <span class="badge bg-secondary-subtle text-secondary-emphasis">
+                    <i class="fa-solid fa-bag-shopping me-1"></i>Pickup
+                  </span>
+                  {% if order.pickup_location %}
+                    <div class="small text-body-secondary text-truncate" style="max-width: 160px;" title="{{ order.pickup_location }}">
+                      {{ order.pickup_location }}
+                    </div>
+                  {% endif %}
+                {% endif %}
+              </td>
+
+              <!-- Payment -->
+              <td>
+                <div class="small fw-medium">{{ order.get_payment_method_display }}</div>
+                {% if order.payment_status == 'paid' %}
+                  <span class="badge bg-success">Paid</span>
+                {% elif order.payment_status == 'refunded' %}
+                  <span class="badge bg-secondary">Refunded</span>
+                {% else %}
+                  <span class="badge bg-warning text-dark">Unpaid</span>
+                {% endif %}
+              </td>
+
+              <!-- Sort numerically by raw decimal total -->
+              <td data-order="{{ order.total }}">
+                <div class="fw-semibold">Rs {{ order.total|floatformat:2 }}</div>
+                {% if order.discount_total > 0 %}
+                  <div class="small text-success">-Rs {{ order.discount_total|floatformat:2 }}</div>
+                {% endif %}
+              </td>
+
+              <!-- Lifecycle Status -->
+              <td>
+                {% if order.status == 'pending' %}
+                  <span class="badge bg-warning text-dark">Pending</span>
+                {% elif order.status == 'confirmed' %}
+                  <span class="badge bg-primary">Confirmed</span>
+                {% elif order.status == 'preparing' %}
+                  <span class="badge bg-info text-dark">Preparing</span>
+                {% elif order.status == 'ready' %}
+                  <span class="badge bg-info">Ready</span>
+                {% elif order.status == 'completed' %}
+                  <span class="badge bg-success">Completed</span>
+                {% elif order.status == 'rejected' %}
+                  <span class="badge bg-danger">Rejected</span>
+                {% else %}
+                  <span class="badge bg-secondary">Cancelled</span>
+                {% endif %}
+              </td>
+
+              <!-- Quick Transitions + Details Trigger -->
+              <td class="text-end">
+                <div class="d-inline-flex align-items-center gap-1">
+                  {% with next_statuses=order.allowed_next_statuses %}
+                    {% if 'confirmed' in next_statuses %}
+                      <form method="post" action="{% url 'shopkeeper:order_update_status' order.order_number %}" class="d-inline">
+                        {% csrf_token %}
+                        <input type="hidden" name="new_status" value="confirmed">
+                        <button type="submit" class="btn btn-sm btn-success" title="Confirm Order">
+                          Confirm
+                        </button>
+                      </form>
+                    {% endif %}
+
+                    {% if 'preparing' in next_statuses %}
+                      <form method="post" action="{% url 'shopkeeper:order_update_status' order.order_number %}" class="d-inline">
+                        {% csrf_token %}
+                        <input type="hidden" name="new_status" value="preparing">
+                        <button type="submit" class="btn btn-sm btn-info text-dark">
+                          Prepare
+                        </button>
+                      </form>
+                    {% endif %}
+
+                    {% if 'ready' in next_statuses %}
+                      <form method="post" action="{% url 'shopkeeper:order_update_status' order.order_number %}" class="d-inline">
+                        {% csrf_token %}
+                        <input type="hidden" name="new_status" value="ready">
+                        <button type="submit" class="btn btn-sm btn-primary">
+                          Mark Ready
+                        </button>
+                      </form>
+                    {% endif %}
+
+                    {% if 'completed' in next_statuses %}
+                      <form method="post" action="{% url 'shopkeeper:order_update_status' order.order_number %}" class="d-inline">
+                        {% csrf_token %}
+                        <input type="hidden" name="new_status" value="completed">
+                        <button type="submit" class="btn btn-sm btn-success">
+                          Complete
+                        </button>
+                      </form>
+                    {% endif %}
+                  {% endwith %}
+
+                  <button
+                    type="button"
+                    class="btn btn-sm btn-outline-secondary"
+                    data-coreui-toggle="modal"
+                    data-coreui-target="#orderModal-{{ order.id }}"
+                  >
+                    Details
+                  </button>
+                </div>
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- Order Detail & Cancel/Reject Modals -->
+{% for order in orders %}
+  <div class="modal fade" id="orderModal-{{ order.id }}" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-scrollable">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">Order #{{ order.order_number }}</h5>
+          <button type="button" class="btn-close" data-coreui-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <div class="row g-3 mb-3">
+            <div class="col-md-6">
+              <div class="small text-body-secondary">Customer Details</div>
+              <div class="fw-semibold">{{ order.customer_name|default:"Guest Customer" }}</div>
+              {% if order.customer_phone %}<div class="small">Phone: {{ order.customer_phone }}</div>{% endif %}
+              {% if order.customer_email %}<div class="small">Email: {{ order.customer_email }}</div>{% endif %}
+            </div>
+            <div class="col-md-6">
+              <div class="small text-body-secondary">Fulfilment & Payment</div>
+              <div class="fw-semibold">{{ order.get_fulfilment_method_display }}</div>
+              {% if order.fulfilment_method == 'delivery' and order.delivery_address %}
+                <div class="small">Address: {{ order.delivery_address }}</div>
+              {% elif order.pickup_location %}
+                <div class="small">Pickup: {{ order.pickup_location }}</div>
+              {% endif %}
+              <div class="small">
+                Payment: {{ order.get_payment_method_display }} ({{ order.get_payment_status_display }})
+              </div>
+            </div>
+          </div>
+
+          {% if order.customer_note %}
+            <div class="alert alert-light border small mb-3">
+              <strong>Customer Note:</strong> {{ order.customer_note }}
+            </div>
+          {% endif %}
+
+          {% if order.cancel_reason %}
+            <div class="alert alert-danger small mb-3">
+              <strong>Cancellation / Rejection Reason:</strong> {{ order.cancel_reason }}
+            </div>
+          {% endif %}
+
+          <table class="table table-sm table-bordered mb-3">
+            <thead class="table-light">
+              <tr>
+                <th>Item</th>
+                <th>SKU</th>
+                <th class="text-end">Unit Price</th>
+                <th class="text-center">Qty</th>
+                <th class="text-end">Line Total</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for item in order.items.all %}
+                <tr>
+                  <td>{{ item.display_name }}</td>
+                  <td><code>{{ item.sku|default:"—" }}</code></td>
+                  <td class="text-end">Rs {{ item.unit_price|floatformat:2 }}</td>
+                  <td class="text-center">{{ item.quantity }}</td>
+                  <td class="text-end">Rs {{ item.line_total|floatformat:2 }}</td>
+                </tr>
+              {% endfor %}
+            </tbody>
+            <tfoot>
+              <tr>
+                <td colspan="4" class="text-end">Subtotal</td>
+                <td class="text-end">Rs {{ order.subtotal|floatformat:2 }}</td>
+              </tr>
+              {% if order.discount_total > 0 %}
+                <tr>
+                  <td colspan="4" class="text-end text-success">
+                    Discount {% if order.coupon_code %}({{ order.coupon_code }}){% endif %}
+                  </td>
+                  <td class="text-end text-success">-Rs {{ order.discount_total|floatformat:2 }}</td>
+                </tr>
+              {% endif %}
+              {% if order.delivery_fee > 0 %}
+                <tr>
+                  <td colspan="4" class="text-end">Delivery Fee</td>
+                  <td class="text-end">Rs {{ order.delivery_fee|floatformat:2 }}</td>
+                </tr>
+              {% endif %}
+              <tr class="fw-bold">
+                <td colspan="4" class="text-end">Total</td>
+                <td class="text-end">Rs {{ order.total|floatformat:2 }}</td>
+              </tr>
+            </tfoot>
+          </table>
+
+          {% with next_statuses=order.allowed_next_statuses %}
+            {% if 'rejected' in next_statuses or 'cancelled' in next_statuses %}
+              <hr>
+              <form method="post" action="{% url 'shopkeeper:order_update_status' order.order_number %}" class="row g-2 align-items-end">
+                {% csrf_token %}
+                <div class="col-md-8">
+                  <label class="form-label small fw-semibold mb-1">Reason for Cancelling / Rejecting</label>
+                  <input type="text" name="note" class="form-control form-control-sm" placeholder="Optional reason visible in order history...">
+                </div>
+                <div class="col-md-4 d-flex gap-2">
+                  {% if 'rejected' in next_statuses %}
+                    <button type="submit" name="new_status" value="rejected" class="btn btn-sm btn-outline-danger w-100">
+                      Reject Order
+                    </button>
+                  {% endif %}
+                  {% if 'cancelled' in next_statuses %}
+                    <button type="submit" name="new_status" value="cancelled" class="btn btn-sm btn-danger w-100">
+                      Cancel Order
+                    </button>
+                  {% endif %}
+                </div>
+              </form>
+            {% endif %}
+          {% endwith %}
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-sm btn-secondary" data-coreui-dismiss="modal">Close</button>
+        </div>
+      </div>
+    </div>
+  </div>
+{% endfor %}
+{% endblock %}

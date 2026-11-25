@@ -1,0 +1,335 @@
+{% extends "shopkeeper/base.html" %}
+{% block title %}{{ page_title }}{% endblock %}
+
+{% block content %}
+<!-- Header & Status Tabs -->
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
+  <div>
+    <h4 class="mb-1">{{ page_title }}</h4>
+    <p class="text-body-secondary small mb-0">
+      Review appointment requests, scheduled time slots, and client reservations for <strong>{{ store.name }}</strong>.
+    </p>
+  </div>
+
+  <div class="btn-group btn-group-sm" role="group" aria-label="Booking status filters">
+    <a href="{% url 'shopkeeper:booking_list' %}" class="btn btn-outline-secondary {% if status_filter == 'all' %}active{% endif %}">
+      All <span class="badge bg-secondary ms-1">{{ counts.all }}</span>
+    </a>
+    <a href="{% url 'shopkeeper:booking_pending' %}" class="btn btn-outline-secondary {% if status_filter == 'pending' %}active{% endif %}">
+      Pending
+      {% if counts.pending %}
+        <span class="badge bg-warning text-dark ms-1">{{ counts.pending }}</span>
+      {% endif %}
+    </a>
+    <a href="{% url 'shopkeeper:booking_confirmed' %}" class="btn btn-outline-secondary {% if status_filter == 'confirmed' %}active{% endif %}">
+      Confirmed <span class="badge bg-primary ms-1">{{ counts.confirmed }}</span>
+    </a>
+    <a href="{% url 'shopkeeper:booking_completed' %}" class="btn btn-outline-secondary {% if status_filter == 'completed' %}active{% endif %}">
+      Completed <span class="badge bg-success ms-1">{{ counts.completed }}</span>
+    </a>
+    <a href="{% url 'shopkeeper:booking_cancelled' %}" class="btn btn-outline-secondary {% if status_filter == 'cancelled' %}active{% endif %}">
+      Cancelled <span class="badge bg-danger ms-1">{{ counts.cancelled }}</span>
+    </a>
+  </div>
+</div>
+
+<!-- Quick KPI Strip -->
+<div class="row g-3 mb-4">
+  <div class="col-6 col-lg-3">
+    <div class="card h-100">
+      <div class="card-body py-3">
+        <div class="text-body-secondary small">Pending Approval</div>
+        <div class="fs-4 fw-bold text-warning">{{ counts.pending }}</div>
+      </div>
+    </div>
+  </div>
+  <div class="col-6 col-lg-3">
+    <div class="card h-100">
+      <div class="card-body py-3">
+        <div class="text-body-secondary small">Confirmed Upcoming</div>
+        <div class="fs-4 fw-bold text-primary">{{ counts.confirmed }}</div>
+      </div>
+    </div>
+  </div>
+  <div class="col-6 col-lg-3">
+    <div class="card h-100">
+      <div class="card-body py-3">
+        <div class="text-body-secondary small">Completed Bookings</div>
+        <div class="fs-4 fw-bold text-success">{{ counts.completed }}</div>
+      </div>
+    </div>
+  </div>
+  <div class="col-6 col-lg-3">
+    <div class="card h-100">
+      <div class="card-body py-3">
+        <div class="text-body-secondary small">Completed Revenue</div>
+        <div class="fs-4 fw-bold">Rs {{ counts.completed_revenue|floatformat:2 }}</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Optional Dropdown Filters -->
+<div class="card mb-4">
+  <div class="card-body py-3">
+    <form method="get" class="row g-2 align-items-center">
+      <div class="col-6 col-md-4">
+        <select name="service" class="form-select form-select-sm">
+          <option value="">All Services</option>
+          {% for svc in store_services %}
+            <option value="{{ svc.id }}" {% if service_filter == svc.id|stringformat:"s" %}selected{% endif %}>
+              {{ svc.name }}
+            </option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-6 col-md-4">
+        <select name="timeframe" class="form-select form-select-sm">
+          <option value="">All Slot Dates</option>
+          <option value="upcoming" {% if timeframe_filter == 'upcoming' %}selected{% endif %}>Upcoming Slots Only</option>
+          <option value="past" {% if timeframe_filter == 'past' %}selected{% endif %}>Past Slots Only</option>
+        </select>
+      </div>
+      <div class="col-12 col-md-4 d-flex gap-2">
+        <button type="submit" class="btn btn-sm btn-primary w-100">Apply Filters</button>
+        {% if service_filter or timeframe_filter %}
+          <a href="{{ request.path }}" class="btn btn-sm btn-outline-secondary">Reset</a>
+        {% endif %}
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- DataTables Bookings Table -->
+<div class="card">
+  <div class="card-body">
+    <div class="table-responsive">
+      <table
+        id="bookingsTable"
+        class="table table-hover align-middle mb-0 datatable w-100"
+        data-empty-text="No {% if status_filter != 'all' %}{{ status_filter }} {% endif %}bookings found."
+      >
+        <thead class="bg-body-tertiary">
+          <tr>
+            <th>Reference</th>
+            <th>Client</th>
+            <th>Service</th>
+            <th>Scheduled Slot</th>
+            <th>Seats</th>
+            <th>Total Price</th>
+            <th>Status</th>
+            <th class="text-end no-sort">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for booking in bookings %}
+            <tr>
+              <!-- Booking Reference & Created At -->
+              <td data-order="{{ booking.created_at|date:'U' }}">
+                <div class="fw-semibold">{{ booking.reference }}</div>
+                <div class="small text-body-secondary">Booked {{ booking.created_at|date:"M d, Y" }}</div>
+              </td>
+
+              <!-- Client Info -->
+              <td>
+                <div class="fw-medium">
+                  {{ booking.customer.get_full_name|default:booking.customer.email }}
+                </div>
+                {% if booking.customer_phone %}
+                  <div class="small text-body-secondary">
+                    <i class="fa-solid fa-phone fa-xs me-1"></i>{{ booking.customer_phone }}
+                  </div>
+                {% endif %}
+              </td>
+
+              <!-- Service & Optional Transport Route -->
+              <td>
+                <div class="fw-medium">{{ booking.service.name }}</div>
+                {% if booking.pickup_location or booking.dropoff_location %}
+                  <div class="small text-body-secondary text-truncate" style="max-width: 190px;" title="{{ booking.pickup_location }} → {{ booking.dropoff_location }}">
+                    <i class="fa-solid fa-route fa-xs me-1"></i>{{ booking.pickup_location }} → {{ booking.dropoff_location }}
+                  </div>
+                {% endif %}
+              </td>
+
+              <!-- Slot Date & Time Window -->
+              <td data-order="{{ booking.slot.start_at|date:'U' }}">
+                <div class="fw-medium">{{ booking.slot.start_at|date:"D, M d, Y" }}</div>
+                <div class="small text-body-secondary">
+                  {{ booking.slot.start_at|date:"H:i" }} – {{ booking.slot.end_at|date:"H:i" }}
+                </div>
+              </td>
+
+              <!-- Seats -->
+              <td data-order="{{ booking.seats }}">
+                <span class="badge bg-secondary-subtle text-secondary-emphasis">
+                  {{ booking.seats }} {% if booking.seats == 1 %}seat{% else %}seats{% endif %}
+                </span>
+              </td>
+
+              <!-- Total Price -->
+              <td data-order="{{ booking.total_price }}">
+                <div class="fw-semibold">Rs {{ booking.total_price|floatformat:2 }}</div>
+              </td>
+
+              <!-- Status Badge -->
+              <td>
+                {% if booking.status == 'pending' %}
+                  <span class="badge bg-warning text-dark">Pending Approval</span>
+                {% elif booking.status == 'confirmed' %}
+                  <span class="badge bg-primary">Confirmed</span>
+                {% elif booking.status == 'completed' %}
+                  <span class="badge bg-success">Completed</span>
+                {% elif booking.status == 'rejected' %}
+                  <span class="badge bg-danger">Rejected</span>
+                {% elif booking.status == 'no_show' %}
+                  <span class="badge bg-dark">No-Show</span>
+                {% else %}
+                  <span class="badge bg-secondary">{{ booking.get_status_display }}</span>
+                {% endif %}
+              </td>
+
+              <!-- Quick Transitions & Modal Trigger -->
+              <td class="text-end">
+                <div class="d-inline-flex align-items-center gap-1">
+                  {% if booking.status == 'pending' %}
+                    <form method="post" action="{% url 'shopkeeper:booking_update_status' booking.reference %}" class="d-inline">
+                      {% csrf_token %}
+                      <input type="hidden" name="action" value="approve">
+                      <button type="submit" class="btn btn-sm btn-success" title="Approve Booking">
+                        Approve
+                      </button>
+                    </form>
+                  {% elif booking.status == 'confirmed' and booking.slot.start_at <= now %}
+                    <form method="post" action="{% url 'shopkeeper:booking_update_status' booking.reference %}" class="d-inline">
+                      {% csrf_token %}
+                      <input type="hidden" name="action" value="complete">
+                      <button type="submit" class="btn btn-sm btn-success" title="Mark Completed">
+                        Complete
+                      </button>
+                    </form>
+                    <form method="post" action="{% url 'shopkeeper:booking_update_status' booking.reference %}" class="d-inline">
+                      {% csrf_token %}
+                      <input type="hidden" name="action" value="no_show">
+                      <button type="submit" class="btn btn-sm btn-outline-warning" title="Mark No-Show">
+                        No-Show
+                      </button>
+                    </form>
+                  {% endif %}
+
+                  <button
+                    type="button"
+                    class="btn btn-sm btn-outline-secondary"
+                    data-coreui-toggle="modal"
+                    data-coreui-target="#bookingModal-{{ booking.id }}"
+                  >
+                    Details
+                  </button>
+                </div>
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- Booking Detail & Reject / Cancel Modals -->
+{% for booking in bookings %}
+  <div class="modal fade" id="bookingModal-{{ booking.id }}" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-scrollable">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">Booking {{ booking.reference }}</h5>
+          <button type="button" class="btn-close" data-coreui-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <div class="row g-3 mb-3">
+            <div class="col-md-6">
+              <div class="small text-body-secondary">Client Details</div>
+              <div class="fw-semibold">{{ booking.customer.get_full_name|default:booking.customer.email }}</div>
+              <div class="small">Email: {{ booking.customer.email }}</div>
+              {% if booking.customer_phone %}<div class="small">Phone: {{ booking.customer_phone }}</div>{% endif %}
+            </div>
+            <div class="col-md-6">
+              <div class="small text-body-secondary">Appointment Summary</div>
+              <div class="fw-semibold">{{ booking.service.name }}</div>
+              <div class="small">
+                Slot: {{ booking.slot.start_at|date:"D, M d, Y · H:i" }} – {{ booking.slot.end_at|date:"H:i" }}
+              </div>
+              <div class="small">
+                Seats: {{ booking.seats }} &middot; Total: <strong>Rs {{ booking.total_price|floatformat:2 }}</strong>
+              </div>
+            </div>
+          </div>
+
+          {% if booking.pickup_location or booking.dropoff_location %}
+            <div class="border rounded p-2 mb-3 small">
+              <div><strong>Pickup:</strong> {{ booking.pickup_location|default:"—" }}</div>
+              <div><strong>Drop-off:</strong> {{ booking.dropoff_location|default:"—" }}</div>
+            </div>
+          {% endif %}
+
+          {% if booking.customer_note %}
+            <div class="alert alert-info small mb-3">
+              <strong>Client Note:</strong> {{ booking.customer_note }}
+            </div>
+          {% endif %}
+
+          {% if booking.vendor_note %}
+            <div class="alert alert-secondary small mb-3">
+              <strong>Vendor Note:</strong> {{ booking.vendor_note }}
+            </div>
+          {% endif %}
+
+          {% if booking.status_reason %}
+            <div class="alert alert-danger small mb-3">
+              <strong>Cancellation / Rejection Reason:</strong> {{ booking.status_reason }}
+            </div>
+          {% endif %}
+
+          <!-- Audit Timestamps -->
+          <div class="small text-body-secondary border-top pt-2 mb-3">
+            <span>Created: {{ booking.created_at|date:"M d, Y H:i" }}</span>
+            {% if booking.confirmed_at %} &middot; <span>Confirmed: {{ booking.confirmed_at|date:"M d, Y H:i" }}</span>{% endif %}
+            {% if booking.completed_at %} &middot; <span>Completed: {{ booking.completed_at|date:"M d, Y H:i" }}</span>{% endif %}
+            {% if booking.cancelled_at %} &middot; <span>Cancelled: {{ booking.cancelled_at|date:"M d, Y H:i" }}</span>{% endif %}
+          </div>
+
+          <!-- Vendor Action Form (Approve with Note / Reject / Cancel) -->
+          {% if booking.status == 'pending' or booking.status == 'confirmed' %}
+            <hr>
+            <form method="post" action="{% url 'shopkeeper:booking_update_status' booking.reference %}" class="row g-2 align-items-end">
+              {% csrf_token %}
+              <div class="col-md-7">
+                <label class="form-label small fw-semibold mb-1">
+                  {% if booking.status == 'pending' %}Vendor Note or Rejection Reason{% else %}Cancellation Reason{% endif %}
+                </label>
+                <input type="text" name="note" class="form-control form-control-sm" placeholder="Optional message for the client...">
+              </div>
+              <div class="col-md-5 d-flex gap-2">
+                {% if booking.status == 'pending' %}
+                  <button type="submit" name="action" value="approve" class="btn btn-sm btn-success w-100">
+                    Approve
+                  </button>
+                  <button type="submit" name="action" value="reject" class="btn btn-sm btn-outline-danger w-100">
+                    Reject
+                  </button>
+                {% elif booking.status == 'confirmed' %}
+                  <button type="submit" name="action" value="cancel" class="btn btn-sm btn-danger w-100">
+                    Cancel Booking
+                  </button>
+                {% endif %}
+              </div>
+            </form>
+          {% endif %}
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-sm btn-secondary" data-coreui-dismiss="modal">Close</button>
+        </div>
+      </div>
+    </div>
+  </div>
+{% endfor %}
+{% endblock %}

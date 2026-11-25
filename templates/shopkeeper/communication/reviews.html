@@ -1,0 +1,438 @@
+{% extends "shopkeeper/base.html" %}
+{% block title %}{{ page_title }}{% endblock %}
+
+{% block content %}
+<!-- Header & Quick Filter -->
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
+  <div>
+    <h4 class="mb-1">{{ page_title }}</h4>
+    <p class="text-body-secondary small mb-0">
+      Verified customer ratings, sentiment breakdown, and response management for <strong>{{ store.name }}</strong>.
+    </p>
+  </div>
+
+  <div class="btn-group btn-group-sm" role="group" aria-label="Reply status filter">
+    <a href="?rating={{ rating_filter }}&reply=all&status={{ status_filter }}" class="btn btn-outline-secondary {% if reply_filter == 'all' %}active{% endif %}">
+      All Reviews
+    </a>
+    <a href="?rating={{ rating_filter }}&reply=unreplied&status={{ status_filter }}" class="btn btn-outline-secondary {% if reply_filter == 'unreplied' %}active{% endif %}">
+      Needs Reply
+      {% if stats.unreplied_count %}
+        <span class="badge bg-warning text-dark ms-1">{{ stats.unreplied_count }}</span>
+      {% endif %}
+    </a>
+    <a href="?rating={{ rating_filter }}&reply=replied&status={{ status_filter }}" class="btn btn-outline-secondary {% if reply_filter == 'replied' %}active{% endif %}">
+      Replied <span class="badge bg-success ms-1">{{ stats.replied_count }}</span>
+    </a>
+  </div>
+</div>
+
+<!-- Top KPI Strip -->
+<div class="row g-3 mb-4">
+  <div class="col-6 col-lg-3">
+    <div class="card h-100">
+      <div class="card-body py-3">
+        <div class="text-body-secondary small mb-1">Overall Store Rating</div>
+        <div class="d-flex align-items-baseline gap-2">
+          <span class="fs-3 fw-bold text-warning">
+            <i class="fa-solid fa-star me-1"></i>{{ stats.avg_rating|floatformat:2 }}
+          </span>
+          <span class="small text-body-secondary">/ 5.00</span>
+        </div>
+        <div class="small text-body-secondary">Based on {{ stats.total_published }} published review(s)</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-6 col-lg-3">
+    <div class="card h-100">
+      <div class="card-body py-3">
+        <div class="text-body-secondary small mb-1">Positive Ratings (4★–5★)</div>
+        <div class="fs-3 fw-bold text-success">{{ stats.positive_rate }}%</div>
+        <div class="small text-body-secondary">Customer satisfaction score</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-6 col-lg-3">
+    <div class="card h-100">
+      <div class="card-body py-3">
+        <div class="text-body-secondary small mb-1">Vendor Response Rate</div>
+        <div class="fs-3 fw-bold text-primary">{{ stats.response_rate }}%</div>
+        <div class="small text-body-secondary">{{ stats.unreplied_count }} awaiting reply</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-6 col-lg-3">
+    <div class="card h-100">
+      <div class="card-body py-3">
+        <div class="text-body-secondary small mb-1">Verified Sources</div>
+        <div class="small fw-semibold mt-1">
+          <i class="fa-solid fa-bag-shopping text-primary me-1"></i>{{ stats.product_reviews_count }} Product Review(s)<br>
+          <i class="fa-solid fa-calendar-check text-info me-1"></i>{{ stats.booking_reviews_count }} Booking Review(s)
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Graphical Breakdown Row -->
+<div class="row g-3 mb-4">
+  <!-- 1–5 Star Distribution (Progress Bars + Doughnut Chart) -->
+  <div class="col-12 col-lg-6">
+    <div class="card h-100">
+      <div class="card-header d-flex justify-content-between align-items-center">
+        <span class="fw-semibold">Star Rating Breakdown</span>
+        {% if rating_filter != 'all' %}
+          <a href="?rating=all&reply={{ reply_filter }}&status={{ status_filter }}" class="btn btn-xs btn-outline-secondary py-0 px-2 small">
+            Clear Star Filter
+          </a>
+        {% endif %}
+      </div>
+      <div class="card-body">
+        <div class="row align-items-center g-3">
+          <div class="col-sm-7">
+            {% for row in star_breakdown %}
+              <a
+                href="?rating={{ row.star }}&reply={{ reply_filter }}&status={{ status_filter }}"
+                class="text-decoration-none text-reset d-block mb-2 {% if rating_filter == row.star|stringformat:'s' %}fw-bold{% endif %}"
+              >
+                <div class="d-flex justify-content-between small mb-1">
+                  <span>{{ row.star }} ★</span>
+                  <span class="text-body-secondary">{{ row.count }} ({{ row.pct }}%)</span>
+                </div>
+                <div class="progress" style="height: 8px;">
+                  <div
+                    class="progress-bar {% if row.star >= 4 %}bg-success{% elif row.star == 3 %}bg-warning{% else %}bg-danger{% endif %}"
+                    role="progressbar"
+                    style="width: {{ row.pct }}%;"
+                    aria-valuenow="{{ row.pct }}"
+                    aria-valuemin="0"
+                    aria-valuemax="100"
+                  ></div>
+                </div>
+              </a>
+            {% endfor %}
+          </div>
+          <div class="col-sm-5">
+            <div style="height: 190px;">
+              <canvas id="starDistributionChart"></canvas>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 6-Month Volume & Rating Trend -->
+  <div class="col-12 col-lg-6">
+    <div class="card h-100">
+      <div class="card-header">
+        <span class="fw-semibold">6-Month Rating & Volume Trend</span>
+      </div>
+      <div class="card-body">
+        <div style="height: 225px;">
+          <canvas id="reviewsTrendChart"></canvas>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Rating Breakdown by Product / Service -->
+{% if item_breakdown %}
+  <div class="card mb-4">
+    <div class="card-header">
+      <span class="fw-semibold">Rating Breakdown by Product / Service</span>
+    </div>
+    <div class="card-body py-2">
+      <div class="row g-2">
+        {% for item in item_breakdown %}
+          <div class="col-12 col-md-6 col-xl-3">
+            <div class="border rounded p-2 d-flex justify-content-between align-items-center">
+              <div class="text-truncate me-2">
+                <div class="fw-medium small text-truncate" title="{{ item.name }}">{{ item.name }}</div>
+                <span class="badge bg-body-secondary text-body-emphasis" style="font-size: 0.7rem;">{{ item.type }}</span>
+              </div>
+              <div class="text-end flex-shrink-0">
+                <div class="fw-bold text-warning small">★ {{ item.avg|floatformat:1 }}</div>
+                <div class="text-body-secondary" style="font-size: 0.72rem;">{{ item.count }} review(s)</div>
+              </div>
+            </div>
+          </div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+{% endif %}
+
+<!-- DataTables Reviews Table -->
+<div class="card">
+  <div class="card-body">
+    <div class="table-responsive">
+      <table
+        id="reviewsTable"
+        class="table table-hover align-middle mb-0 datatable w-100"
+        data-empty-text="No reviews match the selected filters."
+      >
+        <thead class="bg-body-tertiary">
+          <tr>
+            <th>Rating</th>
+            <th>Reviewer & Source</th>
+            <th>Review & Vendor Reply</th>
+            <th>Date</th>
+            <th>Visibility</th>
+            <th class="text-end no-sort">Reply</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for review in reviews %}
+            <tr>
+              <!-- Star Rating -->
+              <td data-order="{{ review.overall_rating }}">
+                <div class="text-warning text-nowrap">
+                  {% for i in "12345" %}
+                    {% if forloop.counter <= review.overall_rating %}
+                      <i class="fa-solid fa-star"></i>
+                    {% else %}
+                      <i class="fa-regular fa-star opacity-50"></i>
+                    {% endif %}
+                  {% endfor %}
+                </div>
+                <div class="small fw-semibold">{{ review.overall_rating }}.0 / 5</div>
+              </td>
+
+              <!-- Reviewer & Verified Purchase/Booking Source -->
+              <td>
+                <div class="fw-semibold">{{ review.display_author }}</div>
+                {% if review.order_item %}
+                  <span class="badge bg-primary-subtle text-primary-emphasis small">
+                    <i class="fa-solid fa-circle-check me-1"></i>Order #{{ review.order_item.order.order_number }}
+                  </span>
+                  {% if review.product %}
+                    <div class="small text-body-secondary mt-1">{{ review.product.name }}</div>
+                  {% endif %}
+                {% elif review.booking %}
+                  <span class="badge bg-info-subtle text-info-emphasis small">
+                    <i class="fa-solid fa-circle-check me-1"></i>Booking {{ review.booking.reference }}
+                  </span>
+                  {% if review.service %}
+                    <div class="small text-body-secondary mt-1">{{ review.service.name }}</div>
+                  {% endif %}
+                {% endif %}
+              </td>
+
+              <!-- Review Content & Existing Vendor Reply -->
+              <td style="max-width: 380px;">
+                {% if review.title %}
+                  <div class="fw-semibold">{{ review.title }}</div>
+                {% endif %}
+                <div class="small text-body-secondary">
+                  {{ review.body|default:"(Rating submitted without written comment)" }}
+                </div>
+
+                {% if review.has_reply %}
+                  <div class="mt-2 p-2 rounded bg-body-tertiary border-start border-3 border-primary small">
+                    <div class="fw-semibold text-primary">
+                      <i class="fa-solid fa-reply me-1"></i>Your Reply
+                      {% if review.replied_at %}
+                        <span class="fw-normal text-body-secondary">· {{ review.replied_at|date:"M d, Y" }}</span>
+                      {% endif %}
+                    </div>
+                    <div>{{ review.reply_text }}</div>
+                  </div>
+                {% endif %}
+              </td>
+
+              <!-- Created Timestamp -->
+              <td data-order="{{ review.created_at|date:'U' }}">
+                <div>{{ review.created_at|date:"M d, Y" }}</div>
+                <div class="small text-body-secondary">{{ review.created_at|timesince }} ago</div>
+              </td>
+
+              <!-- Moderation Status -->
+              <td>
+                {% if review.status == 'published' %}
+                  <span class="badge bg-success">Published</span>
+                {% else %}
+                  <span class="badge bg-secondary">Hidden by Admin</span>
+                {% endif %}
+              </td>
+
+              <!-- Reply Modal Trigger -->
+              <td class="text-end">
+                <button
+                  type="button"
+                  class="btn btn-sm {% if review.has_reply %}btn-outline-secondary{% else %}btn-primary{% endif %}"
+                  data-coreui-toggle="modal"
+                  data-coreui-target="#replyModal-{{ review.pk }}"
+                >
+                  {% if review.has_reply %}Edit Reply{% else %}Reply{% endif %}
+                </button>
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- Vendor Reply Modals -->
+{% for review in reviews %}
+  <div class="modal fade" id="replyModal-{{ review.pk }}" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">Reply to {{ review.display_author }} ({{ review.overall_rating }}★)</h5>
+          <button type="button" class="btn-close" data-coreui-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <div class="p-3 rounded bg-body-tertiary border small mb-3">
+            {% if review.title %}<div class="fw-semibold mb-1">{{ review.title }}</div>{% endif %}
+            <div>{{ review.body|default:"No written comment provided." }}</div>
+          </div>
+
+          <form method="post" action="{% url 'shopkeeper:review_reply' review.pk %}" id="replyForm-{{ review.pk }}">
+            {% csrf_token %}
+            <label class="form-label small fw-semibold">Public Store Response</label>
+            <textarea
+              name="reply_text"
+              rows="4"
+              class="form-control"
+              placeholder="Thank the customer or address their feedback publicly..."
+              required
+            >{{ review.reply_text }}</textarea>
+          </form>
+        </div>
+        <div class="modal-footer justify-content-between">
+          <div>
+            {% if review.has_reply %}
+              <form method="post" action="{% url 'shopkeeper:review_reply' review.pk %}" class="d-inline">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="remove">
+                <button type="submit" class="btn btn-sm btn-outline-danger">Remove Reply</button>
+              </form>
+            {% endif %}
+          </div>
+          <div class="d-flex gap-2">
+            <button type="button" class="btn btn-sm btn-secondary" data-coreui-dismiss="modal">Cancel</button>
+            <button type="submit" form="replyForm-{{ review.pk }}" name="action" value="save" class="btn btn-sm btn-primary">
+              Post Reply
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+{% endfor %}
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    const payload = {{ chart_payload_json|safe }};
+    if (!window.Chart) return;
+
+    const styles = getComputedStyle(document.documentElement);
+    const textColor = styles.getPropertyValue("--cui-body-color").trim() || "#6c757d";
+    const borderColor = styles.getPropertyValue("--cui-border-color").trim() || "rgba(128,128,128,0.2)";
+
+    // 1. Star Distribution Doughnut Chart
+    const starCanvas = document.getElementById("starDistributionChart");
+    if (starCanvas) {
+      new Chart(starCanvas, {
+        type: "doughnut",
+        data: {
+          labels: payload.star_labels,
+          datasets: [{
+            data: payload.star_counts,
+            backgroundColor: [
+              "#198754", // 5 star
+              "#20c997", // 4 star
+              "#ffc107", // 3 star
+              "#fd7e14", // 2 star
+              "#dc3545"  // 1 star
+            ],
+            borderWidth: 1
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          cutout: "62%",
+          plugins: {
+            legend: {
+              position: "bottom",
+              labels: { color: textColor, boxWidth: 12, padding: 8 }
+            }
+          }
+        }
+      });
+    }
+
+    // 2. 6-Month Rating & Volume Trend Chart
+    const trendCanvas = document.getElementById("reviewsTrendChart");
+    if (trendCanvas) {
+      new Chart(trendCanvas, {
+        data: {
+          labels: payload.month_labels,
+          datasets: [
+            {
+              type: "bar",
+              label: "Review Count",
+              data: payload.month_counts,
+              backgroundColor: "rgba(13, 110, 253, 0.55)",
+              borderColor: "rgba(13, 110, 253, 1)",
+              borderWidth: 1,
+              borderRadius: 4,
+              yAxisID: "yCount"
+            },
+            {
+              type: "line",
+              label: "Avg Rating (★)",
+              data: payload.month_avgs,
+              borderColor: "#ffc107",
+              backgroundColor: "#ffc107",
+              borderWidth: 2.5,
+              tension: 0.3,
+              yAxisID: "yRating"
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          interaction: { mode: "index", intersect: false },
+          plugins: {
+            legend: { labels: { color: textColor } }
+          },
+          scales: {
+            x: {
+              ticks: { color: textColor },
+              grid: { color: borderColor }
+            },
+            yCount: {
+              type: "linear",
+              position: "left",
+              beginAtZero: true,
+              ticks: { color: textColor, precision: 0 },
+              grid: { color: borderColor }
+            },
+            yRating: {
+              type: "linear",
+              position: "right",
+              min: 0,
+              max: 5,
+              ticks: { color: textColor },
+              grid: { drawOnChartArea: false }
+            }
+          }
+        }
+      });
+    }
+  });
+</script>
+{% endblock %}

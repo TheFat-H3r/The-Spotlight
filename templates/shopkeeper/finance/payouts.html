@@ -1,0 +1,26 @@
+{% extends "shopkeeper/base.html" %}
+{% block title %}{{ page_title }}{% endblock %}
+
+{% block content %}
+<h4 class="mb-4">{{ page_title }}</h4>
+<div class="card">
+  <div class="table-responsive">
+    <table class="table align-middle mb-0">
+      <thead><tr><th>Payout ID</th><th>Method</th><th>Amount</th><th>Status</th><th>Date</th></tr></thead>
+      <tbody>
+        {% for payout in payouts %}
+        <tr>
+          <td>#{{ payout.id }}</td>
+          <td>{{ payout.method }}</td>
+          <td>${{ payout.amount }}</td>
+          <td><span class="badge bg-success">{{ payout.status }}</span></td>
+          <td>{{ payout.created_at|date:"M d, Y" }}</td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="5" class="text-center py-4 text-body-secondary">No payout history yet.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

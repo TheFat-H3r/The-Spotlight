@@ -8,7 +8,7 @@ from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.core.validators import MinValueValidator
 from django.db import models, transaction
-from django.db.models import F, Q, Sum
+from django.db.models import F, Q, Sum, Value
 from django.db.models.functions import Coalesce
 from django.utils import timezone
 
@@ -33,9 +33,9 @@ def generate_booking_reference():
 # ---------------------------------------------------------------------------
 class AvailabilitySlotQuerySet(models.QuerySet):
     def with_spots(self):
-        """Annotate `total_seats`, `taken_seats` for the slot."""
+        """Annotate `total_seats` and `taken_seats` for the slot."""
         return self.annotate(
-            total_seats=Coalesce("capacity", "service__capacity"),
+            total_seats=Coalesce("capacity", Value(1)),
             taken_seats=Coalesce(
                 Sum("bookings__seats", filter=Q(bookings__status__in=HOLDING_STATUSES)),
                 0,

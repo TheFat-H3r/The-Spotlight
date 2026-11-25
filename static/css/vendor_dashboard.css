@@ -1,0 +1,1171 @@
+
+/* =========================================================
+   THE SPOTLIGHT — VENDOR DASHBOARD
+   Brand: Black | White | Warm Peach | Orange
+========================================================= */
+
+#vendor-dashboard {
+    --black: #050505;
+    --charcoal: #211C18;
+    --peach: #FFC18E;
+    --peach-light: #FFF1E5;
+    --orange: #B86B32;
+    --orange-hover: #A65B27;
+    --white: #FFFFFF;
+    --background: #F8F8F8;
+    --muted: #8B8B8B;
+    --border: #E5E5E5;
+    --success: #218653;
+    --danger: #D94747;
+
+    box-sizing: border-box;
+    width: min(1440px, calc(100% - 64px));
+    margin: 0 auto;
+    padding: 43px 0 70px;
+    color: var(--black);
+    font-family: inherit;
+    line-height: 1.5;
+}
+
+#vendor-dashboard *,
+#vendor-dashboard *::before,
+#vendor-dashboard *::after {
+    box-sizing: border-box;
+}
+
+#vendor-dashboard a {
+    text-decoration: none;
+}
+
+#vendor-dashboard button {
+    font-family: inherit;
+}
+
+/* =========================================================
+   DASHBOARD HEADING
+========================================================= */
+
+#vendor-dashboard .vendor-heading {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 25px;
+    margin-bottom: 30px;
+}
+
+#vendor-dashboard .vendor-eyebrow,
+#vendor-dashboard .vendor-section-label,
+#vendor-dashboard .vendor-banner-label {
+    display: block;
+    color: var(--orange);
+    font-size: 9px;
+    font-weight: 800;
+    letter-spacing: 1.7px;
+}
+
+#vendor-dashboard .vendor-heading h1 {
+    margin: 8px 0 6px;
+    color: var(--black);
+    font-size: clamp(26px, 3vw, 36px);
+    font-weight: 800;
+    letter-spacing: -1.2px;
+    line-height: 1.2;
+}
+
+#vendor-dashboard .vendor-heading p {
+    margin: 0;
+    color: var(--muted);
+    font-size: 13px;
+}
+
+#vendor-dashboard .vendor-heading-actions {
+    display: flex;
+    align-items: center;
+    gap: 13px;
+}
+
+#vendor-dashboard .vendor-status {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 9px 13px;
+    color: var(--success);
+    background: #F0FDF4;
+    border: 1px solid #D9F0E1;
+    border-radius: 30px;
+    font-size: 11px;
+    font-weight: 700;
+    white-space: nowrap;
+}
+
+#vendor-dashboard .vendor-status-dot {
+    width: 7px;
+    height: 7px;
+    background: var(--success);
+    border-radius: 50%;
+}
+
+#vendor-dashboard .vendor-outline-button,
+#vendor-dashboard .vendor-secondary-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    min-height: 39px;
+    padding: 0 14px;
+    color: var(--orange);
+    background: var(--white);
+    border: 1px solid #EAC09F;
+    border-radius: 7px;
+    font-size: 11px;
+    font-weight: 700;
+    transition: 180ms ease;
+}
+
+#vendor-dashboard .vendor-outline-button:hover,
+#vendor-dashboard .vendor-secondary-button:hover {
+    color: var(--black);
+    background: var(--peach-light);
+    border-color: var(--peach);
+}
+
+/* =========================================================
+   STORE BANNER
+========================================================= */
+
+#vendor-dashboard .vendor-store-banner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 25px;
+    min-height: 150px;
+    padding: 25px 30px;
+    margin-bottom: 23px;
+    overflow: hidden;
+    color: var(--white);
+    background: var(--black);
+    border-radius: 13px;
+    position: relative;
+}
+
+#vendor-dashboard .vendor-store-banner::after {
+    position: absolute;
+    top: -105px;
+    right: 14%;
+    width: 260px;
+    height: 260px;
+    border: 1px solid rgba(255, 193, 142, 0.18);
+    border-radius: 50%;
+    box-shadow:
+        0 0 0 25px rgba(255, 193, 142, 0.025),
+        0 0 0 55px rgba(255, 193, 142, 0.025);
+    content: "";
+    pointer-events: none;
+}
+
+#vendor-dashboard .vendor-store-identity {
+    display: flex;
+    align-items: center;
+    gap: 18px;
+    min-width: 0;
+    position: relative;
+    z-index: 1;
+}
+
+#vendor-dashboard .vendor-store-avatar {
+    display: flex;
+    flex-shrink: 0;
+    align-items: center;
+    justify-content: center;
+    width: 65px;
+    height: 65px;
+    color: var(--black);
+    background: var(--peach);
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    border-radius: 12px;
+    font-size: 25px;
+    font-weight: 800;
+}
+
+#vendor-dashboard .vendor-banner-label {
+    color: var(--peach);
+}
+
+#vendor-dashboard .vendor-store-identity h2 {
+    margin: 5px 0;
+    color: var(--white);
+    font-size: 21px;
+    font-weight: 750;
+}
+
+#vendor-dashboard .vendor-store-identity p {
+    max-width: 550px;
+    margin: 0;
+    color: #BEBEBE;
+    font-size: 11px;
+    line-height: 1.7;
+}
+
+#vendor-dashboard .vendor-store-actions {
+    display: flex;
+    align-items: center;
+    gap: 17px;
+    flex-shrink: 0;
+    position: relative;
+    z-index: 1;
+}
+
+#vendor-dashboard .vendor-banner-link {
+    color: var(--peach);
+    font-size: 11px;
+    font-weight: 700;
+}
+
+#vendor-dashboard .vendor-banner-link span {
+    margin-left: 5px;
+}
+
+#vendor-dashboard .vendor-store-separator {
+    width: 1px;
+    height: 24px;
+    background: #45403B;
+}
+
+#vendor-dashboard .vendor-store-label {
+    color: #A9A9A9;
+    font-size: 9px;
+    font-weight: 800;
+    letter-spacing: 1.5px;
+}
+
+/* =========================================================
+   STATISTICS
+========================================================= */
+
+#vendor-dashboard .vendor-stat-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 16px;
+    margin-bottom: 36px;
+}
+
+#vendor-dashboard .vendor-stat-card {
+    min-width: 0;
+    padding: 19px;
+    background: var(--white);
+    border: 1px solid var(--border);
+    border-radius: 11px;
+    box-shadow: 0 3px 12px rgba(0, 0, 0, 0.02);
+    transition: transform 180ms ease, box-shadow 180ms ease;
+}
+
+#vendor-dashboard .vendor-stat-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 22px rgba(0, 0, 0, 0.055);
+}
+
+#vendor-dashboard .vendor-stat-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+}
+
+#vendor-dashboard .vendor-stat-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    color: var(--orange);
+    background: var(--peach-light);
+    border-radius: 9px;
+    font-size: 17px;
+}
+
+#vendor-dashboard .vendor-stat-label {
+    color: #A0A0A0;
+    font-size: 9px;
+    font-weight: 800;
+    letter-spacing: 1.1px;
+}
+
+#vendor-dashboard .vendor-stat-value {
+    display: block;
+    margin-top: 16px;
+    color: var(--black);
+    font-size: 29px;
+    font-weight: 800;
+    letter-spacing: -1px;
+    line-height: 1;
+}
+
+#vendor-dashboard .vendor-stat-card > p {
+    margin: 7px 0 15px;
+    color: var(--muted);
+    font-size: 11px;
+}
+
+#vendor-dashboard .vendor-stat-card > a {
+    color: var(--orange);
+    font-size: 10px;
+    font-weight: 750;
+}
+
+#vendor-dashboard .vendor-stat-card > a span {
+    margin-left: 4px;
+}
+
+/* =========================================================
+   SECTION HEADINGS
+========================================================= */
+
+#vendor-dashboard .vendor-section-heading {
+    margin-bottom: 18px;
+}
+
+#vendor-dashboard .vendor-section-heading h2,
+#vendor-dashboard .vendor-panel-heading h2 {
+    margin: 5px 0 4px;
+    color: var(--black);
+    font-size: 19px;
+    font-weight: 750;
+    letter-spacing: -0.4px;
+}
+
+#vendor-dashboard .vendor-section-heading p,
+#vendor-dashboard .vendor-panel-heading p {
+    margin: 0;
+    color: var(--muted);
+    font-size: 11px;
+    line-height: 1.7;
+}
+
+/* =========================================================
+   QUICK ACTIONS
+========================================================= */
+
+#vendor-dashboard .vendor-quick-actions {
+    margin-bottom: 37px;
+}
+
+#vendor-dashboard .vendor-action-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 13px;
+}
+
+#vendor-dashboard .vendor-action-card {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-width: 0;
+    padding: 15px 13px;
+    background: var(--white);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    transition: 180ms ease;
+}
+
+#vendor-dashboard .vendor-action-card:hover {
+    background: var(--peach-light);
+    border-color: #F0C9A8;
+    transform: translateY(-2px);
+}
+
+#vendor-dashboard .vendor-action-icon {
+    display: flex;
+    flex-shrink: 0;
+    align-items: center;
+    justify-content: center;
+    width: 37px;
+    height: 37px;
+    color: var(--orange);
+    background: var(--peach-light);
+    border-radius: 9px;
+    font-size: 19px;
+}
+
+#vendor-dashboard .vendor-action-card > span:nth-child(2) {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    min-width: 0;
+    gap: 3px;
+}
+
+#vendor-dashboard .vendor-action-card strong {
+    color: var(--black);
+    font-size: 11px;
+    font-weight: 750;
+}
+
+#vendor-dashboard .vendor-action-card small {
+    color: var(--muted);
+    font-size: 9px;
+    line-height: 1.5;
+}
+
+#vendor-dashboard .vendor-action-arrow {
+    flex-shrink: 0;
+    color: var(--orange);
+    font-size: 14px;
+}
+
+/* =========================================================
+   PANELS
+========================================================= */
+
+#vendor-dashboard .vendor-panel {
+    min-width: 0;
+    padding: 25px;
+    background: var(--white);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    box-shadow: 0 3px 12px rgba(0, 0, 0, 0.02);
+    scroll-margin-top: 25px;
+}
+
+#vendor-dashboard .vendor-panel-heading {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 20px;
+    margin-bottom: 20px;
+}
+
+#vendor-dashboard .vendor-view-all {
+    flex-shrink: 0;
+    color: var(--orange);
+    font-size: 10px;
+    font-weight: 750;
+}
+
+#vendor-dashboard .vendor-view-all:hover,
+#vendor-dashboard .vendor-row-link:hover {
+    color: var(--orange-hover);
+}
+
+/* =========================================================
+   ORDERS AND BOOKINGS
+========================================================= */
+
+#vendor-dashboard .vendor-activity-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr);
+    align-items: start;
+    gap: 18px;
+    margin-bottom: 22px;
+}
+
+#vendor-dashboard .vendor-table-wrap {
+    width: 100%;
+    overflow-x: auto;
+}
+
+#vendor-dashboard .vendor-table {
+    width: 100%;
+    border-collapse: collapse;
+    text-align: left;
+    white-space: nowrap;
+}
+
+#vendor-dashboard .vendor-table th {
+    padding: 12px 10px;
+    color: #999999;
+    background: #FAFAFA;
+    border-bottom: 1px solid var(--border);
+    font-size: 9px;
+    font-weight: 800;
+    letter-spacing: 0.8px;
+}
+
+#vendor-dashboard .vendor-table td {
+    padding: 14px 10px;
+    color: #555555;
+    border-bottom: 1px solid #F0F0F0;
+    font-size: 10px;
+}
+
+#vendor-dashboard .vendor-table tbody tr:last-child td {
+    border-bottom: 0;
+}
+
+#vendor-dashboard .vendor-table td strong {
+    color: var(--black);
+}
+
+#vendor-dashboard .vendor-order-status,
+#vendor-dashboard .vendor-listing-status {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 5px 9px;
+    color: var(--orange);
+    background: var(--peach-light);
+    border-radius: 20px;
+    font-size: 9px;
+    font-weight: 750;
+}
+
+#vendor-dashboard .vendor-row-link {
+    color: var(--orange);
+    font-size: 10px;
+    font-weight: 750;
+    white-space: nowrap;
+}
+
+#vendor-dashboard .vendor-booking-list {
+    display: flex;
+    flex-direction: column;
+}
+
+#vendor-dashboard .vendor-booking-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 13px 0;
+    border-bottom: 1px solid #F0F0F0;
+}
+
+#vendor-dashboard .vendor-booking-item:last-child {
+    border-bottom: 0;
+}
+
+#vendor-dashboard .vendor-booking-date {
+    display: flex;
+    flex-shrink: 0;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    width: 43px;
+    height: 46px;
+    color: var(--black);
+    background: var(--peach-light);
+    border-radius: 8px;
+}
+
+#vendor-dashboard .vendor-booking-date span {
+    font-size: 16px;
+    font-weight: 800;
+    line-height: 1.1;
+}
+
+#vendor-dashboard .vendor-booking-date small {
+    color: var(--orange);
+    font-size: 9px;
+    font-weight: 800;
+    text-transform: uppercase;
+}
+
+#vendor-dashboard .vendor-booking-info {
+    flex: 1;
+    min-width: 0;
+}
+
+#vendor-dashboard .vendor-booking-info strong {
+    display: block;
+    overflow: hidden;
+    color: var(--black);
+    font-size: 11px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+#vendor-dashboard .vendor-booking-info p {
+    margin: 3px 0;
+    color: var(--muted);
+    font-size: 10px;
+}
+
+#vendor-dashboard .vendor-booking-info > span {
+    color: var(--orange);
+    font-size: 9px;
+    font-weight: 700;
+}
+
+/* =========================================================
+   EMPTY STATES
+========================================================= */
+
+#vendor-dashboard .vendor-empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 28px 15px;
+    text-align: center;
+}
+
+#vendor-dashboard .vendor-empty-state > span {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    margin-bottom: 11px;
+    color: var(--orange);
+    background: var(--peach-light);
+    border-radius: 50%;
+    font-size: 18px;
+}
+
+#vendor-dashboard .vendor-empty-state strong {
+    color: var(--black);
+    font-size: 11px;
+}
+
+#vendor-dashboard .vendor-empty-state p {
+    margin: 5px 0 0;
+    color: var(--muted);
+    font-size: 10px;
+    line-height: 1.6;
+}
+
+#vendor-dashboard .vendor-full-empty {
+    grid-column: 1 / -1;
+    min-height: 170px;
+    padding: 28px;
+    background: #FCFCFC;
+    border: 1px dashed #E5D4C7;
+    border-radius: 10px;
+}
+
+#vendor-dashboard .vendor-text-link {
+    margin-top: 12px;
+    color: var(--orange);
+    font-size: 10px;
+    font-weight: 750;
+}
+
+/* =========================================================
+   PRODUCTS
+========================================================= */
+
+#vendor-dashboard .vendor-listing-panel {
+    margin-bottom: 22px;
+}
+
+#vendor-dashboard .vendor-primary-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    min-height: 39px;
+    padding: 0 15px;
+    color: var(--black);
+    background: var(--peach);
+    border: 1px solid var(--peach);
+    border-radius: 7px;
+    font-size: 10px;
+    font-weight: 800;
+    transition: 180ms ease;
+}
+
+#vendor-dashboard .vendor-primary-button:hover {
+    background: #F5A96E;
+    border-color: #F5A96E;
+    transform: translateY(-1px);
+}
+
+#vendor-dashboard .vendor-listing-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 14px;
+}
+
+#vendor-dashboard .vendor-listing-card {
+    display: flex;
+    min-width: 0;
+    gap: 15px;
+    padding: 12px;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    transition: 180ms ease;
+}
+
+#vendor-dashboard .vendor-listing-card:hover {
+    border-color: #EAC09F;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.035);
+}
+
+#vendor-dashboard .vendor-listing-image {
+    display: flex;
+    flex-shrink: 0;
+    align-items: center;
+    justify-content: center;
+    width: 100px;
+    min-height: 105px;
+    overflow: hidden;
+    color: #A68A74;
+    background: var(--peach-light);
+    border-radius: 8px;
+    font-size: 9px;
+    font-weight: 800;
+    letter-spacing: 1px;
+}
+
+#vendor-dashboard .vendor-listing-image img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    min-height: 105px;
+    object-fit: cover;
+}
+
+#vendor-dashboard .vendor-listing-details {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    justify-content: space-between;
+    min-width: 0;
+    gap: 8px;
+}
+
+#vendor-dashboard .vendor-listing-title {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 8px;
+}
+
+#vendor-dashboard .vendor-listing-title h3 {
+    margin: 0;
+    color: var(--black);
+    font-size: 12px;
+    font-weight: 750;
+}
+
+#vendor-dashboard .vendor-listing-details > p {
+    margin: 0;
+    color: var(--muted);
+    font-size: 10px;
+    line-height: 1.6;
+}
+
+#vendor-dashboard .vendor-listing-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+}
+
+#vendor-dashboard .vendor-listing-footer strong {
+    color: var(--black);
+    font-size: 11px;
+}
+
+#vendor-dashboard .vendor-listing-footer a {
+    color: var(--orange);
+    font-size: 9px;
+    font-weight: 750;
+    white-space: nowrap;
+}
+
+/* =========================================================
+   SERVICES
+========================================================= */
+
+#vendor-dashboard .vendor-service-list {
+    display: flex;
+    flex-direction: column;
+}
+
+#vendor-dashboard .vendor-service-item {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 15px 0;
+    border-bottom: 1px solid #F0F0F0;
+}
+
+#vendor-dashboard .vendor-service-item:last-child {
+    border-bottom: 0;
+}
+
+#vendor-dashboard .vendor-service-icon {
+    display: flex;
+    flex-shrink: 0;
+    align-items: center;
+    justify-content: center;
+    width: 41px;
+    height: 41px;
+    color: var(--orange);
+    background: var(--peach-light);
+    border-radius: 9px;
+    font-size: 17px;
+}
+
+#vendor-dashboard .vendor-service-info {
+    flex: 1;
+    min-width: 0;
+}
+
+#vendor-dashboard .vendor-service-info strong {
+    color: var(--black);
+    font-size: 11px;
+}
+
+#vendor-dashboard .vendor-service-info p {
+    margin: 4px 0 0;
+    color: var(--muted);
+    font-size: 10px;
+    line-height: 1.6;
+}
+
+#vendor-dashboard .vendor-service-price {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+}
+
+#vendor-dashboard .vendor-service-price span {
+    color: #A0A0A0;
+    font-size: 8px;
+    font-weight: 800;
+}
+
+#vendor-dashboard .vendor-service-price strong {
+    color: var(--black);
+    font-size: 11px;
+}
+
+/* =========================================================
+   AVAILABILITY
+========================================================= */
+
+#vendor-dashboard .vendor-availability-placeholder {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 20px;
+    background: var(--background);
+    border: 1px dashed #E4C5AA;
+    border-radius: 10px;
+}
+
+#vendor-dashboard .vendor-availability-icon {
+    display: flex;
+    flex-shrink: 0;
+    align-items: center;
+    justify-content: center;
+    width: 45px;
+    height: 45px;
+    color: var(--orange);
+    background: var(--peach-light);
+    border-radius: 10px;
+    font-size: 21px;
+}
+
+#vendor-dashboard .vendor-availability-placeholder > div:nth-child(2) {
+    flex: 1;
+    min-width: 0;
+}
+
+#vendor-dashboard .vendor-availability-placeholder strong {
+    color: var(--black);
+    font-size: 12px;
+}
+
+#vendor-dashboard .vendor-availability-placeholder p {
+    max-width: 520px;
+    margin: 5px 0 0;
+    color: var(--muted);
+    font-size: 10px;
+    line-height: 1.7;
+}
+
+#vendor-dashboard .vendor-coming-soon {
+    flex-shrink: 0;
+    padding: 7px 10px;
+    color: var(--orange);
+    background: var(--peach-light);
+    border-radius: 20px;
+    font-size: 9px;
+    font-weight: 750;
+}
+
+/* =========================================================
+   MARKETING
+========================================================= */
+
+#vendor-dashboard .vendor-marketing-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 14px;
+}
+
+#vendor-dashboard .vendor-marketing-card {
+    padding: 19px;
+    background: #FCFAF8;
+    border: 1px solid #F0E5DC;
+    border-radius: 10px;
+}
+
+#vendor-dashboard .vendor-marketing-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    margin-bottom: 13px;
+    color: var(--orange);
+    background: var(--peach-light);
+    border-radius: 9px;
+    font-size: 18px;
+}
+
+#vendor-dashboard .vendor-marketing-card h3 {
+    margin: 0;
+    color: var(--black);
+    font-size: 12px;
+}
+
+#vendor-dashboard .vendor-marketing-card p {
+    min-height: 40px;
+    margin: 7px 0 13px;
+    color: var(--muted);
+    font-size: 10px;
+    line-height: 1.7;
+}
+
+#vendor-dashboard .vendor-marketing-card a {
+    color: var(--orange);
+    font-size: 10px;
+    font-weight: 750;
+}
+
+#vendor-dashboard .vendor-announcement-list {
+    margin-top: 25px;
+    padding-top: 20px;
+    border-top: 1px solid var(--border);
+}
+
+#vendor-dashboard .vendor-announcement-list h3 {
+    margin: 0 0 10px;
+    color: var(--black);
+    font-size: 12px;
+}
+
+#vendor-dashboard .vendor-announcement-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 15px;
+    padding: 12px 0;
+    border-bottom: 1px solid #F0F0F0;
+}
+
+#vendor-dashboard .vendor-announcement-item strong {
+    color: var(--black);
+    font-size: 11px;
+}
+
+#vendor-dashboard .vendor-announcement-item p {
+    margin: 4px 0 0;
+    color: var(--muted);
+    font-size: 9px;
+}
+
+#vendor-dashboard .vendor-announcement-item > span {
+    padding: 5px 9px;
+    color: var(--orange);
+    background: var(--peach-light);
+    border-radius: 20px;
+    font-size: 9px;
+    font-weight: 750;
+}
+
+#vendor-dashboard .vendor-muted-message {
+    color: var(--muted);
+    font-size: 10px;
+}
+
+/* =========================================================
+   STORE MANAGEMENT
+========================================================= */
+
+#vendor-dashboard .vendor-store-management {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 20px;
+    padding: 18px;
+    background: var(--background);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+}
+
+#vendor-dashboard .vendor-store-management > div {
+    flex: 1;
+    min-width: 0;
+}
+
+#vendor-dashboard .vendor-store-management-icon {
+    display: block;
+    margin-bottom: 7px;
+    color: var(--orange);
+    font-size: 19px;
+}
+
+#vendor-dashboard .vendor-store-management strong {
+    color: var(--black);
+    font-size: 12px;
+}
+
+#vendor-dashboard .vendor-store-management p {
+    margin: 5px 0 0;
+    color: var(--muted);
+    font-size: 10px;
+    line-height: 1.6;
+}
+
+/* =========================================================
+   DASHBOARD FOOTER
+========================================================= */
+
+#vendor-dashboard .vendor-dashboard-footer {
+    padding-top: 27px;
+    text-align: center;
+}
+
+#vendor-dashboard .vendor-dashboard-footer > span {
+    color: var(--orange);
+    font-size: 9px;
+    font-weight: 800;
+    letter-spacing: 2px;
+}
+
+#vendor-dashboard .vendor-dashboard-footer p {
+    margin: 5px 0 0;
+    color: #A0A0A0;
+    font-size: 10px;
+}
+
+/* =========================================================
+   RESPONSIVE DESIGN
+========================================================= */
+
+@media (max-width: 1100px) {
+    #vendor-dashboard .vendor-stat-grid,
+    #vendor-dashboard .vendor-action-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    #vendor-dashboard .vendor-activity-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 760px) {
+    #vendor-dashboard {
+        width: calc(100% - 32px);
+        padding: 30px 0 50px;
+    }
+
+    #vendor-dashboard .vendor-heading {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+
+    #vendor-dashboard .vendor-store-banner {
+        align-items: flex-start;
+        flex-direction: column;
+        padding: 23px;
+    }
+
+    #vendor-dashboard .vendor-store-actions {
+        padding-top: 12px;
+    }
+
+    #vendor-dashboard .vendor-listing-grid {
+        grid-template-columns: 1fr;
+    }
+
+    #vendor-dashboard .vendor-availability-placeholder {
+        align-items: flex-start;
+        flex-wrap: wrap;
+    }
+}
+
+@media (max-width: 520px) {
+    #vendor-dashboard .vendor-stat-grid,
+    #vendor-dashboard .vendor-action-grid,
+    #vendor-dashboard .vendor-marketing-grid {
+        grid-template-columns: 1fr;
+    }
+
+    #vendor-dashboard .vendor-heading-actions {
+        align-items: flex-start;
+        flex-wrap: wrap;
+    }
+
+    #vendor-dashboard .vendor-panel {
+        padding: 19px 15px;
+    }
+
+    #vendor-dashboard .vendor-panel-heading {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+
+    #vendor-dashboard .vendor-listing-card {
+        gap: 11px;
+    }
+
+    #vendor-dashboard .vendor-listing-image {
+        width: 80px;
+    }
+
+    #vendor-dashboard .vendor-service-item {
+        flex-wrap: wrap;
+    }
+
+    #vendor-dashboard .vendor-service-info {
+        flex-basis: calc(100% - 60px);
+    }
+
+    #vendor-dashboard .vendor-availability-placeholder {
+        flex-direction: column;
+    }
+
+    #vendor-dashboard .vendor-store-management {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+
+    #vendor-dashboard .vendor-store-identity {
+        align-items: flex-start;
+    }
+
+    #vendor-dashboard .vendor-store-avatar {
+        width: 52px;
+        height: 52px;
+    }
+
+    #vendor-dashboard .vendor-store-identity h2 {
+        font-size: 18px;
+    }
+
+    #vendor-dashboard .vendor-booking-item {
+        gap: 8px;
+    }
+
+    #vendor-dashboard .vendor-booking-item > .vendor-row-link {
+        font-size: 9px;
+    }
+}
+
+/* =========================================================
+   ACCESSIBILITY
+========================================================= */
+
+@media (prefers-reduced-motion: reduce) {
+    #vendor-dashboard *,
+    #vendor-dashboard *::before,
+    #vendor-dashboard *::after {
+        scroll-behavior: auto !important;
+        transition: none !important;
+        animation: none !important;
+    }
+}
