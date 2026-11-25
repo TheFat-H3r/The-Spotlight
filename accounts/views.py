@@ -41,6 +41,12 @@ class RegisterView(View):
         password = request.POST.get('password', '')
         confirm_password = request.POST.get('confirm_password', '')
 
+        #Checking whether the user has already clicked on Agree terms and conditions to continue 
+        
+        if not request.POST.get("agree_terms"):
+            messages.error(request, "You must accept the Terms of Service and Privacy Policy before creating an account.")
+            return render(request, self.template_name, context)
+
         context = {
             'full_name': full_name,
             'email': email,

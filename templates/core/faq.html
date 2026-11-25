@@ -1,0 +1,129 @@
+{% extends "core/base.html" %}
+{% load static %}
+
+{% block title %}FAQ & Help | The Spotlight{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/faq.css' %}">
+{% endblock %}
+
+{% block content %}
+<main class="spotlight-faq">
+
+    <header class="spotlight-faq__header">
+        <a href="{% url 'core:home' %}" class="spotlight-faq__back">← Back to Marketplace</a>
+        <span class="spotlight-faq__eyebrow">HELP CENTER</span>
+        <h1>FAQ</h1>
+        <p>Quick answers about shopping, booking services, and becoming a vendor on The Spotlight.</p>
+    </header>
+
+    <div class="faq-accordion" id="spotlightFaqAccordion">
+
+        <!-- Item 1 -->
+        <div class="faq-item">
+            <button type="button" class="faq-trigger" aria-expanded="false" aria-controls="faq-panel-1" id="faq-trigger-1">
+                <span class="faq-question">How do I buy a product on The Spotlight?</span>
+                <span class="faq-icon" aria-hidden="true">+</span>
+            </button>
+            <div class="faq-panel" id="faq-panel-1" role="region" aria-labelledby="faq-trigger-1">
+                <div class="faq-panel__inner">
+                    <p>Finding and ordering items from local and campus vendors is simple:</p>
+                    <ul class="faq-list">
+                        <li>Search by keyword or filter by category, max price (MUR), or location on the marketplace.</li>
+                        <li>Open a product card to check details, pricing, and vendor information.</li>
+                        <li>Add items to your cart and complete your order flow.</li>
+                        <li>Coordinate pickup or delivery details directly with the store.</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- Item 2 (Expanded by default for clear visual preview; toggleable on click) -->
+        <div class="faq-item is-open">
+            <button type="button" class="faq-trigger" aria-expanded="true" aria-controls="faq-panel-2" id="faq-trigger-2">
+                <span class="faq-question">How do I become a vendor and open a store?</span>
+                <span class="faq-icon" aria-hidden="true">+</span>
+            </button>
+            <div class="faq-panel" id="faq-panel-2" role="region" aria-labelledby="faq-trigger-2">
+                <div class="faq-panel__inner">
+                    <p>You can set up your business presence in a few steps:</p>
+                    <ul class="faq-list">
+                        <li>Select <strong>Become a Vendor</strong> from the marketplace or footer.</li>
+                        <li>Create your account or sign in and complete your vendor application details.</li>
+                        <li>Add your store profile, business info, and products or services.</li>
+                        <li>Start connecting with customers and managing incoming orders or bookings.</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- Item 3 -->
+        <div class="faq-item">
+            <button type="button" class="faq-trigger" aria-expanded="false" aria-controls="faq-panel-3" id="faq-trigger-3">
+                <span class="faq-question">How do I book a service or session?</span>
+                <span class="faq-icon" aria-hidden="true">+</span>
+            </button>
+            <div class="faq-panel" id="faq-panel-3" role="region" aria-labelledby="faq-trigger-3">
+                <div class="faq-panel__inner">
+                    <p>Service providers list their starting prices and availability across stores:</p>
+                    <ul class="faq-list">
+                        <li>Browse services on the marketplace or visit a specific vendor's storefront.</li>
+                        <li>Review service details and starting rates in MUR.</li>
+                        <li>Click <strong>Book Now</strong> to request your preferred time or session.</li>
+                        <li>Check your booking status and updates in your account.</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- Item 4 -->
+        <div class="faq-item">
+            <button type="button" class="faq-trigger" aria-expanded="false" aria-controls="faq-panel-4" id="faq-trigger-4">
+                <span class="faq-question">How do I manage my account, password, or privacy settings?</span>
+                <span class="faq-icon" aria-hidden="true">+</span>
+            </button>
+            <div class="faq-panel" id="faq-panel-4" role="region" aria-labelledby="faq-trigger-4">
+                <div class="faq-panel__inner">
+                    <p>Everything account-related lives inside <strong>Account Settings</strong>:</p>
+                    <ul class="faq-list">
+                        <li>Update your name, email address, phone number, and profile avatar.</li>
+                        <li>Change your password or review active login sessions.</li>
+                        <li>Customize notification toggles, display preferences, and privacy options.</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- Item 5 -->
+        <div class="faq-item">
+            <button type="button" class="faq-trigger" aria-expanded="false" aria-controls="faq-panel-5" id="faq-trigger-5">
+                <span class="faq-question">What if I have an issue with an order, booking, or my account?</span>
+                <span class="faq-icon" aria-hidden="true">+</span>
+            </button>
+            <div class="faq-panel" id="faq-panel-5" role="region" aria-labelledby="faq-trigger-5">
+                <div class="faq-panel__inner">
+                    <p>If something doesn't go as expected, our team is ready to help:</p>
+                    <ul class="faq-list">
+                        <li>Note any order or booking ID related to your request.</li>
+                        <li>Visit <a href="{% url 'core:contact-support' %}">Contact Support</a> and describe the issue clearly.</li>
+                        <li>We'll follow up using the contact details you provide.</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <div class="spotlight-faq__cta">
+        <p>Still have questions?</p>
+        <a href="{% url 'core:contact-support' %}" class="spotlight-faq__btn">
+            Contact Support <span>→</span>
+        </a>
+    </div>
+
+</main>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/faq.js' %}"></script>
+{% endblock %}

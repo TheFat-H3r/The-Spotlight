@@ -21,6 +21,7 @@ def home(request):
             max_price = None
 
     # 2. Base Querysets (only active/published records)
+
     active_ads = Advertisement.objects.filter(is_active=True).order_by("-created_at")
 
     featured_stores = (
@@ -118,5 +119,21 @@ def about_us(request):
 
 def contact_us(request):
     return render(request, 'core/contact.html')
+
 def contact_support(request):
     return render(request, 'core/customer_support.html')
+
+def faq_help(request):
+    return render(request, "core/faq.html")
+
+
+def privacy_policy(request):
+    return render(request, "core/privacy_policy.html")
+
+
+def terms_of_service(request):
+    return render(request, "core/terms.html")
+
+
+def community_guidelines(request):
+    return render(request, "core/community_guidelines.html")

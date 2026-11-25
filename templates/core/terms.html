@@ -1,0 +1,156 @@
+{% extends "core/base.html" %}
+{% load static %}
+
+{% block title %}Terms of Service | The Spotlight{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/legal_pages.css' %}">
+{% endblock %}
+
+{% block content %}
+<main class="legal-page">
+
+    <header class="legal-header">
+        <div>
+            <a href="{% url 'core:home' %}" class="legal-back">← Back to Marketplace</a>
+            <span class="legal-eyebrow">LEGAL &amp; POLICIES</span>
+            <h1>Terms of Service</h1>
+            <p>Please read these terms carefully before creating an account, listing items, or purchasing on The Spotlight.</p>
+        </div>
+
+        <div class="legal-meta">
+            <span class="legal-meta__label">LAST UPDATED</span>
+            <strong>November 2026</strong>
+        </div>
+    </header>
+
+    <div class="legal-layout">
+
+        <!-- Sticky Section Navigator -->
+        <aside class="legal-sidebar" aria-label="Terms sections">
+            <span class="legal-sidebar__title">ON THIS PAGE</span>
+            <nav class="legal-nav">
+                <a href="#acceptance">1. Acceptance of Terms</a>
+                <a href="#accounts">2. User Accounts &amp; Roles</a>
+                <a href="#vendors">3. Vendor Stores &amp; Listings</a>
+                <a href="#orders">4. Orders, Bookings &amp; Payments</a>
+                <a href="#conduct">5. Prohibited Conduct</a>
+                <a href="#termination">6. Suspension &amp; Termination</a>
+                <a href="#liability">7. Limitation of Liability</a>
+                <a href="#contact">8. Contact &amp; Updates</a>
+            </nav>
+
+            <div class="legal-sidebar__links">
+                <a href="{% url 'core:privacy-policy' %}">Privacy Policy →</a>
+                <a href="{% url 'core:community-guidelines' %}">Community Guidelines →</a>
+            </div>
+        </aside>
+
+        <!-- Main Agreement Content -->
+        <article class="legal-card">
+
+            <div class="legal-callout">
+                <strong>Binding User Agreement:</strong> By creating an account, signing in, or using any service on <strong>The Spotlight</strong>, you confirm that you have read, understood, and agreed to be bound by these Terms of Service and our <a href="{% url 'core:privacy-policy' %}">Privacy Policy</a>.
+            </div>
+
+            <section id="acceptance" class="legal-section">
+                <h2>1. Acceptance of Terms</h2>
+                <p>
+                    Welcome to <strong>The Spotlight</strong>. These Terms of Service ("Terms") govern your access to and use of our marketplace website, storefront tools, booking features, and related services. If you do not agree to these Terms, you must not register for an account or use the platform.
+                </p>
+            </section>
+
+            <section id="accounts" class="legal-section">
+                <h2>2. User Accounts &amp; Roles</h2>
+                <p>To access protected features such as purchasing, booking services, or managing a store, you must create an account.</p>
+                <ul>
+                    <li><strong>Accurate Information:</strong> You agree to provide truthful, current, and complete details (full name, email address, and phone number) during registration and keep them updated in Account Settings.</li>
+                    <li><strong>Email Verification &amp; Security:</strong> You are responsible for verifying your email address and safeguarding your password. Notify us immediately if you suspect unauthorized access.</li>
+                    <li><strong>Account Roles:</strong> Users may register as a <strong>Customer</strong> or apply as a <strong>Vendor</strong>. Administrative privileges are restricted to authorized platform operators.</li>
+                </ul>
+            </section>
+
+            <section id="vendors" class="legal-section">
+                <h2>3. Vendor Stores &amp; Listings</h2>
+                <p>Approved vendors may operate storefronts to showcase products and bookable services.</p>
+                <ul>
+                    <li><strong>Listing Accuracy:</strong> Vendors must describe items and services honestly, display clear pricing in Mauritian Rupees (MUR), and keep stock or availability accurate.</li>
+                    <li><strong>Fulfillment Responsibility:</strong> Vendors are directly responsible for fulfilling accepted orders, honoring scheduled service bookings, and communicating clearly with customers.</li>
+                    <li><strong>Approval &amp; Moderation:</strong> Store applications and listings are subject to review and may be declined or removed if they violate platform standards.</li>
+                </ul>
+            </section>
+
+            <section id="orders" class="legal-section">
+                <h2>4. Orders, Bookings &amp; Payments</h2>
+                <ul>
+                    <li><strong>Transactions:</strong> Placing an order or booking a service constitutes a commitment between the customer and the respective vendor under the terms shown on the listing.</li>
+                    <li><strong>Delivery &amp; Pickup:</strong> Delivery timelines, campus/local meetup points, and payment methods are coordinated according to the vendor's stated terms.</li>
+                    <li><strong>Disputes &amp; Refunds:</strong> Customers should first contact the vendor to resolve order or booking issues. If unresolved, either party may submit a request via <a href="{% url 'core:contact-support' %}">Contact Support</a>.</li>
+                </ul>
+            </section>
+
+            <section id="conduct" class="legal-section">
+                <h2>5. Prohibited Conduct</h2>
+                <p>When using The Spotlight, you agree not to:</p>
+                <ul>
+                    <li>List or sell illegal, counterfeit, stolen, hazardous, or prohibited goods or services.</li>
+                    <li>Post false reviews, manipulate ratings, or impersonate another user, vendor, or staff member.</li>
+                    <li>Harass, spam, defraud, or abuse other community members.</li>
+                    <li>Attempt to bypass authentication, scrape platform data, or disrupt site security.</li>
+                </ul>
+            </section>
+
+            <section id="termination" class="legal-section">
+                <h2>6. Account Deactivation &amp; Suspension</h2>
+                <p>
+                    You may deactivate your account at any time from <strong>Account Settings</strong>. The Spotlight also reserves the right to suspend or terminate accounts or storefronts that breach these Terms or our <a href="{% url 'core:community-guidelines' %}">Community Guidelines</a>.
+                </p>
+            </section>
+
+            <section id="liability" class="legal-section">
+                <h2>7. Platform Role &amp; Limitation of Liability</h2>
+                <p>
+                    The Spotlight provides a marketplace venue connecting buyers and independent vendors. While we verify storefronts and moderate content, we do not manufacture listed products or directly perform vendor services, and we are not liable for indirect losses arising from user-to-user transactions to the maximum extent permitted by law.
+                </p>
+            </section>
+
+            <section id="contact" class="legal-section">
+                <h2>8. Updates to Terms &amp; Contact</h2>
+                <p>
+                    We may revise these Terms periodically as new features launch. Continued use of The Spotlight after changes take effect constitutes acceptance of the revised Terms. Questions may be sent through <a href="{% url 'core:contact-support' %}">Contact Support</a>.
+                </p>
+            </section>
+
+            <!-- Agreement Footer Bar -->
+           <!-- Interactive Agreement Box at Bottom of Terms Page -->
+            <form method="get" action="{% url 'accounts:register' %}" class="legal-agreement-box" id="termsAgreementForm">
+                <div class="legal-agreement-copy">
+                    <strong>Accept Terms &amp; Conditions</strong>
+                    <p>You must check the agreement box below to proceed with creating an account on The Spotlight.</p>
+
+                    <label class="legal-checkbox-row" for="acceptTermsPageCheckbox">
+                        <input type="checkbox"
+                            id="acceptTermsPageCheckbox"
+                            name="terms_accepted"
+                            value="1"
+                            required>
+                        <span>
+                            I have read and agree to <strong>The Spotlight's</strong> Terms of Service and
+                            <a href="{% url 'core:privacy-policy' %}">Privacy Policy</a>.
+                        </span>
+                    </label>
+                </div>
+    <div class="legal-agreement-actions">
+        <a href="{% url 'core:home' %}" class="legal-btn-secondary">Decline &amp; Go Back</a>
+        <button type="submit" class="legal-btn-primary" id="acceptTermsSubmitBtn">
+            I Agree &amp; Create Account →
+        </button>
+    </div>
+</form>
+
+        </article>
+
+    </div>
+
+</main>
+{% endblock %}

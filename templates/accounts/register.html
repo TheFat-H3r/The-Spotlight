@@ -121,6 +121,23 @@
         </div>
       </div>
 
+      <!--Check the box of terms and conditions before creating an account-->
+
+        <div style="margin: 14px 0 18px; display: flex; align-items: flex-start; gap: 10px;">
+           <input type="checkbox"
+           id="id_agree_terms"
+           name="agree_terms"
+           value="on"
+           {% if request.GET.terms_accepted == "1" or request.POST.agree_terms %}checked{% endif %}
+           required
+           style="margin-top: 3px; accent-color: #B86B32; width: 17px; height: 17px; cursor: pointer;">
+          <span style="font-size: 12.5px; color: #3D3833; line-height: 1.5;">
+           <label for="id_agree_terms" style="cursor: pointer;">I agree to</label>
+           <a href="{% url 'core:terms' %}" target="_blank" rel="noopener noreferrer" style="color: #B86B32; font-weight: 700; text-decoration: underline;">Terms of Service</a>
+           <label for="id_agree_terms" style="cursor: pointer;">and</label>
+           <a href="{% url 'core:privacy-policy' %}" target="_blank" rel="noopener noreferrer" style="color: #B86B32; font-weight: 700; text-decoration: underline;">Privacy Policy</a>.
+          </span>
+        </div>
       <!-- Submit Button (Warm Gold #f7c18b with Black #000000 text) -->
       <button type="submit" class="w-full mt-2 bg-[#f7c18b] hover:bg-[#fad3ab] text-[#000000] font-bold py-3 px-4 rounded-xl transition-all shadow-lg flex items-center justify-center space-x-2 cursor-pointer">
         <span>Create Spotlight Account</span>

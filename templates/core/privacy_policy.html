@@ -1,0 +1,49 @@
+{% extends "core/base.html" %}
+{% load static %}
+
+{% block title %}Privacy Policy | The Spotlight{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/subpages.css' %}">
+{% endblock %}
+
+{% block content %}
+<main class="account-subpage">
+
+    <header class="account-subpage__header">
+        <a href="{% url 'core:home' %}" class="account-subpage__back">← Back to Marketplace</a>
+        <span class="account-subpage__eyebrow">POLICIES</span>
+        <h1>Privacy Policy</h1>
+        <p>How The Spotlight collects, uses, and protects your information.</p>
+    </header>
+
+    <section class="account-subpage__card">
+        <h2 style="margin: 0 0 8px; font-size: 16px;">1. Information We Collect</h2>
+        <p style="margin: 0 0 18px; color: #555555; font-size: 13px; line-height: 1.7;">
+            When you create an account or storefront on The Spotlight, we collect your full name, email address, phone number, role (Customer or Vendor), optional profile photo, and order or booking history.
+        </p>
+
+        <h2 style="margin: 0 0 8px; font-size: 16px;">2. How We Use Your Data</h2>
+        <p style="margin: 0 0 18px; color: #555555; font-size: 13px; line-height: 1.7;">
+            Your information is used to authenticate your account, verify your email, connect buyers with vendors for orders and bookings, and send essential account notifications.
+        </p>
+
+        <h2 style="margin: 0 0 8px; font-size: 16px;">3. Session Cookies &amp; Preferences</h2>
+        <p style="margin: 0 0 18px; color: #555555; font-size: 13px; line-height: 1.7;">
+            We use essential session cookies to keep you signed in and store your display, currency, and notification preferences.
+        </p>
+
+        <h2 style="margin: 0 0 8px; font-size: 16px;">4. Your Controls</h2>
+        <p style="margin: 0; color: #555555; font-size: 13px; line-height: 1.7;">
+            You can edit your profile details, adjust privacy preferences, or deactivate your account at any time in Account Settings.
+        </p>
+
+        <div class="account-subpage__actions">
+            <a href="{% url 'core:contact-support' %}" class="account-subpage__btn-secondary">
+                Questions? Contact Support
+            </a>
+        </div>
+    </section>
+
+</main>
+{% endblock %}

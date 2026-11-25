@@ -1,0 +1,49 @@
+{% extends "core/base.html" %}
+{% load static %}
+
+{% block title %}Community Guidelines | The Spotlight{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/subpages.css' %}">
+{% endblock %}
+
+{% block content %}
+<main class="account-subpage">
+
+    <header class="account-subpage__header">
+        <a href="{% url 'core:home' %}" class="account-subpage__back">← Back to Marketplace</a>
+        <span class="account-subpage__eyebrow">POLICIES</span>
+        <h1>Community Guidelines</h1>
+        <p>Standards that keep The Spotlight trustworthy, safe, and welcoming for everyone.</p>
+    </header>
+
+    <section class="account-subpage__card">
+        <h2 style="margin: 0 0 8px; font-size: 16px;">1. Honest &amp; Accurate Listings</h2>
+        <p style="margin: 0 0 18px; color: #555555; font-size: 13px; line-height: 1.7;">
+            Only list products and services you legitimately offer. Use real photos, truthful descriptions, and accurate availability.
+        </p>
+
+        <h2 style="margin: 0 0 8px; font-size: 16px;">2. Respectful Communication</h2>
+        <p style="margin: 0 0 18px; color: #555555; font-size: 13px; line-height: 1.7;">
+            Treat customers, vendors, and support staff with respect. Harassment, spam, hate speech, or abusive messages are strictly prohibited.
+        </p>
+
+        <h2 style="margin: 0 0 8px; font-size: 16px;">3. Genuine Reviews</h2>
+        <p style="margin: 0 0 18px; color: #555555; font-size: 13px; line-height: 1.7;">
+            Leave reviews based only on real experiences with a store, product, or service. Fake or manipulated ratings are not permitted.
+        </p>
+
+        <h2 style="margin: 0 0 8px; font-size: 16px;">4. Prohibited Items &amp; Reporting</h2>
+        <p style="margin: 0; color: #555555; font-size: 13px; line-height: 1.7;">
+            Illegal, unsafe, or counterfeit items are banned from The Spotlight. If you spot a listing or account breaking these rules, report it through Contact Support.
+        </p>
+
+        <div class="account-subpage__actions">
+            <a href="{% url 'core:contact-support' %}" class="account-subpage__btn-primary">
+                Report an Issue →
+            </a>
+        </div>
+    </section>
+
+</main>
+{% endblock %}
