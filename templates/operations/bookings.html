@@ -1,0 +1,311 @@
+{% extends "operations/base.html" %}
+
+{% block title %}Manage Bookings | The Spotlight{% endblock %}
+{% block breadcrumb %}Manage bookings{% endblock %}
+{% block page_kicker %}Transactions &amp; Scheduling{% endblock %}
+{% block page_heading %}Manage bookings{% endblock %}
+{% block page_description %}
+    Monitor service appointments, scheduled time slots, transport pickups, and booking status transitions.
+{% endblock %}
+{% block bookings_nav_class %}active{% endblock %}
+
+{% block extra_css %}
+    <link rel="stylesheet" href="https://cdn.datatables.net/2.1.8/css/dataTables.bootstrap5.min.css">
+    <style>
+        .ops-kpi-card {
+            transition: transform .15s ease, border-color .15s ease;
+        }
+        .ops-kpi-card:hover {
+            border-color: var(--ops-gold);
+            transform: translateY(-2px);
+        }
+        .ops-kpi-value {
+            color: var(--ops-ink);
+            letter-spacing: -.02em;
+        }
+        .ops-kpi-icon {
+            align-items: center;
+            background: var(--ops-black);
+            border-radius: .65rem;
+            color: var(--ops-gold);
+            display: inline-flex;
+            height: 3rem;
+            justify-content: center;
+            width: 3rem;
+        }
+        .ops-card-header {
+            background: var(--ops-black);
+            border-bottom: 2px solid var(--ops-gold);
+            border-top-left-radius: calc(.85rem - 1px);
+            border-top-right-radius: calc(.85rem - 1px);
+            color: #fff;
+        }
+        .ops-card-header .ops-card-title {
+            color: #fff;
+            font-weight: 700;
+            letter-spacing: -.01em;
+        }
+        .ops-card-header .ops-card-title i {
+            color: var(--ops-gold);
+        }
+        .ops-card-header .ops-card-subtitle {
+            color: #9ba8ba;
+        }
+        .ops-btn-gold-outline {
+            border: 1px solid rgba(228, 173, 67, 0.45);
+            color: var(--ops-gold);
+            font-weight: 600;
+        }
+        .ops-btn-gold-outline:hover {
+            background: var(--ops-gold);
+            border-color: var(--ops-gold);
+            color: var(--ops-black);
+        }
+        .ops-filter-pill {
+            border: 1px solid var(--ops-border);
+            color: var(--ops-ink);
+            font-size: .82rem;
+            font-weight: 600;
+        }
+        .ops-filter-pill.active,
+        .ops-filter-pill:hover {
+            background: var(--ops-black);
+            border-color: var(--ops-black);
+            color: var(--ops-gold);
+        }
+        .ops-table thead th {
+            background-color: var(--ops-black-elevated) !important;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+            color: var(--ops-gold) !important;
+            font-size: .74rem;
+            font-weight: 700;
+            letter-spacing: .08em;
+            padding-bottom: .85rem;
+            padding-top: .85rem;
+            text-transform: uppercase;
+            white-space: nowrap;
+        }
+        .ops-table thead th span.dt-column-order { opacity: 1 !important; }
+        .ops-table thead th span.dt-column-order::before,
+        .ops-table thead th span.dt-column-order::after {
+            color: rgba(255, 255, 255, 0.75) !important;
+            opacity: 1 !important;
+        }
+        .ops-table thead th.dt-orderable-asc:hover span.dt-column-order::before,
+        .ops-table thead th.dt-orderable-desc:hover span.dt-column-order::after,
+        .ops-table thead th.dt-ordering-asc span.dt-column-order::before,
+        .ops-table thead th.dt-ordering-desc span.dt-column-order::after {
+            color: var(--ops-gold) !important;
+        }
+        .ops-table tbody td {
+            border-color: var(--ops-border);
+            color: var(--ops-ink);
+            font-size: .9rem;
+            padding-bottom: .8rem;
+            padding-top: .8rem;
+        }
+        .ops-table tbody tr[data-href] { cursor: pointer; }
+        .ops-table tbody tr:hover td { background-color: rgba(228, 173, 67, 0.07); }
+        .ops-row-link { color: var(--ops-ink); text-decoration: none; }
+        .ops-table tbody tr:hover .ops-row-link,
+        .ops-row-link:hover { color: #9b711f; text-decoration: underline; }
+        .dt-container .pagination .page-item.active .page-link {
+            background-color: var(--ops-black);
+            border-color: var(--ops-black);
+            color: var(--ops-gold);
+            font-weight: 600;
+        }
+    </style>
+{% endblock %}
+
+{% block page_actions %}
+    <a class="btn ops-btn-gold-outline" href="{% url 'admin:transactions_booking_changelist' %}">
+        <i class="bi bi-sliders me-1" aria-hidden="true"></i>
+        Django admin
+    </a>
+{% endblock %}
+
+{% block content %}
+    {# KPI Summary #}
+    <section class="row g-3 mb-4" aria-label="Bookings summary">
+        <div class="col-sm-6 col-xl-3">
+            <article class="ops-card ops-kpi-card h-100 p-3 p-lg-4">
+                <div class="d-flex align-items-start justify-content-between">
+                    <div>
+                        <p class="small text-secondary fw-medium mb-2">Active bookings</p>
+                        <p class="fs-2 fw-bold ops-kpi-value mb-0">{{ active_bookings_count }}</p>
+                    </div>
+                    <span class="ops-kpi-icon">
+                        <i class="bi bi-calendar2-check fs-5" aria-hidden="true"></i>
+                    </span>
+                </div>
+                <p class="small text-secondary mb-0 mt-3">{{ pending_booking_count|default:0 }} awaiting vendor approval</p>
+            </article>
+        </div>
+        <div class="col-sm-6 col-xl-3">
+            <article class="ops-card ops-kpi-card h-100 p-3 p-lg-4">
+                <div class="d-flex align-items-start justify-content-between">
+                    <div>
+                        <p class="small text-secondary fw-medium mb-2">Upcoming confirmed</p>
+                        <p class="fs-2 fw-bold ops-kpi-value mb-0">{{ upcoming_confirmed_count }}</p>
+                    </div>
+                    <span class="ops-kpi-icon">
+                        <i class="bi bi-clock fs-5" aria-hidden="true"></i>
+                    </span>
+                </div>
+                <p class="small text-secondary mb-0 mt-3">Scheduled slots ahead</p>
+            </article>
+        </div>
+        <div class="col-sm-6 col-xl-3">
+            <article class="ops-card ops-kpi-card h-100 p-3 p-lg-4">
+                <div class="d-flex align-items-start justify-content-between">
+                    <div>
+                        <p class="small text-secondary fw-medium mb-2">Completed bookings</p>
+                        <p class="fs-2 fw-bold ops-kpi-value mb-0">{{ completed_bookings_count }}</p>
+                    </div>
+                    <span class="ops-kpi-icon">
+                        <i class="bi bi-check2-circle fs-5" aria-hidden="true"></i>
+                    </span>
+                </div>
+                <p class="small text-secondary mb-0 mt-3">Out of {{ total_bookings_count }} total bookings</p>
+            </article>
+        </div>
+        <div class="col-sm-6 col-xl-3">
+            <article class="ops-card ops-kpi-card h-100 p-3 p-lg-4">
+                <div class="d-flex align-items-start justify-content-between">
+                    <div>
+                        <p class="small text-secondary fw-medium mb-2">Completed service GMV</p>
+                        <p class="fs-3 fw-bold ops-kpi-value mb-0">MUR {{ completed_revenue|floatformat:2 }}</p>
+                    </div>
+                    <span class="ops-kpi-icon">
+                        <i class="bi bi-cash-coin fs-5" aria-hidden="true"></i>
+                    </span>
+                </div>
+                <p class="small text-secondary mb-0 mt-3">Gross completed service volume</p>
+            </article>
+        </div>
+    </section>
+
+    {# Status Quick Filter Bar #}
+    <div class="d-flex flex-wrap gap-2 mb-3">
+        <a href="{% url 'operations:bookings' %}"
+           class="btn btn-sm rounded-pill ops-filter-pill {% if not status_filter %}active{% endif %}">
+            All ({{ total_bookings_count }})
+        </a>
+        {% for code, label in status_choices %}
+            <a href="?status={{ code }}"
+               class="btn btn-sm rounded-pill ops-filter-pill {% if status_filter == code %}active{% endif %}">
+                {{ label }}
+            </a>
+        {% endfor %}
+    </div>
+
+    {# Bookings Table #}
+    <section class="ops-card" aria-labelledby="bookings-table-heading">
+        <div class="ops-card-header d-flex flex-wrap align-items-center justify-content-between gap-2 px-3 px-lg-4 py-3">
+            <div>
+                <h2 class="h5 ops-card-title mb-1" id="bookings-table-heading">
+                    <i class="bi bi-calendar2-week me-2" aria-hidden="true"></i>Service bookings
+                </h2>
+                <p class="small ops-card-subtitle mb-0">Click any row to inspect slot schedule, transport route, and booking controls</p>
+            </div>
+        </div>
+        <div class="p-3 p-lg-4">
+            <div class="table-responsive">
+                <table id="bookings-table" class="table ops-table align-middle w-100 mb-0">
+                    <thead>
+                        <tr>
+                            <th scope="col">Reference</th>
+                            <th scope="col">Service &amp; Store</th>
+                            <th scope="col">Customer</th>
+                            <th scope="col">Scheduled Slot</th>
+                            <th class="text-center" scope="col">Seats</th>
+                            <th class="text-end" scope="col">Total</th>
+                            <th scope="col">Status</th>
+                            <th class="text-end" scope="col" data-orderable="false">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for booking in bookings %}
+                            {% url 'operations:booking-detail' booking.pk as detail_url %}
+                            <tr data-href="{{ detail_url }}">
+                                <td class="fw-semibold">
+                                    <a href="{{ detail_url }}" class="ops-row-link">{{ booking.reference }}</a>
+                                    {% if booking.pickup_location or booking.dropoff_location %}
+                                        <span class="d-block small text-secondary">
+                                            <i class="bi bi-car-front me-1" aria-hidden="true"></i>Transport
+                                        </span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <span class="d-block fw-semibold">{{ booking.service.name }}</span>
+                                    <span class="small text-secondary">{{ booking.store.name }}</span>
+                                </td>
+                                <td>
+                                    <span class="d-block fw-medium">{{ booking.customer.get_full_name|default:booking.customer.email }}</span>
+                                    {% if booking.customer_phone %}
+                                        <span class="small text-secondary">{{ booking.customer_phone }}</span>
+                                    {% endif %}
+                                </td>
+                                <td class="text-nowrap" data-order="{{ booking.slot.start_at|date:'U' }}">
+                                    <span class="d-block fw-medium">{{ booking.slot.start_at|date:"d M Y" }}</span>
+                                    <span class="small text-secondary">
+                                        {{ booking.slot.start_at|date:"H:i" }} – {{ booking.slot.end_at|date:"H:i" }}
+                                    </span>
+                                </td>
+                                <td class="text-center">{{ booking.seats }}</td>
+                                <td class="text-end fw-bold text-nowrap" data-order="{{ booking.total_price }}">
+                                    MUR {{ booking.total_price|floatformat:2 }}
+                                </td>
+                                <td>
+                                    {% if booking.status == "completed" %}
+                                        <span class="badge rounded-pill bg-success-subtle text-success-emphasis">Completed</span>
+                                    {% elif booking.status == "confirmed" %}
+                                        <span class="badge rounded-pill bg-primary-subtle text-primary-emphasis">Confirmed</span>
+                                    {% elif booking.status == "pending" %}
+                                        <span class="badge rounded-pill bg-warning-subtle text-warning-emphasis">Pending</span>
+                                    {% elif booking.status == "no_show" %}
+                                        <span class="badge rounded-pill bg-secondary-subtle text-secondary-emphasis">No-show</span>
+                                    {% else %}
+                                        <span class="badge rounded-pill bg-danger-subtle text-danger-emphasis">{{ booking.get_status_display }}</span>
+                                    {% endif %}
+                                </td>
+                                <td class="text-end text-nowrap">
+                                    <a href="{{ detail_url }}" class="btn btn-sm btn-outline-dark">
+                                        Manage <i class="bi bi-chevron-right small ms-1" aria-hidden="true"></i>
+                                    </a>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </section>
+{% endblock %}
+
+{% block extra_js %}
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script src="https://cdn.datatables.net/2.1.8/js/dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/2.1.8/js/dataTables.bootstrap5.min.js"></script>
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            new DataTable("#bookings-table", {
+                pageLength: 15,
+                lengthMenu: [10, 15, 25, 50],
+                order: [],
+                language: {
+                    emptyTable: "No bookings found for this filter.",
+                    search: "Search bookings:",
+                },
+            });
+
+            document.addEventListener("click", function (event) {
+                const row = event.target.closest("tr[data-href]");
+                if (!row) return;
+                if (event.target.closest("a, button") || window.getSelection().toString()) return;
+                window.location.href = row.dataset.href;
+            });
+        });
+    </script>
+{% endblock %}

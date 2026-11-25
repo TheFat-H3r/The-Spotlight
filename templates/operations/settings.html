@@ -1,0 +1,244 @@
+{% extends "operations/base.html" %}
+
+{% block title %}Settings &amp; Admin Profile | The Spotlight{% endblock %}
+{% block breadcrumb %}Settings{% endblock %}
+{% block page_kicker %}Administration{% endblock %}
+{% block page_heading %}Settings &amp; admin profile{% endblock %}
+{% block page_description %}
+    Manage your personal administrator profile, account security, and global marketplace rules for The Spotlight.
+{% endblock %}
+{% block settings_nav_class %}active{% endblock %}
+
+{% block content %}
+    {# 1. Admin Profile Card #}
+    <section class="ops-card w-100 mb-4" aria-labelledby="admin-profile-heading">
+        <div class="ops-card-header d-flex flex-wrap align-items-center justify-content-between gap-2 px-3 px-lg-4 py-3">
+            <div class="d-flex align-items-center gap-3">
+                {% if profile.avatar %}
+                    <img src="{{ profile.avatar.url }}" alt="{{ profile.full_name }}" class="rounded-circle border" style="width: 52px; height: 52px; object-fit: cover;">
+                {% else %}
+                    <span class="ops-kpi-icon rounded-circle" style="width: 52px; height: 52px;">
+                        <i class="bi bi-person-badge fs-4" aria-hidden="true"></i>
+                    </span>
+                {% endif %}
+                <div>
+                    <h2 class="h5 ops-card-title mb-1" id="admin-profile-heading">My admin profile</h2>
+                    <p class="small ops-card-subtitle mb-0">
+                        {{ profile.email }} · <span class="fw-medium text-dark">{{ profile.get_role_display }}</span>
+                        {% if profile.is_email_verified %}
+                            <span class="badge rounded-pill bg-success-subtle text-success-emphasis ms-1">Verified</span>
+                        {% endif %}
+                    </p>
+                </div>
+            </div>
+            <span class="badge rounded-pill bg-dark text-white">
+                Sign-in: {{ profile.get_auth_provider_display }}
+            </span>
+        </div>
+
+        <div class="p-3 p-lg-4">
+            <form method="post" enctype="multipart/form-data">
+                {% csrf_token %}
+                <input type="hidden" name="form_type" value="profile">
+
+                <div class="row g-3 mb-3">
+                    <div class="col-md-4">
+                        <label class="form-label fw-medium" for="full_name">Full name *</label>
+                        <input type="text" id="full_name" name="full_name" maxlength="150" value="{{ profile.full_name|default:'' }}" class="form-control" required>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label fw-medium" for="email_display">Email address</label>
+                        <input type="email" id="email_display" value="{{ profile.email }}" class="form-control bg-light" readonly>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label fw-medium" for="phone">Phone / WhatsApp</label>
+                        <input type="text" id="phone" name="phone" maxlength="16" value="{{ profile.phone|default:'' }}" class="form-control" placeholder="+23051234567">
+                    </div>
+                </div>
+
+                <div class="row g-3 mb-3">
+                    <div class="col-md-3">
+                        <label class="form-label fw-medium" for="student_id">Student / Staff ID</label>
+                        <input type="text" id="student_id" name="student_id" maxlength="30" value="{{ profile.student_id|default:'' }}" class="form-control">
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label fw-medium" for="course">Course</label>
+                        <select id="course" name="course" class="form-select">
+                            <option value="">None</option>
+                            {% for value, label in courses %}
+                                <option value="{{ value }}" {% if profile.course == value %}selected{% endif %}>
+                                    {{ label }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label fw-medium" for="cohort">Cohort</label>
+                        <input type="text" id="cohort" name="cohort" maxlength="4" value="{{ profile.cohort|default:'' }}" class="form-control" placeholder="F'25">
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label fw-medium" for="residence">Residence hall</label>
+                        <select id="residence" name="residence" class="form-select">
+                            <option value="">Off-campus / None</option>
+                            {% for value, label in residences %}
+                                <option value="{{ value }}" {% if profile.residence == value %}selected{% endif %}>
+                                    {{ label }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label fw-medium" for="room_number">Room</label>
+                        <input type="text" id="room_number" name="room_number" maxlength="4" value="{{ profile.room_number|default:'' }}" class="form-control" placeholder="S101">
+                    </div>
+                </div>
+
+                <div class="mb-4">
+                    <label class="form-label fw-medium" for="avatar">Profile avatar</label>
+                    <input type="file" id="avatar" name="avatar" accept="image/*" class="form-control">
+                </div>
+
+                <div class="d-flex flex-wrap gap-2 pt-3 border-top">
+                    <button type="submit" class="btn btn-dark">
+                        <i class="bi bi-check2 me-1" aria-hidden="true"></i>Save profile
+                    </button>
+                </div>
+            </form>
+        </div>
+    </section>
+
+    {# 2. Security / Password Card (Shown for Email & Password Accounts) #}
+    {% if is_email_auth %}
+        <section class="ops-card w-100 mb-4" aria-labelledby="security-heading">
+            <div class="ops-card-header px-3 px-lg-4 py-3">
+                <h2 class="h5 ops-card-title mb-1" id="security-heading">
+                    <i class="bi bi-shield-lock me-2" aria-hidden="true"></i>Account security
+                </h2>
+                <p class="small ops-card-subtitle mb-0">Update your operations login password</p>
+            </div>
+            <div class="p-3 p-lg-4">
+                <form method="post">
+                    {% csrf_token %}
+                    <input type="hidden" name="form_type" value="password">
+
+                    <div class="row g-3 mb-4">
+                        <div class="col-md-4">
+                            <label class="form-label fw-medium" for="current_password">Current password *</label>
+                            <input type="password" id="current_password" name="current_password" class="form-control" required>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-medium" for="new_password">New password *</label>
+                            <input type="password" id="new_password" name="new_password" minlength="8" class="form-control" required>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-medium" for="confirm_password">Confirm new password *</label>
+                            <input type="password" id="confirm_password" name="confirm_password" minlength="8" class="form-control" required>
+                        </div>
+                    </div>
+
+                    <div class="d-flex flex-wrap gap-2 pt-3 border-top">
+                        <button type="submit" class="btn ops-btn-gold-outline">
+                            <i class="bi bi-key me-1" aria-hidden="true"></i>Update password
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </section>
+    {% endif %}
+
+    {# 3. Platform & Marketplace Configuration Card #}
+    <section class="ops-card w-100" aria-labelledby="platform-settings-heading">
+        <div class="ops-card-header d-flex flex-wrap align-items-center justify-content-between gap-2 px-3 px-lg-4 py-3">
+            <div>
+                <h2 class="h5 ops-card-title mb-1" id="platform-settings-heading">
+                    <i class="bi bi-sliders me-2" aria-hidden="true"></i>Platform &amp; marketplace configuration
+                </h2>
+                <p class="small ops-card-subtitle mb-0">
+                    Global billing defaults, vendor onboarding, support channels, and maintenance controls
+                </p>
+            </div>
+            {% if platform_settings.updated_by %}
+                <span class="small text-secondary">
+                    Last updated by {{ platform_settings.updated_by.full_name|default:platform_settings.updated_by.email }}
+                    on {{ platform_settings.updated_at|date:"d M Y, H:i" }}
+                </span>
+            {% endif %}
+        </div>
+
+        <div class="p-3 p-lg-4">
+            <form method="post">
+                {% csrf_token %}
+                <input type="hidden" name="form_type" value="platform">
+
+                <div class="row g-3 mb-3">
+                    <div class="col-md-3">
+                        <label class="form-label fw-medium" for="default_commission_rate">Default commission (%)</label>
+                        <input type="number" step="0.01" min="0" max="100" id="default_commission_rate" name="default_commission_rate" value="{{ platform_settings.default_commission_rate }}" class="form-control" required>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label fw-medium" for="monthly_subscription_fee">Monthly store fee (MUR)</label>
+                        <input type="number" step="0.01" min="0" id="monthly_subscription_fee" name="monthly_subscription_fee" value="{{ platform_settings.monthly_subscription_fee }}" class="form-control" required>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label fw-medium" for="payout_day_of_month">Payout day (1–28)</label>
+                        <input type="number" min="1" max="28" id="payout_day_of_month" name="payout_day_of_month" value="{{ platform_settings.payout_day_of_month }}" class="form-control" required>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label fw-medium" for="cancellation_window_hours">Booking cancel window (hrs)</label>
+                        <input type="number" min="0" id="cancellation_window_hours" name="cancellation_window_hours" value="{{ platform_settings.cancellation_window_hours }}" class="form-control" required>
+                    </div>
+                </div>
+
+                <div class="row g-3 mb-3">
+                    <div class="col-md-6">
+                        <label class="form-label fw-medium" for="support_email">Operations support email *</label>
+                        <input type="email" id="support_email" name="support_email" value="{{ platform_settings.support_email }}" class="form-control" required>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label fw-medium" for="support_whatsapp">Support WhatsApp number</label>
+                        <input type="text" id="support_whatsapp" name="support_whatsapp" maxlength="25" value="{{ platform_settings.support_whatsapp|default:'' }}" class="form-control">
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label fw-medium" for="maintenance_message">Maintenance banner message</label>
+                    <input type="text" id="maintenance_message" name="maintenance_message" maxlength="255" value="{{ platform_settings.maintenance_message|default:'' }}" class="form-control">
+                </div>
+
+                <div class="row g-3 mb-4 pt-2">
+                    <div class="col-md-6">
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="checkbox" id="allow_new_registrations" name="allow_new_registrations" {% if platform_settings.allow_new_registrations %}checked{% endif %}>
+                            <label class="form-check-label fw-medium" for="allow_new_registrations">Allow new user sign-ups</label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="checkbox" id="auto_approve_stores" name="auto_approve_stores" {% if platform_settings.auto_approve_stores %}checked{% endif %}>
+                            <label class="form-check-label fw-medium" for="auto_approve_stores">Auto-approve new store applications</label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="maintenance_mode" name="maintenance_mode" {% if platform_settings.maintenance_mode %}checked{% endif %}>
+                            <label class="form-check-label fw-medium text-danger" for="maintenance_mode">Enable maintenance mode banner</label>
+                        </div>
+                    </div>
+
+                    <div class="col-md-6">
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="checkbox" id="notify_staff_new_store" name="notify_staff_new_store" {% if platform_settings.notify_staff_new_store %}checked{% endif %}>
+                            <label class="form-check-label fw-medium" for="notify_staff_new_store">Alert staff on new store applications</label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="notify_staff_urgent_complaint" name="notify_staff_urgent_complaint" {% if platform_settings.notify_staff_urgent_complaint %}checked{% endif %}>
+                            <label class="form-check-label fw-medium" for="notify_staff_urgent_complaint">Alert staff on high-priority complaints</label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="d-flex flex-wrap gap-2 pt-3 border-top">
+                    <button type="submit" class="btn btn-dark">
+                        <i class="bi bi-check2 me-1" aria-hidden="true"></i>Save platform settings
+                    </button>
+                </div>
+            </form>
+        </div>
+    </section>
+{% endblock %}

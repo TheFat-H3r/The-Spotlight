@@ -1,0 +1,434 @@
+{% extends "operations/base.html" %}
+
+{% block title %}Catalog | The Spotlight{% endblock %}
+{% block breadcrumb %}Catalog{% endblock %}
+{% block page_kicker %}Administration{% endblock %}
+{% block page_heading %}Products &amp; services catalog{% endblock %}
+{% block page_description %}
+    Moderate marketplace listings, inspect pricing and stock levels, and feature top products or bookable services.
+{% endblock %}
+{% block catalog_nav_class %}active{% endblock %}
+
+{% block extra_css %}
+    <link rel="stylesheet" href="https://cdn.datatables.net/2.1.8/css/dataTables.bootstrap5.min.css">
+{% endblock %}
+
+{% block page_actions %}
+    <a class="btn ops-btn-gold-outline" href="{% url 'operations:service-add' %}">
+        <i class="bi bi-plus-lg me-1" aria-hidden="true"></i>
+        New service
+    </a>
+    <a class="btn btn-dark" href="{% url 'operations:product-add' %}">
+        <i class="bi bi-plus-lg me-1" aria-hidden="true"></i>
+        New product
+    </a>
+{% endblock %}
+
+{% block content %}
+    {# KPI Summary Row #}
+    <section class="row g-3 mb-4" aria-label="Catalog summary">
+        <div class="col-sm-6 col-xl-3">
+            <article class="ops-card ops-kpi-card h-100 p-3 p-lg-4">
+                <div class="d-flex align-items-start justify-content-between">
+                    <div>
+                        <p class="small text-secondary fw-medium mb-2">Total products</p>
+                        <p class="fs-2 fw-bold ops-kpi-value mb-0">{{ product_count }}</p>
+                    </div>
+                    <span class="ops-kpi-icon">
+                        <i class="bi bi-box-seam fs-5" aria-hidden="true"></i>
+                    </span>
+                </div>
+                <p class="small text-secondary mb-0 mt-3">Physical &amp; retail items listed</p>
+            </article>
+        </div>
+        <div class="col-sm-6 col-xl-3">
+            <article class="ops-card ops-kpi-card h-100 p-3 p-lg-4">
+                <div class="d-flex align-items-start justify-content-between">
+                    <div>
+                        <p class="small text-secondary fw-medium mb-2">Total services</p>
+                        <p class="fs-2 fw-bold ops-kpi-value mb-0">{{ service_count }}</p>
+                    </div>
+                    <span class="ops-kpi-icon">
+                        <i class="bi bi-calendar2-check fs-5" aria-hidden="true"></i>
+                    </span>
+                </div>
+                <p class="small text-secondary mb-0 mt-3">Bookable vendor services</p>
+            </article>
+        </div>
+        <div class="col-sm-6 col-xl-3">
+            <article class="ops-card ops-kpi-card h-100 p-3 p-lg-4">
+                <div class="d-flex align-items-start justify-content-between">
+                    <div>
+                        <p class="small text-secondary fw-medium mb-2">Featured items</p>
+                        <p class="fs-2 fw-bold ops-kpi-value mb-0">{{ featured_count }}</p>
+                    </div>
+                    <span class="ops-kpi-icon">
+                        <i class="bi bi-star fs-5" aria-hidden="true"></i>
+                    </span>
+                </div>
+                <p class="small text-secondary mb-0 mt-3">Promoted across storefront feeds</p>
+            </article>
+        </div>
+        <div class="col-sm-6 col-xl-3">
+            <article class="ops-card ops-kpi-card h-100 p-3 p-lg-4">
+                <div class="d-flex align-items-start justify-content-between">
+                    <div>
+                        <p class="small text-secondary fw-medium mb-2">Out of stock</p>
+                        <p class="fs-2 fw-bold ops-kpi-value mb-0">{{ out_of_stock_count }}</p>
+                    </div>
+                    <span class="ops-kpi-icon">
+                        <i class="bi bi-exclamation-triangle fs-5" aria-hidden="true"></i>
+                    </span>
+                </div>
+                <p class="small text-secondary mb-0 mt-3">Products with 0 units left</p>
+            </article>
+        </div>
+    </section>
+
+    {# 1. Products Table #}
+    <section class="ops-card mb-4" aria-labelledby="products-heading">
+        <div class="ops-card-header d-flex flex-wrap align-items-center justify-content-between gap-2 px-3 px-lg-4 py-3">
+            <div>
+                <h2 class="h5 ops-card-title mb-1" id="products-heading">
+                    <i class="bi bi-box-seam me-2" aria-hidden="true"></i>Products
+                </h2>
+                <p class="small ops-card-subtitle mb-0">{{ product_count }} listed products</p>
+            </div>
+        </div>
+        <div class="p-3 p-lg-4">
+            <div class="table-responsive">
+                <table id="products-table" class="table ops-table align-middle w-100 mb-0">
+                    <thead>
+                        <tr>
+                            <th scope="col">Product</th>
+                            <th scope="col">Store</th>
+                            <th scope="col">Category</th>
+                            <th scope="col">Price</th>
+                            <th scope="col">Stock</th>
+                            <th scope="col">Rating</th>
+                            <th scope="col">Status</th>
+                            <th class="text-end" scope="col" data-orderable="false">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in products %}
+                            <tr>
+                                <td class="fw-semibold">
+                                    <a href="#"
+                                       class="ops-row-link js-catalog-preview"
+                                       data-bs-toggle="modal"
+                                       data-bs-target="#catalogPreviewModal"
+                                       data-kind="Product"
+                                       data-item-type="product"
+                                       data-item-id="{{ item.pk }}"
+                                       data-title="{{ item.name }}"
+                                       data-store="{{ item.store.name }}"
+                                       data-category="{% if item.category %}{{ item.category.name }}{% else %}Uncategorized{% endif %}"
+                                       data-price="MUR {{ item.price }}"
+                                       data-extra="{{ item.stock }} in stock · {{ item.rating_average }} ★ ({{ item.rating_count }} reviews)"
+                                       data-status="{% if item.is_available %}Available{% else %}Unavailable{% endif %}{% if item.is_featured %} · Featured{% endif %}"
+                                       data-image="{% if item.image %}{{ item.image.url }}{% endif %}"
+                                       data-body="{{ item.description|default:'No description provided.' }}">
+                                        {{ item.name }}
+                                    </a>
+                                    {% if item.is_featured %}
+                                        <span class="badge rounded-pill bg-warning-subtle text-warning-emphasis ms-1">Featured</span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ item.store.name }}</td>
+                                <td>
+                                    {% if item.category %}
+                                        {{ item.category.name }}
+                                    {% else %}
+                                        <span class="text-secondary">—</span>
+                                    {% endif %}
+                                </td>
+                                <td class="text-nowrap" data-order="{{ item.price }}">MUR {{ item.price }}</td>
+                                <td data-order="{{ item.stock }}">
+                                    {% if item.stock == 0 %}
+                                        <span class="badge rounded-pill bg-danger-subtle text-danger-emphasis">0 left</span>
+                                    {% else %}
+                                        {{ item.stock }}
+                                    {% endif %}
+                                </td>
+                                <td class="small text-secondary text-nowrap">{{ item.rating_average }} ★ ({{ item.rating_count }})</td>
+                                <td>
+                                    {% if item.is_available %}
+                                        <span class="badge rounded-pill bg-success-subtle text-success-emphasis">Available</span>
+                                    {% else %}
+                                        <span class="badge rounded-pill bg-secondary-subtle text-secondary-emphasis">Unavailable</span>
+                                    {% endif %}
+                                </td>
+                                <td class="text-end text-nowrap">
+                                    <div class="d-inline-flex gap-1">
+                                        <button type="button"
+                                                class="btn btn-sm btn-outline-dark js-catalog-preview"
+                                                data-bs-toggle="modal"
+                                                data-bs-target="#catalogPreviewModal"
+                                                data-kind="Product"
+                                                data-item-type="product"
+                                                data-item-id="{{ item.pk }}"
+                                                data-title="{{ item.name }}"
+                                                data-store="{{ item.store.name }}"
+                                                data-category="{% if item.category %}{{ item.category.name }}{% else %}Uncategorized{% endif %}"
+                                                data-price="MUR {{ item.price }}"
+                                                data-extra="{{ item.stock }} in stock · {{ item.rating_average }} ★ ({{ item.rating_count }} reviews)"
+                                                data-status="{% if item.is_available %}Available{% else %}Unavailable{% endif %}{% if item.is_featured %} · Featured{% endif %}"
+                                                data-image="{% if item.image %}{{ item.image.url }}{% endif %}"
+                                                data-body="{{ item.description|default:'No description provided.' }}">
+                                            View
+                                        </button>
+                                        <a href="{% url 'operations:product-edit' item.pk %}" class="btn btn-sm btn-outline-dark">Edit</a>
+                                        <form method="post" class="d-inline">
+                                            {% csrf_token %}
+                                            <input type="hidden" name="item_type" value="product">
+                                            <input type="hidden" name="item_id" value="{{ item.pk }}">
+                                            <button type="submit" name="action" value="toggle_available" class="btn btn-sm btn-outline-secondary">
+                                                {% if item.is_available %}Hide{% else %}Enable{% endif %}
+                                            </button>
+                                            <button type="submit" name="action" value="delete" class="btn btn-sm btn-outline-danger" onclick="return confirm('Delete product {{ item.name }}?');">
+                                                Delete
+                                            </button>
+                                        </form>
+                                    </div>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </section>
+
+    {# 2. Services Table #}
+    <section class="ops-card" aria-labelledby="services-heading">
+        <div class="ops-card-header d-flex flex-wrap align-items-center justify-content-between gap-2 px-3 px-lg-4 py-3">
+            <div>
+                <h2 class="h5 ops-card-title mb-1" id="services-heading">
+                    <i class="bi bi-calendar2-check me-2" aria-hidden="true"></i>Services
+                </h2>
+                <p class="small ops-card-subtitle mb-0">{{ service_count }} listed bookable services</p>
+            </div>
+        </div>
+        <div class="p-3 p-lg-4">
+            <div class="table-responsive">
+                <table id="services-table" class="table ops-table align-middle w-100 mb-0">
+                    <thead>
+                        <tr>
+                            <th scope="col">Service</th>
+                            <th scope="col">Store</th>
+                            <th scope="col">Category</th>
+                            <th scope="col">Starting Price</th>
+                            <th scope="col">Status</th>
+                            <th scope="col">Created</th>
+                            <th class="text-end" scope="col" data-orderable="false">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in services %}
+                            <tr>
+                                <td class="fw-semibold">
+                                    <a href="#"
+                                       class="ops-row-link js-catalog-preview"
+                                       data-bs-toggle="modal"
+                                       data-bs-target="#catalogPreviewModal"
+                                       data-kind="Service"
+                                       data-item-type="service"
+                                       data-item-id="{{ item.pk }}"
+                                       data-title="{{ item.name }}"
+                                       data-store="{{ item.store.name }}"
+                                       data-category="{% if item.category %}{{ item.category.name }}{% else %}Uncategorized{% endif %}"
+                                       data-price="From MUR {{ item.starting_price }}"
+                                       data-extra="Bookable service"
+                                       data-status="{% if item.is_available %}Available{% else %}Unavailable{% endif %}{% if item.is_featured %} · Featured{% endif %}"
+                                       data-image="{% if item.image %}{{ item.image.url }}{% endif %}"
+                                       data-body="{{ item.description|default:'No description provided.' }}">
+                                        {{ item.name }}
+                                    </a>
+                                    {% if item.is_featured %}
+                                        <span class="badge rounded-pill bg-warning-subtle text-warning-emphasis ms-1">Featured</span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ item.store.name }}</td>
+                                <td>
+                                    {% if item.category %}
+                                        {{ item.category.name }}
+                                    {% else %}
+                                        <span class="text-secondary">—</span>
+                                    {% endif %}
+                                </td>
+                                <td class="text-nowrap" data-order="{{ item.starting_price }}">MUR {{ item.starting_price }}</td>
+                                <td>
+                                    {% if item.is_available %}
+                                        <span class="badge rounded-pill bg-success-subtle text-success-emphasis">Available</span>
+                                    {% else %}
+                                        <span class="badge rounded-pill bg-secondary-subtle text-secondary-emphasis">Unavailable</span>
+                                    {% endif %}
+                                </td>
+                                <td class="text-nowrap" data-order="{{ item.created_at|date:'U' }}">
+                                    {{ item.created_at|date:"d M Y" }}
+                                </td>
+                                <td class="text-end text-nowrap">
+                                    <div class="d-inline-flex gap-1">
+                                        <button type="button"
+                                                class="btn btn-sm btn-outline-dark js-catalog-preview"
+                                                data-bs-toggle="modal"
+                                                data-bs-target="#catalogPreviewModal"
+                                                data-kind="Service"
+                                                data-item-type="service"
+                                                data-item-id="{{ item.pk }}"
+                                                data-title="{{ item.name }}"
+                                                data-store="{{ item.store.name }}"
+                                                data-category="{% if item.category %}{{ item.category.name }}{% else %}Uncategorized{% endif %}"
+                                                data-price="From MUR {{ item.starting_price }}"
+                                                data-extra="Bookable service"
+                                                data-status="{% if item.is_available %}Available{% else %}Unavailable{% endif %}{% if item.is_featured %} · Featured{% endif %}"
+                                                data-image="{% if item.image %}{{ item.image.url }}{% endif %}"
+                                                data-body="{{ item.description|default:'No description provided.' }}">
+                                            View
+                                        </button>
+                                        <a href="{% url 'operations:service-edit' item.pk %}" class="btn btn-sm btn-outline-dark">Edit</a>
+                                        <form method="post" class="d-inline">
+                                            {% csrf_token %}
+                                            <input type="hidden" name="item_type" value="service">
+                                            <input type="hidden" name="item_id" value="{{ item.pk }}">
+                                            <button type="submit" name="action" value="toggle_available" class="btn btn-sm btn-outline-secondary">
+                                                {% if item.is_available %}Hide{% else %}Enable{% endif %}
+                                            </button>
+                                            <button type="submit" name="action" value="delete" class="btn btn-sm btn-outline-danger" onclick="return confirm('Delete service {{ item.name }}?');">
+                                                Delete
+                                            </button>
+                                        </form>
+                                    </div>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </section>
+
+    {# Shared Product / Service Preview & Moderation Modal #}
+    <div class="modal fade" id="catalogPreviewModal" tabindex="-1" aria-labelledby="catModalTitle" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content ops-card border-0">
+                <div class="ops-card-header d-flex align-items-start justify-content-between gap-2 px-3 px-lg-4 py-3">
+                    <div>
+                        <span id="catModalKind" class="badge rounded-pill bg-secondary-subtle text-secondary-emphasis mb-1"></span>
+                        <h3 class="h5 ops-card-title mb-0" id="catModalTitle"></h3>
+                    </div>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+
+                <form method="post">
+                    {% csrf_token %}
+                    <input type="hidden" name="item_type" id="catModalItemType">
+                    <input type="hidden" name="item_id" id="catModalItemId">
+
+                    <div class="modal-body p-3 p-lg-4">
+                        <div class="row g-3 mb-3 small text-secondary">
+                            <div class="col-sm-6">
+                                <strong class="text-dark d-block">Store</strong>
+                                <span id="catModalStore"></span>
+                            </div>
+                            <div class="col-sm-6">
+                                <strong class="text-dark d-block">Category</strong>
+                                <span id="catModalCategory"></span>
+                            </div>
+                            <div class="col-sm-6">
+                                <strong class="text-dark d-block">Price</strong>
+                                <span id="catModalPrice"></span>
+                            </div>
+                            <div class="col-sm-6">
+                                <strong class="text-dark d-block">Inventory / Details</strong>
+                                <span id="catModalExtra"></span>
+                            </div>
+                            <div class="col-12">
+                                <strong class="text-dark d-block">Visibility</strong>
+                                <span id="catModalStatus"></span>
+                            </div>
+                        </div>
+
+                        <div id="catModalImgWrapper" class="mb-3 d-none">
+                            <img id="catModalImg" src="" alt="Item preview" class="img-fluid rounded border" style="max-height: 240px; object-fit: cover;">
+                        </div>
+
+                        <div class="p-3 bg-light rounded">
+                            <strong class="d-block small text-uppercase text-secondary mb-1">Description</strong>
+                            <p id="catModalBody" class="mb-0" style="white-space: pre-line;"></p>
+                        </div>
+                    </div>
+
+                    <div class="modal-footer border-top d-flex flex-wrap justify-content-between gap-2 px-3 px-lg-4 py-3">
+                        <div class="d-flex flex-wrap gap-2">
+                            <button type="submit" name="action" value="toggle_featured" class="btn btn-sm ops-btn-gold-outline">Toggle featured</button>
+                            <button type="submit" name="action" value="toggle_available" class="btn btn-sm btn-outline-dark">Toggle available</button>
+                        </div>
+                        <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-dismiss="modal">Close</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block extra_js %}
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script src="https://cdn.datatables.net/2.1.8/js/dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/2.1.8/js/dataTables.bootstrap5.min.js"></script>
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            const commonConfig = {
+                pageLength: 10,
+                lengthMenu: [5, 10, 25, 50],
+                order: [],
+            };
+
+            new DataTable("#products-table", {
+                ...commonConfig,
+                language: {
+                    emptyTable: "No products listed in the catalog.",
+                    search: "Search products:",
+                },
+            });
+
+            new DataTable("#services-table", {
+                ...commonConfig,
+                language: {
+                    emptyTable: "No services listed in the catalog.",
+                    search: "Search services:",
+                },
+            });
+
+            const modal = document.getElementById("catalogPreviewModal");
+            if (modal) {
+                modal.addEventListener("show.bs.modal", function (event) {
+                    const btn = event.relatedTarget;
+                    if (!btn) return;
+
+                    document.getElementById("catModalItemType").value = btn.dataset.itemType || "";
+                    document.getElementById("catModalItemId").value = btn.dataset.itemId || "";
+                    document.getElementById("catModalKind").textContent = btn.dataset.kind || "";
+                    document.getElementById("catModalTitle").textContent = btn.dataset.title || "";
+                    document.getElementById("catModalStore").textContent = btn.dataset.store || "";
+                    document.getElementById("catModalCategory").textContent = btn.dataset.category || "";
+                    document.getElementById("catModalPrice").textContent = btn.dataset.price || "";
+                    document.getElementById("catModalExtra").textContent = btn.dataset.extra || "";
+                    document.getElementById("catModalStatus").textContent = btn.dataset.status || "";
+                    document.getElementById("catModalBody").textContent = btn.dataset.body || "";
+
+                    const imgWrapper = document.getElementById("catModalImgWrapper");
+                    const imgEl = document.getElementById("catModalImg");
+                    if (btn.dataset.image) {
+                        imgEl.src = btn.dataset.image;
+                        imgWrapper.classList.remove("d-none");
+                    } else {
+                        imgEl.src = "";
+                        imgWrapper.classList.add("d-none");
+                    }
+                });
+            }
+        });
+    </script>
+{% endblock %}

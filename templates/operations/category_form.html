@@ -1,0 +1,49 @@
+{% extends "operations/base.html" %}
+
+{% block title %}{% if category %}Edit Category{% else %}New Category{% endif %} | The Spotlight{% endblock %}
+{% block breadcrumb %}Categories{% endblock %}
+{% block page_kicker %}Administration{% endblock %}
+{% block page_heading %}{% if category %}Edit category: {{ category.name }}{% else %}Create browsing category{% endif %}{% endblock %}
+{% block page_description %}Add or update a public store browsing category.{% endblock %}
+{% block categories_nav_class %}active{% endblock %}
+
+{% block page_actions %}
+    <a class="btn ops-btn-gold-outline" href="{% url 'operations:categories' %}">
+        <i class="bi bi-arrow-left me-1" aria-hidden="true"></i>
+        Back to categories
+    </a>
+{% endblock %}
+
+{% block content %}
+    <section class="ops-card w-100" aria-labelledby="category-form-heading">
+        <div class="ops-card-header px-3 px-lg-4 py-3">
+            <h2 class="h5 ops-card-title mb-1" id="category-form-heading">
+                <i class="bi bi-tag me-2" aria-hidden="true"></i>Category details
+            </h2>
+            <p class="small ops-card-subtitle mb-0">Leave slug blank to generate automatically from the name</p>
+        </div>
+        <div class="p-3 p-lg-4">
+            <form method="post">
+                {% csrf_token %}
+
+                <div class="row g-3 mb-4">
+                    <div class="col-md-6">
+                        <label class="form-label fw-medium" for="name">Category name *</label>
+                        <input type="text" id="name" name="name" maxlength="100" value="{{ category.name|default:'' }}" class="form-control" required>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label fw-medium" for="slug">Slug (optional)</label>
+                        <input type="text" id="slug" name="slug" maxlength="110" value="{{ category.slug|default:'' }}" class="form-control" placeholder="auto-generated-from-name">
+                    </div>
+                </div>
+
+                <div class="d-flex flex-wrap gap-2 pt-3 border-top">
+                    <button type="submit" class="btn btn-dark">
+                        <i class="bi bi-check2 me-1" aria-hidden="true"></i>Save category
+                    </button>
+                    <a href="{% url 'operations:categories' %}" class="btn ops-btn-gold-outline">Cancel</a>
+                </div>
+            </form>
+        </div>
+    </section>
+{% endblock %}

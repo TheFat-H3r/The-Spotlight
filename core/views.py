@@ -21,7 +21,7 @@ def home(request):
             max_price = None
 
     # 2. Base Querysets (only active/published records)
-    active_ads = Advertisement.objects.filter(is_active=True).order_by("-created_at")
+    active_ads = Advertisement.objects.filter(is_active=True, status="active").order_by("-created_at")
 
     featured_stores = (
         Store.objects.filter(status="active", is_featured=True)
@@ -84,7 +84,7 @@ def home(request):
     featured_categories = Category.objects.all().order_by("name")
 
     advertisements = (
-        Advertisement.objects.filter(is_active=True)
+        Advertisement.objects.filter(is_active=True, status="active")
         .select_related("store")
         .order_by("-created_at")[:4]
     )

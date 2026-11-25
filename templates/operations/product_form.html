@@ -1,0 +1,107 @@
+{% extends "operations/base.html" %}
+
+{% block title %}{% if product %}Edit {{ product.name }}{% else %}New Product{% endif %} | The Spotlight{% endblock %}
+{% block breadcrumb %}Catalog{% endblock %}
+{% block page_kicker %}Administration{% endblock %}
+{% block page_heading %}{% if product %}Edit product: {{ product.name }}{% else %}Create product{% endif %}{% endblock %}
+{% block page_description %}Configure product pricing, stock quantity, category, and storefront visibility.{% endblock %}
+{% block catalog_nav_class %}active{% endblock %}
+
+{% block page_actions %}
+    <a class="btn ops-btn-gold-outline" href="{% url 'operations:catalog' %}">
+        <i class="bi bi-arrow-left me-1" aria-hidden="true"></i>
+        Back to catalog
+    </a>
+{% endblock %}
+
+{% block content %}
+    <section class="ops-card w-100" aria-labelledby="product-form-heading">
+        <div class="ops-card-header px-3 px-lg-4 py-3">
+            <h2 class="h5 ops-card-title mb-1" id="product-form-heading">
+                <i class="bi bi-box-seam me-2" aria-hidden="true"></i>Product details
+            </h2>
+            <p class="small ops-card-subtitle mb-0">Fields marked with * are required</p>
+        </div>
+        <div class="p-3 p-lg-4">
+            <form method="post" enctype="multipart/form-data">
+                {% csrf_token %}
+
+                <div class="row g-3 mb-3">
+                    <div class="col-md-4">
+                        <label class="form-label fw-medium" for="store">Store *</label>
+                        <select id="store" name="store" class="form-select" required>
+                            <option value="">Select product store...</option>
+                            {% for s in stores %}
+                                <option value="{{ s.pk }}" {% if product and product.store_id == s.pk %}selected{% endif %}>
+                                    {{ s.name }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-5">
+                        <label class="form-label fw-medium" for="name">Product name *</label>
+                        <input type="text" id="name" name="name" maxlength="255" value="{{ product.name|default:'' }}" class="form-control" required>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label fw-medium" for="category">Category</label>
+                        <select id="category" name="category" class="form-select">
+                            <option value="">Uncategorized</option>
+                            {% for cat in categories %}
+                                <option value="{{ cat.pk }}" {% if product and product.category_id == cat.pk %}selected{% endif %}>
+                                    {{ cat.name }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label fw-medium" for="description">Description</label>
+                    <textarea id="description" name="description" rows="4" class="form-control">{{ product.description|default:'' }}</textarea>
+                </div>
+
+                <div class="row g-3 mb-3">
+                    <div class="col-md-3">
+                        <label class="form-label fw-medium" for="price">Price (MUR)</label>
+                        <input type="number" step="0.01" min="0" id="price" name="price" value="{{ product.price|default:'0.00' }}" class="form-control">
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label fw-medium" for="stock">Stock quantity</label>
+                        <input type="number" min="0" id="stock" name="stock" value="{{ product.stock|default:'0' }}" class="form-control">
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label fw-medium" for="slug">Slug (optional)</label>
+                        <input type="text" id="slug" name="slug" maxlength="255" value="{{ product.slug|default:'' }}" class="form-control" placeholder="auto-generated">
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label fw-medium" for="image">Product image</label>
+                        {% if product and product.image %}
+                            <div class="mb-2">
+                                <img src="{{ product.image.url }}" alt="{{ product.name }}" class="rounded border" style="height: 56px; width: 56px; object-fit: cover;">
+                            </div>
+                        {% endif %}
+                        <input type="file" id="image" name="image" accept="image/*" class="form-control">
+                    </div>
+                </div>
+
+                <div class="d-flex flex-wrap gap-4 mb-4">
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="is_available" name="is_available" {% if product %}{% if product.is_available %}checked{% endif %}{% else %}checked{% endif %}>
+                        <label class="form-check-label fw-medium" for="is_available">Available for purchase</label>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="is_featured" name="is_featured" {% if product and product.is_featured %}checked{% endif %}>
+                        <label class="form-check-label fw-medium" for="is_featured">Featured product</label>
+                    </div>
+                </div>
+
+                <div class="d-flex flex-wrap gap-2 pt-3 border-top">
+                    <button type="submit" class="btn btn-dark">
+                        <i class="bi bi-check2 me-1" aria-hidden="true"></i>Save product
+                    </button>
+                    <a href="{% url 'operations:catalog' %}" class="btn ops-btn-gold-outline">Cancel</a>
+                </div>
+            </form>
+        </div>
+    </section>
+{% endblock %}

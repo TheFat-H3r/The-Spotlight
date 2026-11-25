@@ -1,0 +1,176 @@
+{% extends "operations/base.html" %}
+
+{% block title %}{{ payout.reference }} | Payout Details{% endblock %}
+{% block breadcrumb %}Payout {{ payout.reference }}{% endblock %}
+{% block page_kicker %}Settlement Breakdown{% endblock %}
+{% block page_heading %}{{ payout.reference }} — {{ payout.store.name }}{% endblock %}
+{% block page_description %}
+    Period: {{ payout.period_start|date:"d M Y" }} to {{ payout.period_end|date:"d M Y" }}
+{% endblock %}
+{% block payouts_nav_class %}active{% endblock %}
+
+{% block extra_css %}
+    <link rel="stylesheet" href="https://cdn.datatables.net/2.1.8/css/dataTables.bootstrap5.min.css">
+    <style>
+        .ops-card-header {
+            background: var(--ops-black);
+            border-bottom: 2px solid var(--ops-gold);
+            border-top-left-radius: calc(.85rem - 1px);
+            border-top-right-radius: calc(.85rem - 1px);
+            color: #fff;
+        }
+        .ops-card-header .ops-card-title { color: #fff; font-weight: 700; }
+        .ops-card-header .ops-card-title i { color: var(--ops-gold); }
+        .ops-btn-gold-outline {
+            border: 1px solid rgba(228, 173, 67, 0.45);
+            color: var(--ops-gold);
+            font-weight: 600;
+        }
+        .ops-btn-gold-outline:hover {
+            background: var(--ops-gold);
+            border-color: var(--ops-gold);
+            color: var(--ops-black);
+        }
+        .ops-table thead th {
+            background-color: var(--ops-black-elevated) !important;
+            color: var(--ops-gold) !important;
+            font-size: .74rem;
+            font-weight: 700;
+            letter-spacing: .08em;
+            padding: .85rem .75rem;
+            text-transform: uppercase;
+        }
+        .ops-table thead th span.dt-column-order { opacity: 1 !important; }
+        .ops-table thead th span.dt-column-order::before,
+        .ops-table thead th span.dt-column-order::after {
+            color: rgba(255, 255, 255, 0.75) !important;
+            opacity: 1 !important;
+        }
+        .ops-table thead th.dt-orderable-asc:hover span.dt-column-order::before,
+        .ops-table thead th.dt-orderable-desc:hover span.dt-column-order::after,
+        .ops-table thead th.dt-ordering-asc span.dt-column-order::before,
+        .ops-table thead th.dt-ordering-desc span.dt-column-order::after {
+            color: var(--ops-gold) !important;
+        }
+    </style>
+{% endblock %}
+
+{% block page_actions %}
+    <a class="btn ops-btn-gold-outline" href="{% url 'operations:payouts' %}">
+        <i class="bi bi-arrow-left me-1" aria-hidden="true"></i>All payouts
+    </a>
+{% endblock %}
+
+{% block content %}
+    {# Settlement Summary Strip #}
+    <section class="row g-3 mb-4">
+        <div class="col-sm-6 col-xl-3">
+            <div class="ops-card p-3 p-lg-4 h-100">
+                <span class="small text-secondary d-block mb-1">Gross Sales</span>
+                <span class="fs-4 fw-bold">MUR {{ payout.gross_sales|floatformat:2 }}</span>
+            </div>
+        </div>
+        <div class="col-sm-6 col-xl-3">
+            <div class="ops-card p-3 p-lg-4 h-100">
+                <span class="small text-secondary d-block mb-1">Exempt Sales (Trial / Grace)</span>
+                <span class="fs-4 fw-bold text-success">MUR {{ payout.exempt_sales|floatformat:2 }}</span>
+            </div>
+        </div>
+        <div class="col-sm-6 col-xl-3">
+            <div class="ops-card p-3 p-lg-4 h-100">
+                <span class="small text-secondary d-block mb-1">Commission ({{ payout.applied_commission_rate }}%)</span>
+                <span class="fs-4 fw-bold text-danger">- MUR {{ payout.commission_amount|floatformat:2 }}</span>
+            </div>
+        </div>
+        <div class="col-sm-6 col-xl-3">
+            <div class="ops-card p-3 p-lg-4 h-100" style="border-color: var(--ops-gold);">
+                <span class="small text-secondary d-block mb-1">Net Vendor Payout</span>
+                <span class="fs-4 fw-bold">MUR {{ payout.net_payout|floatformat:2 }}</span>
+            </div>
+        </div>
+    </section>
+
+    {# Line Items Table #}
+    <section class="ops-card">
+        <div class="ops-card-header px-3 px-lg-4 py-3 d-flex justify-content-between align-items-center">
+            <h2 class="h5 ops-card-title mb-0">
+                <i class="bi bi-receipt me-2" aria-hidden="true"></i>Included Orders &amp; Bookings ({{ items.count }})
+            </h2>
+            {% if payout.status == "paid" %}
+                <span class="badge rounded-pill bg-success-subtle text-success-emphasis">
+                    Paid via {{ payout.payment_method }} ({{ payout.transaction_reference }})
+                </span>
+            {% endif %}
+        </div>
+        <div class="p-3 p-lg-4">
+            <div class="table-responsive">
+                <table id="payout-items-table" class="table ops-table align-middle w-100 mb-0">
+                    <thead>
+                        <tr>
+                            <th scope="col">Type</th>
+                            <th scope="col">Reference</th>
+                            <th scope="col">Waiver Status</th>
+                            <th class="text-end" scope="col">Gross Amount</th>
+                            <th class="text-end" scope="col">Rate</th>
+                            <th class="text-end" scope="col">Commission</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in items %}
+                            <tr>
+                                <td>
+                                    {% if item.order %}
+                                        <span class="badge bg-dark text-warning">Order</span>
+                                    {% else %}
+                                        <span class="badge bg-secondary">Booking</span>
+                                    {% endif %}
+                                </td>
+                                <td class="fw-semibold">
+                                    {% if item.order %}
+                                        {{ item.order.order_number }}
+                                    {% else %}
+                                        {{ item.booking.reference }}
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if item.is_waived %}
+                                        <span class="badge rounded-pill bg-success-subtle text-success-emphasis">
+                                            0% ({{ item.waiver_reason|default:"Waived" }})
+                                        </span>
+                                    {% else %}
+                                        <span class="text-secondary small">Standard rate</span>
+                                    {% endif %}
+                                </td>
+                                <td class="text-end text-nowrap" data-order="{{ item.gross_amount }}">
+                                    MUR {{ item.gross_amount|floatformat:2 }}
+                                </td>
+                                <td class="text-end">{{ item.commission_rate }}%</td>
+                                <td class="text-end fw-semibold text-nowrap" data-order="{{ item.commission_amount }}">
+                                    MUR {{ item.commission_amount|floatformat:2 }}
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </section>
+{% endblock %}
+
+{% block extra_js %}
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script src="https://cdn.datatables.net/2.1.8/js/dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/2.1.8/js/dataTables.bootstrap5.min.js"></script>
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            new DataTable("#payout-items-table", {
+                pageLength: 25,
+                order: [],
+                language: {
+                    emptyTable: "No line items attached to this payout.",
+                    search: "Filter items:",
+                },
+            });
+        });
+    </script>
+{% endblock %}

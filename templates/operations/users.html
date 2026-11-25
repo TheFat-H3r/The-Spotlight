@@ -1,0 +1,357 @@
+{% extends "operations/base.html" %}
+
+{% block title %}Users &amp; Roles | The Spotlight{% endblock %}
+{% block breadcrumb %}Users{% endblock %}
+{% block page_kicker %}Administration{% endblock %}
+{% block page_heading %}Users &amp; roles{% endblock %}
+{% block page_description %}
+    Manage platform accounts, assign customer, vendor, or administrator roles, and inspect campus details.
+{% endblock %}
+{% block users_nav_class %}active{% endblock %}
+
+{% block extra_css %}
+    <link rel="stylesheet" href="https://cdn.datatables.net/2.1.8/css/dataTables.bootstrap5.min.css">
+{% endblock %}
+
+{% block page_actions %}
+    <a class="btn ops-btn-gold-outline" href="{% url 'admin:accounts_user_changelist' %}">
+        <i class="bi bi-sliders me-1" aria-hidden="true"></i>
+        Django admin
+    </a>
+    <a class="btn btn-dark" href="{% url 'operations:user-add' %}">
+        <i class="bi bi-person-plus me-1" aria-hidden="true"></i>
+        New user
+    </a>
+{% endblock %}
+
+{% block content %}
+    {# KPI Summary Row #}
+    <section class="row g-3 mb-4" aria-label="Users summary">
+        <div class="col-sm-6 col-xl-3">
+            <article class="ops-card ops-kpi-card h-100 p-3 p-lg-4">
+                <div class="d-flex align-items-start justify-content-between">
+                    <div>
+                        <p class="small text-secondary fw-medium mb-2">Total users</p>
+                        <p class="fs-2 fw-bold ops-kpi-value mb-0">{{ total_user_count }}</p>
+                    </div>
+                    <span class="ops-kpi-icon">
+                        <i class="bi bi-people fs-5" aria-hidden="true"></i>
+                    </span>
+                </div>
+                <p class="small text-secondary mb-0 mt-3">All registered Spotlight accounts</p>
+            </article>
+        </div>
+        <div class="col-sm-6 col-xl-3">
+            <article class="ops-card ops-kpi-card h-100 p-3 p-lg-4">
+                <div class="d-flex align-items-start justify-content-between">
+                    <div>
+                        <p class="small text-secondary fw-medium mb-2">Customers</p>
+                        <p class="fs-2 fw-bold ops-kpi-value mb-0">{{ customer_count }}</p>
+                    </div>
+                    <span class="ops-kpi-icon">
+                        <i class="bi bi-bag-check fs-5" aria-hidden="true"></i>
+                    </span>
+                </div>
+                <p class="small text-secondary mb-0 mt-3">Standard buyer accounts</p>
+            </article>
+        </div>
+        <div class="col-sm-6 col-xl-3">
+            <article class="ops-card ops-kpi-card h-100 p-3 p-lg-4">
+                <div class="d-flex align-items-start justify-content-between">
+                    <div>
+                        <p class="small text-secondary fw-medium mb-2">Vendors</p>
+                        <p class="fs-2 fw-bold ops-kpi-value mb-0">{{ vendor_count }}</p>
+                    </div>
+                    <span class="ops-kpi-icon">
+                        <i class="bi bi-shop fs-5" aria-hidden="true"></i>
+                    </span>
+                </div>
+                <p class="small text-secondary mb-0 mt-3">Store owners &amp; service providers</p>
+            </article>
+        </div>
+        <div class="col-sm-6 col-xl-3">
+            <article class="ops-card ops-kpi-card h-100 p-3 p-lg-4">
+                <div class="d-flex align-items-start justify-content-between">
+                    <div>
+                        <p class="small text-secondary fw-medium mb-2">Administrators</p>
+                        <p class="fs-2 fw-bold ops-kpi-value mb-0">{{ admin_count }}</p>
+                    </div>
+                    <span class="ops-kpi-icon">
+                        <i class="bi bi-shield-lock fs-5" aria-hidden="true"></i>
+                    </span>
+                </div>
+                <p class="small text-secondary mb-0 mt-3">Operations &amp; platform staff</p>
+            </article>
+        </div>
+    </section>
+
+    {# Users Directory Table #}
+    <section class="ops-card" aria-labelledby="users-heading">
+        <div class="ops-card-header d-flex flex-wrap align-items-center justify-content-between gap-2 px-3 px-lg-4 py-3">
+            <div>
+                <h2 class="h5 ops-card-title mb-1" id="users-heading">
+                    <i class="bi bi-people me-2" aria-hidden="true"></i>Platform users
+                </h2>
+                <p class="small ops-card-subtitle mb-0">{{ total_user_count }} accounts registered</p>
+            </div>
+        </div>
+        <div class="p-3 p-lg-4">
+            <div class="table-responsive">
+                <table id="users-table" class="table ops-table align-middle w-100 mb-0">
+                    <thead>
+                        <tr>
+                            <th scope="col">User</th>
+                            <th scope="col">Role</th>
+                            <th scope="col">Campus Info</th>
+                            <th scope="col">Auth &amp; Stores</th>
+                            <th scope="col">Status</th>
+                            <th scope="col">Joined</th>
+                            <th class="text-end" scope="col" data-orderable="false">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for u in users %}
+                            <tr>
+                                <td>
+                                    <div class="fw-semibold">
+                                        <a href="#"
+                                           class="ops-row-link js-user-preview"
+                                           data-bs-toggle="modal"
+                                           data-bs-target="#userPreviewModal"
+                                           data-id="{{ u.pk }}"
+                                           data-name="{{ u.full_name }}"
+                                           data-email="{{ u.email }}"
+                                           data-phone="{{ u.phone|default:'—' }}"
+                                           data-student-id="{{ u.student_id|default:'—' }}"
+                                           data-role="{{ u.role }}"
+                                           data-role-label="{{ u.get_role_display }}"
+                                           data-course="{{ u.get_course_display|default:'—' }}"
+                                           data-cohort="{{ u.cohort|default:'—' }}"
+                                           data-residence="{{ u.get_residence_display|default:'—' }}"
+                                           data-room="{{ u.room_number|default:'—' }}"
+                                           data-auth="{{ u.get_auth_provider_display }}"
+                                           data-stores="{{ u.store_count }} store{{ u.store_count|pluralize }}"
+                                           data-verified="{% if u.is_email_verified %}Verified{% else %}Unverified{% endif %}"
+                                           data-status="{% if u.is_active %}Active{% else %}Suspended{% endif %}"
+                                           data-joined="{{ u.date_joined|date:'d M Y, H:i' }}"
+                                           data-avatar="{% if u.avatar %}{{ u.avatar.url }}{% endif %}">
+                                            {{ u.full_name }}
+                                        </a>
+                                    </div>
+                                    <div class="small text-secondary">
+                                        {{ u.email }}
+                                        {% if u.is_email_verified %}
+                                            <i class="bi bi-patch-check-fill text-success ms-1" title="Email verified"></i>
+                                        {% endif %}
+                                    </div>
+                                </td>
+                                <td>
+                                    {% if u.role == "admin" %}
+                                        <span class="badge rounded-pill bg-dark text-white">{{ u.get_role_display }}</span>
+                                    {% elif u.role == "vendor" %}
+                                        <span class="badge rounded-pill bg-warning-subtle text-warning-emphasis">{{ u.get_role_display }}</span>
+                                    {% else %}
+                                        <span class="badge rounded-pill bg-secondary-subtle text-secondary-emphasis">{{ u.get_role_display }}</span>
+                                    {% endif %}
+                                </td>
+                                <td class="small">
+                                    {% if u.course or u.cohort %}
+                                        <div class="fw-medium">{{ u.course|default:"" }} {{ u.cohort|default:"" }}</div>
+                                    {% endif %}
+                                    {% if u.residence or u.room_number %}
+                                        <div class="text-secondary">{{ u.residence|default:"" }} {% if u.room_number %}· {{ u.room_number }}{% endif %}</div>
+                                    {% endif %}
+                                    {% if not u.course and not u.cohort and not u.residence and not u.room_number %}
+                                        <span class="text-secondary">—</span>
+                                    {% endif %}
+                                </td>
+                                <td class="small text-secondary text-nowrap">
+                                    <div>{{ u.get_auth_provider_display }}</div>
+                                    <div>{{ u.store_count }} store{{ u.store_count|pluralize }}</div>
+                                </td>
+                                <td>
+                                    {% if u.is_active %}
+                                        <span class="badge rounded-pill bg-success-subtle text-success-emphasis">Active</span>
+                                    {% else %}
+                                        <span class="badge rounded-pill bg-danger-subtle text-danger-emphasis">Suspended</span>
+                                    {% endif %}
+                                </td>
+                                <td class="text-nowrap" data-order="{{ u.date_joined|date:'U' }}">
+                                    {{ u.date_joined|date:"d M Y" }}
+                                </td>
+                                <td class="text-end text-nowrap">
+                                    <div class="d-inline-flex gap-1">
+                                        <button type="button"
+                                                class="btn btn-sm btn-outline-dark js-user-preview"
+                                                data-bs-toggle="modal"
+                                                data-bs-target="#userPreviewModal"
+                                                data-id="{{ u.pk }}"
+                                                data-name="{{ u.full_name }}"
+                                                data-email="{{ u.email }}"
+                                                data-phone="{{ u.phone|default:'—' }}"
+                                                data-student-id="{{ u.student_id|default:'—' }}"
+                                                data-role="{{ u.role }}"
+                                                data-role-label="{{ u.get_role_display }}"
+                                                data-course="{{ u.get_course_display|default:'—' }}"
+                                                data-cohort="{{ u.cohort|default:'—' }}"
+                                                data-residence="{{ u.get_residence_display|default:'—' }}"
+                                                data-room="{{ u.room_number|default:'—' }}"
+                                                data-auth="{{ u.get_auth_provider_display }}"
+                                                data-stores="{{ u.store_count }} store{{ u.store_count|pluralize }}"
+                                                data-verified="{% if u.is_email_verified %}Verified{% else %}Unverified{% endif %}"
+                                                data-status="{% if u.is_active %}Active{% else %}Suspended{% endif %}"
+                                                data-joined="{{ u.date_joined|date:'d M Y, H:i' }}"
+                                                data-avatar="{% if u.avatar %}{{ u.avatar.url }}{% endif %}">
+                                            View
+                                        </button>
+                                        <a href="{% url 'operations:user-edit' u.pk %}" class="btn btn-sm btn-outline-dark">Edit</a>
+                                        {% if u.pk != request.user.pk %}
+                                            <form method="post" class="d-inline">
+                                                {% csrf_token %}
+                                                <input type="hidden" name="user_id" value="{{ u.pk }}">
+                                                <button type="submit" name="action" value="toggle_active" class="btn btn-sm btn-outline-secondary">
+                                                    {% if u.is_active %}Suspend{% else %}Activate{% endif %}
+                                                </button>
+                                            </form>
+                                        {% endif %}
+                                    </div>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </section>
+
+    {# User Inspection & Quick Role Change Modal #}
+    <div class="modal fade" id="userPreviewModal" tabindex="-1" aria-labelledby="userModalName" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content ops-card border-0">
+                <div class="ops-card-header d-flex align-items-start justify-content-between gap-2 px-3 px-lg-4 py-3">
+                    <div class="d-flex align-items-center gap-3">
+                        <img id="userModalAvatar" src="" alt="User avatar" class="rounded-circle border d-none" style="width: 48px; height: 48px; object-fit: cover;">
+                        <div>
+                            <span id="userModalRoleBadge" class="badge rounded-pill bg-secondary-subtle text-secondary-emphasis mb-1"></span>
+                            <h3 class="h5 ops-card-title mb-0" id="userModalName"></h3>
+                            <p id="userModalEmail" class="small text-secondary mb-0"></p>
+                        </div>
+                    </div>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+
+                <form method="post">
+                    {% csrf_token %}
+                    <input type="hidden" name="user_id" id="userModalId">
+
+                    <div class="modal-body p-3 p-lg-4">
+                        <div class="row g-3 mb-3 small text-secondary">
+                            <div class="col-sm-6">
+                                <strong class="text-dark d-block">Phone &amp; Student ID</strong>
+                                <span id="userModalPhone"></span> · ID: <span id="userModalStudentId"></span>
+                            </div>
+                            <div class="col-sm-6">
+                                <strong class="text-dark d-block">Course &amp; Cohort</strong>
+                                <span id="userModalCourse"></span> · <span id="userModalCohort"></span>
+                            </div>
+                            <div class="col-sm-6">
+                                <strong class="text-dark d-block">Residence &amp; Room</strong>
+                                <span id="userModalResidence"></span> · Room <span id="userModalRoom"></span>
+                            </div>
+                            <div class="col-sm-6">
+                                <strong class="text-dark d-block">Sign-in &amp; Stores</strong>
+                                <span id="userModalAuth"></span> · <span id="userModalStores"></span>
+                            </div>
+                            <div class="col-sm-6">
+                                <strong class="text-dark d-block">Account &amp; Email Status</strong>
+                                <span id="userModalStatus"></span> · <span id="userModalVerified"></span>
+                            </div>
+                            <div class="col-sm-6">
+                                <strong class="text-dark d-block">Date Joined</strong>
+                                <span id="userModalJoined"></span>
+                            </div>
+                        </div>
+
+                        <div class="p-3 bg-light rounded">
+                            <label for="userModalRoleSelect" class="form-label fw-medium small text-uppercase text-secondary mb-2">
+                                Assign Platform Role
+                            </label>
+                            <div class="d-flex flex-wrap gap-2">
+                                <select id="userModalRoleSelect" name="role" class="form-select form-select-sm" style="max-width: 240px;">
+                                    {% for value, label in roles %}
+                                        <option value="{{ value }}">{{ label }}</option>
+                                    {% endfor %}
+                                </select>
+                                <button type="submit" name="action" value="set_role" class="btn btn-sm btn-dark">
+                                    Update role
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="modal-footer border-top d-flex flex-wrap justify-content-between gap-2 px-3 px-lg-4 py-3">
+                        <div class="d-flex flex-wrap gap-2">
+                            <button type="submit" name="action" value="verify_email" class="btn btn-sm ops-btn-gold-outline">Verify email</button>
+                            <button type="submit" name="action" value="toggle_active" class="btn btn-sm btn-outline-dark">Suspend / Activate</button>
+                            <button type="submit" name="action" value="delete" class="btn btn-sm btn-outline-danger" onclick="return confirm('Delete this user account permanently?');">Delete</button>
+                        </div>
+                        <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-dismiss="modal">Close</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block extra_js %}
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script src="https://cdn.datatables.net/2.1.8/js/dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/2.1.8/js/dataTables.bootstrap5.min.js"></script>
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            new DataTable("#users-table", {
+                pageLength: 10,
+                lengthMenu: [5, 10, 25, 50],
+                order: [],
+                language: {
+                    emptyTable: "No users registered yet.",
+                    search: "Search users:",
+                },
+            });
+
+            const modal = document.getElementById("userPreviewModal");
+            if (modal) {
+                modal.addEventListener("show.bs.modal", function (event) {
+                    const btn = event.relatedTarget;
+                    if (!btn) return;
+
+                    document.getElementById("userModalId").value = btn.dataset.id || "";
+                    document.getElementById("userModalName").textContent = btn.dataset.name || "";
+                    document.getElementById("userModalEmail").textContent = btn.dataset.email || "";
+                    document.getElementById("userModalRoleBadge").textContent = btn.dataset.roleLabel || "";
+                    document.getElementById("userModalRoleSelect").value = btn.dataset.role || "customer";
+                    document.getElementById("userModalPhone").textContent = btn.dataset.phone || "";
+                    document.getElementById("userModalStudentId").textContent = btn.dataset.studentId || "";
+                    document.getElementById("userModalCourse").textContent = btn.dataset.course || "";
+                    document.getElementById("userModalCohort").textContent = btn.dataset.cohort || "";
+                    document.getElementById("userModalResidence").textContent = btn.dataset.residence || "";
+                    document.getElementById("userModalRoom").textContent = btn.dataset.room || "";
+                    document.getElementById("userModalAuth").textContent = btn.dataset.auth || "";
+                    document.getElementById("userModalStores").textContent = btn.dataset.stores || "";
+                    document.getElementById("userModalStatus").textContent = btn.dataset.status || "";
+                    document.getElementById("userModalVerified").textContent = btn.dataset.verified || "";
+                    document.getElementById("userModalJoined").textContent = btn.dataset.joined || "";
+
+                    const avatarEl = document.getElementById("userModalAvatar");
+                    if (btn.dataset.avatar) {
+                        avatarEl.src = btn.dataset.avatar;
+                        avatarEl.classList.remove("d-none");
+                    } else {
+                        avatarEl.src = "";
+                        avatarEl.classList.add("d-none");
+                    }
+                });
+            }
+        });
+    </script>
+{% endblock %}

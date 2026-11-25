@@ -1,0 +1,99 @@
+{% extends "operations/base.html" %}
+
+{% block title %}{{ page_title }} | The Spotlight{% endblock %}
+{% block breadcrumb %}{{ page_title }}{% endblock %}
+{% block page_kicker %}Operations Workspace{% endblock %}
+{% block page_heading %}{{ page_title }}{% endblock %}
+{% block page_description %}{{ page_description }}{% endblock %}
+
+{# Dynamically highlight the active sidebar link based on active_nav #}
+{% block overview_nav_class %}{% if active_nav == "overview" %}active{% endif %}{% endblock %}
+{% block authorize_stores_nav_class %}{% if active_nav == "authorize_stores" %}active{% endif %}{% endblock %}
+{% block authorize_ads_nav_class %}{% if active_nav == "authorize_ads" %}active{% endif %}{% endblock %}
+{% block complaints_nav_class %}{% if active_nav == "complaints" %}active{% endif %}{% endblock %}
+{% block stores_nav_class %}{% if active_nav == "stores" %}active{% endif %}{% endblock %}
+{% block categories_nav_class %}{% if active_nav == "categories" %}active{% endif %}{% endblock %}
+{% block products_services_nav_class %}{% if active_nav == "catalog" %}active{% endif %}{% endblock %}
+{% block users_nav_class %}{% if active_nav == "users" %}active{% endif %}{% endblock %}
+{% block orders_nav_class %}{% if active_nav == "orders" %}active{% endif %}{% endblock %}
+{% block bookings_nav_class %}{% if active_nav == "bookings" %}active{% endif %}{% endblock %}
+{% block payouts_nav_class %}{% if active_nav == "payouts" %}active{% endif %}{% endblock %}
+{% block notifications_nav_class %}{% if active_nav == "notifications" %}active{% endif %}{% endblock %}
+{% block reviews_nav_class %}{% if active_nav == "reviews" %}active{% endif %}{% endblock %}
+
+{% block page_actions %}
+    <a class="btn btn-outline-light btn-sm" href="{% url 'operations:admin-home' %}">
+        <i class="bi bi-arrow-left me-1" aria-hidden="true"></i>
+        Back to overview
+    </a>
+    <a class="btn btn-sm"
+       style="border: 1px solid rgba(228, 173, 67, 0.45); color: var(--ops-gold); font-weight: 600;"
+       href="{% url 'admin:index' %}">
+        <i class="bi bi-sliders me-1" aria-hidden="true"></i>
+        Django admin
+    </a>
+{% endblock %}
+
+{% block content %}
+    <section class="ops-card overflow-hidden">
+        <div class="px-4 py-3 d-flex align-items-center justify-content-between"
+             style="background: var(--ops-black); border-bottom: 2px solid var(--ops-gold);">
+            <span class="text-white fw-semibold small text-uppercase" style="letter-spacing: .08em;">
+                <i class="bi bi-hammer me-2" style="color: var(--ops-gold);" aria-hidden="true"></i>
+                Module Status
+            </span>
+            <span class="badge rounded-pill"
+                  style="background: var(--ops-gold-soft); color: var(--ops-gold); border: 1px solid rgba(228, 173, 67, 0.35);">
+                In Development
+            </span>
+        </div>
+
+        <div class="p-4 p-lg-5 text-center">
+            <div class="mx-auto mb-3 d-inline-flex align-items-center justify-content-center rounded-4"
+                 style="width: 4rem; height: 4rem; background: var(--ops-black); color: var(--ops-gold); box-shadow: 0 8px 20px rgba(10, 10, 12, .12);">
+                {% if active_nav == "authorize_stores" %}
+                    <i class="bi bi-patch-check fs-3" aria-hidden="true"></i>
+                {% elif active_nav == "authorize_ads" %}
+                    <i class="bi bi-megaphone fs-3" aria-hidden="true"></i>
+                {% elif active_nav == "complaints" %}
+                    <i class="bi bi-flag fs-3" aria-hidden="true"></i>
+                {% elif active_nav == "stores" %}
+                    <i class="bi bi-shop fs-3" aria-hidden="true"></i>
+                {% elif active_nav == "categories" %}
+                    <i class="bi bi-tags fs-3" aria-hidden="true"></i>
+                {% elif active_nav == "catalog" %}
+                    <i class="bi bi-box-seam fs-3" aria-hidden="true"></i>
+                {% elif active_nav == "users" %}
+                    <i class="bi bi-people fs-3" aria-hidden="true"></i>
+                {% elif active_nav == "orders" %}
+                    <i class="bi bi-bag-check fs-3" aria-hidden="true"></i>
+                {% elif active_nav == "bookings" %}
+                    <i class="bi bi-calendar2-check fs-3" aria-hidden="true"></i>
+                {% elif active_nav == "payouts" %}
+                    <i class="bi bi-wallet2 fs-3" aria-hidden="true"></i>
+                {% elif active_nav == "notifications" %}
+                    <i class="bi bi-bell fs-3" aria-hidden="true"></i>
+                {% elif active_nav == "reviews" %}
+                    <i class="bi bi-star-half fs-3" aria-hidden="true"></i>
+                {% else %}
+                    <i class="bi bi-tools fs-3" aria-hidden="true"></i>
+                {% endif %}
+            </div>
+
+            <h2 class="h4 fw-bold mb-2">{{ page_title }} workspace is ready to wire up</h2>
+            <p class="text-secondary mx-auto mb-4" style="max-width: 34rem;">
+                {{ page_description }} While this custom operations view is being built, you can manage records directly through Django administration.
+            </p>
+
+            <div class="d-flex flex-wrap justify-content-center gap-2">
+                <a class="btn btn-dark px-4" href="{% url 'admin:index' %}">
+                    <i class="bi bi-sliders me-2" style="color: var(--ops-gold);" aria-hidden="true"></i>
+                    Open Django Admin
+                </a>
+                <a class="btn btn-outline-secondary px-4" href="{% url 'operations:admin-home' %}">
+                    Return to Overview
+                </a>
+            </div>
+        </div>
+    </section>
+{% endblock %}

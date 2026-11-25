@@ -1,0 +1,112 @@
+{% extends "operations/base.html" %}
+
+{% block title %}{% if complaint %}Edit {{ complaint.reference }}{% else %}Log Complaint{% endif %} | The Spotlight{% endblock %}
+{% block breadcrumb %}Complaints{% endblock %}
+{% block page_kicker %}Administration{% endblock %}
+{% block page_heading %}{% if complaint %}Edit complaint {{ complaint.reference }}{% else %}Log new complaint{% endif %}{% endblock %}
+{% block page_description %}Record dispute details, assign a staff investigator, or update case status.{% endblock %}
+{% block complaints_nav_class %}active{% endblock %}
+
+{% block page_actions %}
+    <a class="btn ops-btn-gold-outline" href="{% url 'operations:complaints' %}">
+        <i class="bi bi-arrow-left me-1" aria-hidden="true"></i>
+        Back to complaints
+    </a>
+{% endblock %}
+
+{% block content %}
+    <section class="ops-card w-100" aria-labelledby="complaint-form-heading">
+        <div class="ops-card-header px-3 px-lg-4 py-3">
+            <h2 class="h5 ops-card-title mb-1" id="complaint-form-heading">
+                <i class="bi bi-shield-exclamation me-2" aria-hidden="true"></i>Complaint details
+            </h2>
+            <p class="small ops-card-subtitle mb-0">Fields marked with * are required</p>
+        </div>
+        <div class="p-3 p-lg-4">
+            <form method="post" enctype="multipart/form-data">
+                {% csrf_token %}
+
+                <div class="row g-3 mb-3">
+                    <div class="col-md-4">
+                        <label class="form-label fw-medium" for="category">Category</label>
+                        <select id="category" name="category" class="form-select">
+                            {% for value, label in categories %}
+                                <option value="{{ value }}" {% if complaint and complaint.category == value %}selected{% endif %}>
+                                    {{ label }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label fw-medium" for="priority">Priority</label>
+                        <select id="priority" name="priority" class="form-select">
+                            {% for value, label in priorities %}
+                                <option value="{{ value }}" {% if complaint and complaint.priority == value %}selected{% elif not complaint and value == 'medium' %}selected{% endif %}>
+                                    {{ label }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label fw-medium" for="status">Status</label>
+                        <select id="status" name="status" class="form-select">
+                            {% for value, label in statuses %}
+                                <option value="{{ value }}" {% if complaint and complaint.status == value %}selected{% elif not complaint and value == 'open' %}selected{% endif %}>
+                                    {{ label }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+
+                <div class="row g-3 mb-3">
+                    <div class="col-md-8">
+                        <label class="form-label fw-medium" for="subject">Subject *</label>
+                        <input type="text" id="subject" name="subject" maxlength="180" value="{{ complaint.subject|default:'' }}" class="form-control" required>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label fw-medium" for="assigned_to">Assigned staff</label>
+                        <select id="assigned_to" name="assigned_to" class="form-select">
+                            <option value="">Unassigned</option>
+                            {% for staff in staff_users %}
+                                <option value="{{ staff.pk }}" {% if complaint and complaint.assigned_to_id == staff.pk %}selected{% endif %}>
+                                    {{ staff.full_name|default:staff.email }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label fw-medium" for="description">Description *</label>
+                    <textarea id="description" name="description" rows="4" class="form-control" required>{{ complaint.description|default:'' }}</textarea>
+                </div>
+
+                <div class="row g-3 mb-3">
+                    <div class="col-md-6">
+                        <label class="form-label fw-medium" for="evidence">Evidence file (optional)</label>
+                        {% if complaint and complaint.evidence %}
+                            <div class="mb-2">
+                                <a href="{{ complaint.evidence.url }}" target="_blank" rel="noopener noreferrer" class="small">
+                                    Current attachment: {{ complaint.evidence.name }}
+                                </a>
+                            </div>
+                        {% endif %}
+                        <input type="file" id="evidence" name="evidence" class="form-control">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label fw-medium" for="resolution_notes">Internal resolution notes</label>
+                        <textarea id="resolution_notes" name="resolution_notes" rows="2" class="form-control">{{ complaint.resolution_notes|default:'' }}</textarea>
+                    </div>
+                </div>
+
+                <div class="d-flex flex-wrap gap-2 pt-3 border-top">
+                    <button type="submit" class="btn btn-dark">
+                        <i class="bi bi-check2 me-1" aria-hidden="true"></i>Save complaint
+                    </button>
+                    <a href="{% url 'operations:complaints' %}" class="btn ops-btn-gold-outline">Cancel</a>
+                </div>
+            </form>
+        </div>
+    </section>
+{% endblock %}
