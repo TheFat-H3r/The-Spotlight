@@ -54,11 +54,8 @@ INSTALLED_APPS = [
     'stores',
     'transactions',
     'marketing',
-<<<<<<< HEAD
     'shopkeeper',
-=======
     'operations',
->>>>>>> main
 ]
 
 AUTH_USER_MODEL = "accounts.User"
@@ -87,11 +84,8 @@ TEMPLATES = [
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
                 "transactions.context_processors.cart_count",
-<<<<<<< HEAD
                 "shopkeeper.context_processors.vendor_dashboard_context",
-=======
                 "operations.context_processors.operations_sidebar_counts",
->>>>>>> main
             ],
         },
     },
@@ -152,11 +146,7 @@ SOCIALACCOUNT_QUERY_EMAIL = True
 SOCIALACCOUNT_AUTO_SIGNUP = True
 SOCIALACCOUNT_STORE_TOKENS = False
 
-<<<<<<< HEAD
 LOGIN_URL = 'accounts:login'
-=======
-LOGIN_URL = "accounts:login"
->>>>>>> main
 LOGIN_REDIRECT_URL = "/"
 LOGOUT_REDIRECT_URL = "/login/"
 
