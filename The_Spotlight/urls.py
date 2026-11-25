@@ -6,6 +6,7 @@ from The_Spotlight import settings # type: ignore
 urlpatterns = [
     path('', include('core.urls')),
     path('admin/', admin.site.urls),
+    path('portal/', include('operations.urls')),
     path('', include('accounts.urls')),
     path("auth/", include("allauth.urls")),
     path('stores/', include('stores.urls')),

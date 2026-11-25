@@ -1,0 +1,504 @@
+{% extends "operations/base.html" %}
+
+{% block title %}Complaints &amp; Disputes | The Spotlight{% endblock %}
+{% block breadcrumb %}Complaints{% endblock %}
+{% block page_kicker %}Administration{% endblock %}
+{% block page_heading %}Complaints &amp; disputes{% endblock %}
+{% block page_description %}
+    Investigate customer and vendor reports, manage order or booking disputes, and log resolutions.
+{% endblock %}
+{% block complaints_nav_class %}active{% endblock %}
+
+{% block extra_css %}
+    <link rel="stylesheet" href="https://cdn.datatables.net/2.1.8/css/dataTables.bootstrap5.min.css">
+{% endblock %}
+
+{% block page_actions %}
+    <a class="btn btn-dark" href="{% url 'operations:complaint-add' %}">
+        <i class="bi bi-plus-lg me-1" aria-hidden="true"></i>
+        Log complaint
+    </a>
+{% endblock %}
+
+{% block content %}
+    {# KPI Summary Row #}
+    <section class="row g-3 mb-4" aria-label="Complaints summary">
+        <div class="col-sm-6 col-xl-3">
+            <article class="ops-card ops-kpi-card h-100 p-3 p-lg-4">
+                <div class="d-flex align-items-start justify-content-between">
+                    <div>
+                        <p class="small text-secondary fw-medium mb-2">Open complaints</p>
+                        <p class="fs-2 fw-bold ops-kpi-value mb-0">{{ open_count }}</p>
+                    </div>
+                    <span class="ops-kpi-icon">
+                        <i class="bi bi-exclamation-circle fs-5" aria-hidden="true"></i>
+                    </span>
+                </div>
+                <p class="small text-secondary mb-0 mt-3">Unassigned or awaiting triage</p>
+            </article>
+        </div>
+        <div class="col-sm-6 col-xl-3">
+            <article class="ops-card ops-kpi-card h-100 p-3 p-lg-4">
+                <div class="d-flex align-items-start justify-content-between">
+                    <div>
+                        <p class="small text-secondary fw-medium mb-2">Under investigation</p>
+                        <p class="fs-2 fw-bold ops-kpi-value mb-0">{{ investigating_count }}</p>
+                    </div>
+                    <span class="ops-kpi-icon">
+                        <i class="bi bi-search fs-5" aria-hidden="true"></i>
+                    </span>
+                </div>
+                <p class="small text-secondary mb-0 mt-3">Actively being reviewed by staff</p>
+            </article>
+        </div>
+        <div class="col-sm-6 col-xl-3">
+            <article class="ops-card ops-kpi-card h-100 p-3 p-lg-4">
+                <div class="d-flex align-items-start justify-content-between">
+                    <div>
+                        <p class="small text-secondary fw-medium mb-2">Urgent priority</p>
+                        <p class="fs-2 fw-bold ops-kpi-value mb-0">{{ urgent_count }}</p>
+                    </div>
+                    <span class="ops-kpi-icon">
+                        <i class="bi bi-lightning-charge fs-5" aria-hidden="true"></i>
+                    </span>
+                </div>
+                <p class="small text-secondary mb-0 mt-3">Open cases flagged urgent</p>
+            </article>
+        </div>
+        <div class="col-sm-6 col-xl-3">
+            <article class="ops-card ops-kpi-card h-100 p-3 p-lg-4">
+                <div class="d-flex align-items-start justify-content-between">
+                    <div>
+                        <p class="small text-secondary fw-medium mb-2">Resolved cases</p>
+                        <p class="fs-2 fw-bold ops-kpi-value mb-0">{{ resolved_count }}</p>
+                    </div>
+                    <span class="ops-kpi-icon">
+                        <i class="bi bi-check2-circle fs-5" aria-hidden="true"></i>
+                    </span>
+                </div>
+                <p class="small text-secondary mb-0 mt-3">Closed with resolution logged</p>
+            </article>
+        </div>
+    </section>
+
+    {# 1. Active Complaints Queue (Open & Under Investigation) #}
+    <section class="ops-card mb-4" aria-labelledby="active-complaints-heading">
+        <div class="ops-card-header d-flex flex-wrap align-items-center justify-content-between gap-2 px-3 px-lg-4 py-3">
+            <div>
+                <h2 class="h5 ops-card-title mb-1" id="active-complaints-heading">
+                    <i class="bi bi-shield-exclamation me-2" aria-hidden="true"></i>Active complaints queue
+                </h2>
+                <p class="small ops-card-subtitle mb-0">{{ active_complaints|length }} open or in-progress cases</p>
+            </div>
+        </div>
+        <div class="p-3 p-lg-4">
+            <div class="table-responsive">
+                <table id="active-complaints-table" class="table ops-table align-middle w-100 mb-0">
+                    <thead>
+                        <tr>
+                            <th scope="col">Reference</th>
+                            <th scope="col">Subject &amp; Category</th>
+                            <th scope="col">Reporter</th>
+                            <th scope="col">Linked Entity</th>
+                            <th scope="col">Priority</th>
+                            <th scope="col">Status</th>
+                            <th scope="col">Submitted</th>
+                            <th class="text-end" scope="col" data-orderable="false">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in active_complaints %}
+                            <tr>
+                                <td class="fw-semibold text-nowrap">
+                                    <a href="#"
+                                       class="ops-row-link js-complaint-preview"
+                                       data-bs-toggle="modal"
+                                       data-bs-target="#complaintDetailModal"
+                                       data-id="{{ item.pk }}"
+                                       data-reference="{{ item.reference }}"
+                                       data-subject="{{ item.subject }}"
+                                       data-category="{{ item.get_category_display }}"
+                                       data-priority="{{ item.get_priority_display }}"
+                                       data-status="{{ item.status }}"
+                                       data-status-label="{{ item.get_status_display }}"
+                                       data-reporter="{% if item.reporter %}{{ item.reporter.full_name|default:item.reporter.email }}{% else %}Anonymous{% endif %}"
+                                       data-assigned="{% if item.assigned_to %}{{ item.assigned_to.full_name|default:item.assigned_to.email }}{% else %}Unassigned{% endif %}"
+                                       data-store="{{ item.store.name|default:'' }}"
+                                       data-order="{{ item.order.order_number|default:'' }}"
+                                       data-booking="{{ item.booking.reference|default:'' }}"
+                                       data-review="{% if item.review %}Review #{{ item.review.pk }}{% endif %}"
+                                       data-created="{{ item.created_at|date:'d M Y, H:i' }}"
+                                       data-evidence="{% if item.evidence %}{{ item.evidence.url }}{% endif %}"
+                                       data-description="{{ item.description }}"
+                                       data-notes="{{ item.resolution_notes }}">
+                                        {{ item.reference }}
+                                    </a>
+                                </td>
+                                <td>
+                                    <div class="fw-medium">{{ item.subject|truncatechars:48 }}</div>
+                                    <small class="text-secondary">{{ item.get_category_display }}</small>
+                                </td>
+                                <td>
+                                    {% if item.reporter %}
+                                        {{ item.reporter.full_name|default:item.reporter.email }}
+                                    {% else %}
+                                        Anonymous
+                                    {% endif %}
+                                </td>
+                                <td class="small">
+                                    {% if item.store %}<div><span class="text-secondary">Store:</span> {{ item.store.name }}</div>{% endif %}
+                                    {% if item.order %}<div><span class="text-secondary">Order:</span> {{ item.order.order_number }}</div>{% endif %}
+                                    {% if item.booking %}<div><span class="text-secondary">Booking:</span> {{ item.booking.reference }}</div>{% endif %}
+                                    {% if item.review %}<div><span class="text-secondary">Review:</span> #{{ item.review.pk }}</div>{% endif %}
+                                    {% if not item.store and not item.order and not item.booking and not item.review %}
+                                        <span class="text-secondary">—</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if item.priority == "urgent" %}
+                                        <span class="badge rounded-pill bg-danger-subtle text-danger-emphasis">{{ item.get_priority_display }}</span>
+                                    {% elif item.priority == "high" %}
+                                        <span class="badge rounded-pill bg-warning-subtle text-warning-emphasis">{{ item.get_priority_display }}</span>
+                                    {% elif item.priority == "medium" %}
+                                        <span class="badge rounded-pill bg-primary-subtle text-primary-emphasis">{{ item.get_priority_display }}</span>
+                                    {% else %}
+                                        <span class="badge rounded-pill bg-secondary-subtle text-secondary-emphasis">{{ item.get_priority_display }}</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if item.status == "open" %}
+                                        <span class="badge rounded-pill bg-warning-subtle text-warning-emphasis">{{ item.get_status_display }}</span>
+                                    {% else %}
+                                        <span class="badge rounded-pill bg-info-subtle text-info-emphasis">{{ item.get_status_display }}</span>
+                                    {% endif %}
+                                </td>
+                                <td class="text-nowrap" data-order="{{ item.created_at|date:'U' }}">
+                                    {{ item.created_at|date:"d M Y, H:i" }}
+                                </td>
+                                <td class="text-end text-nowrap">
+                                    <div class="d-inline-flex gap-1">
+                                        <button type="button"
+                                                class="btn btn-sm btn-outline-dark js-complaint-preview"
+                                                data-bs-toggle="modal"
+                                                data-bs-target="#complaintDetailModal"
+                                                data-id="{{ item.pk }}"
+                                                data-reference="{{ item.reference }}"
+                                                data-subject="{{ item.subject }}"
+                                                data-category="{{ item.get_category_display }}"
+                                                data-priority="{{ item.get_priority_display }}"
+                                                data-status="{{ item.status }}"
+                                                data-status-label="{{ item.get_status_display }}"
+                                                data-reporter="{% if item.reporter %}{{ item.reporter.full_name|default:item.reporter.email }}{% else %}Anonymous{% endif %}"
+                                                data-assigned="{% if item.assigned_to %}{{ item.assigned_to.full_name|default:item.assigned_to.email }}{% else %}Unassigned{% endif %}"
+                                                data-store="{{ item.store.name|default:'' }}"
+                                                data-order="{{ item.order.order_number|default:'' }}"
+                                                data-booking="{{ item.booking.reference|default:'' }}"
+                                                data-review="{% if item.review %}Review #{{ item.review.pk }}{% endif %}"
+                                                data-created="{{ item.created_at|date:'d M Y, H:i' }}"
+                                                data-evidence="{% if item.evidence %}{{ item.evidence.url }}{% endif %}"
+                                                data-description="{{ item.description }}"
+                                                data-notes="{{ item.resolution_notes }}">
+                                            Review
+                                        </button>
+                                        <a href="{% url 'operations:complaint-edit' item.pk %}" class="btn btn-sm btn-outline-secondary">Edit</a>
+                                        {% if item.status == "open" %}
+                                            <form method="post" class="d-inline">
+                                                {% csrf_token %}
+                                                <input type="hidden" name="complaint_id" value="{{ item.pk }}">
+                                                <button type="submit" name="action" value="investigate" class="btn btn-sm btn-dark">Investigate</button>
+                                            </form>
+                                        {% endif %}
+                                    </div>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </section>
+
+    {# 2. Closed Complaints (Resolved & Dismissed) #}
+    <section class="ops-card" aria-labelledby="closed-complaints-heading">
+        <div class="ops-card-header d-flex flex-wrap align-items-center justify-content-between gap-2 px-3 px-lg-4 py-3">
+            <div>
+                <h2 class="h5 ops-card-title mb-1" id="closed-complaints-heading">
+                    <i class="bi bi-archive me-2" aria-hidden="true"></i>Resolved &amp; dismissed history
+                </h2>
+                <p class="small ops-card-subtitle mb-0">Completed investigations and closed reports</p>
+            </div>
+        </div>
+        <div class="p-3 p-lg-4">
+            <div class="table-responsive">
+                <table id="closed-complaints-table" class="table ops-table align-middle w-100 mb-0">
+                    <thead>
+                        <tr>
+                            <th scope="col">Reference</th>
+                            <th scope="col">Subject</th>
+                            <th scope="col">Category</th>
+                            <th scope="col">Resolved By</th>
+                            <th scope="col">Status</th>
+                            <th scope="col">Closed At</th>
+                            <th class="text-end" scope="col" data-orderable="false">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in closed_complaints %}
+                            <tr>
+                                <td class="fw-semibold text-nowrap">
+                                    <a href="#"
+                                       class="ops-row-link js-complaint-preview"
+                                       data-bs-toggle="modal"
+                                       data-bs-target="#complaintDetailModal"
+                                       data-id="{{ item.pk }}"
+                                       data-reference="{{ item.reference }}"
+                                       data-subject="{{ item.subject }}"
+                                       data-category="{{ item.get_category_display }}"
+                                       data-priority="{{ item.get_priority_display }}"
+                                       data-status="{{ item.status }}"
+                                       data-status-label="{{ item.get_status_display }}"
+                                       data-reporter="{% if item.reporter %}{{ item.reporter.full_name|default:item.reporter.email }}{% else %}Anonymous{% endif %}"
+                                       data-assigned="{% if item.assigned_to %}{{ item.assigned_to.full_name|default:item.assigned_to.email }}{% else %}Unassigned{% endif %}"
+                                       data-store="{{ item.store.name|default:'' }}"
+                                       data-order="{{ item.order.order_number|default:'' }}"
+                                       data-booking="{{ item.booking.reference|default:'' }}"
+                                       data-review="{% if item.review %}Review #{{ item.review.pk }}{% endif %}"
+                                       data-created="{{ item.created_at|date:'d M Y, H:i' }}"
+                                       data-evidence="{% if item.evidence %}{{ item.evidence.url }}{% endif %}"
+                                       data-description="{{ item.description }}"
+                                       data-notes="{{ item.resolution_notes }}">
+                                        {{ item.reference }}
+                                    </a>
+                                </td>
+                                <td>{{ item.subject|truncatechars:52 }}</td>
+                                <td class="small text-secondary">{{ item.get_category_display }}</td>
+                                <td>{{ item.resolved_by.full_name|default:item.resolved_by.email|default:"—" }}</td>
+                                <td>
+                                    {% if item.status == "resolved" %}
+                                        <span class="badge rounded-pill bg-success-subtle text-success-emphasis">{{ item.get_status_display }}</span>
+                                    {% else %}
+                                        <span class="badge rounded-pill bg-secondary-subtle text-secondary-emphasis">{{ item.get_status_display }}</span>
+                                    {% endif %}
+                                </td>
+                                <td class="text-nowrap" data-order="{{ item.resolved_at|date:'U'|default:'0' }}">
+                                    {{ item.resolved_at|date:"d M Y, H:i"|default:item.updated_at|date:"d M Y, H:i" }}
+                                </td>
+                                <td class="text-end text-nowrap">
+                                    <div class="d-inline-flex gap-1">
+                                        <button type="button"
+                                                class="btn btn-sm btn-outline-dark js-complaint-preview"
+                                                data-bs-toggle="modal"
+                                                data-bs-target="#complaintDetailModal"
+                                                data-id="{{ item.pk }}"
+                                                data-reference="{{ item.reference }}"
+                                                data-subject="{{ item.subject }}"
+                                                data-category="{{ item.get_category_display }}"
+                                                data-priority="{{ item.get_priority_display }}"
+                                                data-status="{{ item.status }}"
+                                                data-status-label="{{ item.get_status_display }}"
+                                                data-reporter="{% if item.reporter %}{{ item.reporter.full_name|default:item.reporter.email }}{% else %}Anonymous{% endif %}"
+                                                data-assigned="{% if item.assigned_to %}{{ item.assigned_to.full_name|default:item.assigned_to.email }}{% else %}Unassigned{% endif %}"
+                                                data-store="{{ item.store.name|default:'' }}"
+                                                data-order="{{ item.order.order_number|default:'' }}"
+                                                data-booking="{{ item.booking.reference|default:'' }}"
+                                                data-review="{% if item.review %}Review #{{ item.review.pk }}{% endif %}"
+                                                data-created="{{ item.created_at|date:'d M Y, H:i' }}"
+                                                data-evidence="{% if item.evidence %}{{ item.evidence.url }}{% endif %}"
+                                                data-description="{{ item.description }}"
+                                                data-notes="{{ item.resolution_notes }}">
+                                            View
+                                        </button>
+                                        <form method="post" class="d-inline">
+                                            {% csrf_token %}
+                                            <input type="hidden" name="complaint_id" value="{{ item.pk }}">
+                                            <button type="submit" name="action" value="reopen" class="btn btn-sm btn-outline-secondary">Reopen</button>
+                                            <button type="submit" name="action" value="delete" class="btn btn-sm btn-outline-danger" onclick="return confirm('Delete this complaint record permanently?');">Delete</button>
+                                        </form>
+                                    </div>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </section>
+
+    {# Complaint Inspection & Resolution Modal #}
+    <div class="modal fade" id="complaintDetailModal" tabindex="-1" aria-labelledby="cmpModalSubject" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content ops-card border-0">
+                <div class="ops-card-header d-flex align-items-start justify-content-between gap-2 px-3 px-lg-4 py-3">
+                    <div>
+                        <div class="d-flex flex-wrap align-items-center gap-2 mb-1">
+                            <span id="cmpModalRef" class="fw-bold small text-uppercase"></span>
+                            <span id="cmpModalStatus" class="badge rounded-pill bg-warning-subtle text-warning-emphasis"></span>
+                            <span id="cmpModalPriority" class="badge rounded-pill bg-secondary-subtle text-secondary-emphasis"></span>
+                        </div>
+                        <h3 class="h5 ops-card-title mb-0" id="cmpModalSubject"></h3>
+                    </div>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+
+                <form method="post">
+                    {% csrf_token %}
+                    <input type="hidden" name="complaint_id" id="cmpModalId">
+
+                    <div class="modal-body p-3 p-lg-4">
+                        <div class="row g-3 mb-3 small text-secondary">
+                            <div class="col-sm-6">
+                                <strong class="text-dark d-block">Category</strong>
+                                <span id="cmpModalCategory"></span>
+                            </div>
+                            <div class="col-sm-6">
+                                <strong class="text-dark d-block">Submitted</strong>
+                                <span id="cmpModalCreated"></span>
+                            </div>
+                            <div class="col-sm-6">
+                                <strong class="text-dark d-block">Reporter</strong>
+                                <span id="cmpModalReporter"></span>
+                            </div>
+                            <div class="col-sm-6">
+                                <strong class="text-dark d-block">Assigned staff</strong>
+                                <span id="cmpModalAssigned"></span>
+                            </div>
+                        </div>
+
+                        <div id="cmpLinkedWrapper" class="mb-3 small d-none">
+                            <strong class="text-dark d-block mb-1">Linked marketplace records</strong>
+                            <div id="cmpLinkedBadges" class="d-flex flex-wrap gap-2"></div>
+                        </div>
+
+                        <div class="p-3 bg-light rounded mb-3">
+                            <strong class="d-block small text-uppercase text-secondary mb-1">Complaint description</strong>
+                            <p id="cmpModalDescription" class="mb-0" style="white-space: pre-line;"></p>
+                        </div>
+
+                        <div id="cmpEvidenceWrapper" class="mb-3 d-none">
+                            <a id="cmpEvidenceLink" href="#" target="_blank" rel="noopener noreferrer" class="btn btn-sm ops-btn-gold-outline">
+                                <i class="bi bi-paperclip me-1"></i>Open attached evidence
+                            </a>
+                        </div>
+
+                        <div>
+                            <label for="cmpResolutionNotes" class="form-label fw-medium small text-uppercase text-secondary">
+                                Internal resolution notes
+                            </label>
+                            <textarea id="cmpResolutionNotes"
+                                      name="resolution_notes"
+                                      rows="3"
+                                      class="form-control"
+                                      placeholder="Document investigation findings, refund details, or vendor warnings..."></textarea>
+                        </div>
+                    </div>
+
+                    <div class="modal-footer border-top d-flex flex-wrap justify-content-between gap-2 px-3 px-lg-4 py-3">
+                        <div class="d-flex flex-wrap gap-2">
+                            <button type="submit" name="action" value="assign_me" class="btn btn-sm btn-outline-dark">
+                                Assign to me
+                            </button>
+                            <button type="submit" name="action" value="investigate" class="btn btn-sm btn-outline-secondary">
+                                Mark investigating
+                            </button>
+                        </div>
+                        <div class="d-flex flex-wrap gap-2">
+                            <button type="submit" name="action" value="dismiss" class="btn btn-sm btn-outline-danger">
+                                Dismiss
+                            </button>
+                            <button type="submit" name="action" value="resolve" class="btn btn-sm btn-success">
+                                Mark resolved
+                            </button>
+                            <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-dismiss="modal">Close</button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block extra_js %}
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script src="https://cdn.datatables.net/2.1.8/js/dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/2.1.8/js/dataTables.bootstrap5.min.js"></script>
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            const commonConfig = {
+                pageLength: 10,
+                lengthMenu: [5, 10, 25, 50],
+                order: [],
+            };
+
+            new DataTable("#active-complaints-table", {
+                ...commonConfig,
+                language: {
+                    emptyTable: "No open complaints in the queue.",
+                    search: "Search active complaints:",
+                },
+            });
+
+            new DataTable("#closed-complaints-table", {
+                ...commonConfig,
+                language: {
+                    emptyTable: "No resolved or dismissed complaints yet.",
+                    search: "Search history:",
+                },
+            });
+
+            const modal = document.getElementById("complaintDetailModal");
+            if (modal) {
+                modal.addEventListener("show.bs.modal", function (event) {
+                    const btn = event.relatedTarget;
+                    if (!btn) return;
+
+                    document.getElementById("cmpModalId").value = btn.dataset.id || "";
+                    document.getElementById("cmpModalRef").textContent = btn.dataset.reference || "";
+                    document.getElementById("cmpModalSubject").textContent = btn.dataset.subject || "";
+                    document.getElementById("cmpModalCategory").textContent = btn.dataset.category || "";
+                    document.getElementById("cmpModalPriority").textContent = btn.dataset.priority || "";
+                    document.getElementById("cmpModalStatus").textContent = btn.dataset.statusLabel || "";
+                    document.getElementById("cmpModalReporter").textContent = btn.dataset.reporter || "";
+                    document.getElementById("cmpModalAssigned").textContent = btn.dataset.assigned || "";
+                    document.getElementById("cmpModalCreated").textContent = btn.dataset.created || "";
+                    document.getElementById("cmpModalDescription").textContent = btn.dataset.description || "";
+                    document.getElementById("cmpResolutionNotes").value = btn.dataset.notes || "";
+
+                    // Linked entities badges
+                    const linkedWrapper = document.getElementById("cmpLinkedWrapper");
+                    const linkedBadges = document.getElementById("cmpLinkedBadges");
+                    linkedBadges.innerHTML = "";
+
+                    const links = [
+                        { label: "Store", val: btn.dataset.store },
+                        { label: "Order", val: btn.dataset.order },
+                        { label: "Booking", val: btn.dataset.booking },
+                        { label: "Review", val: btn.dataset.review },
+                    ].filter(item => item.val);
+
+                    if (links.length > 0) {
+                        links.forEach(item => {
+                            const span = document.createElement("span");
+                            span.className = "badge rounded-pill bg-secondary-subtle text-secondary-emphasis";
+                            span.textContent = `${item.label}: ${item.val}`;
+                            linkedBadges.appendChild(span);
+                        });
+                        linkedWrapper.classList.remove("d-none");
+                    } else {
+                        linkedWrapper.classList.add("d-none");
+                    }
+
+                    // Evidence attachment
+                    const evidenceWrapper = document.getElementById("cmpEvidenceWrapper");
+                    const evidenceLink = document.getElementById("cmpEvidenceLink");
+                    if (btn.dataset.evidence) {
+                        evidenceLink.href = btn.dataset.evidence;
+                        evidenceWrapper.classList.remove("d-none");
+                    } else {
+                        evidenceLink.href = "#";
+                        evidenceWrapper.classList.add("d-none");
+                    }
+                });
+            }
+        });
+    </script>
+{% endblock %}

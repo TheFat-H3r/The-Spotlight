@@ -1,0 +1,82 @@
+{% extends "operations/base.html" %}
+
+{% block title %}New Staff Alert | The Spotlight{% endblock %}
+{% block breadcrumb %}Notifications{% endblock %}
+{% block page_kicker %}Operations{% endblock %}
+{% block page_heading %}Create operations alert{% endblock %}
+{% block page_description %}Post an internal system alert for all staff or assign it to a specific administrator.{% endblock %}
+{% block notifications_nav_class %}active{% endblock %}
+
+{% block page_actions %}
+    <a class="btn ops-btn-gold-outline" href="{% url 'operations:notifications' %}">
+        <i class="bi bi-arrow-left me-1" aria-hidden="true"></i>
+        Back to notifications
+    </a>
+{% endblock %}
+
+{% block content %}
+    <section class="ops-card w-100" aria-labelledby="alert-form-heading">
+        <div class="ops-card-header px-3 px-lg-4 py-3">
+            <h2 class="h5 ops-card-title mb-1" id="alert-form-heading">
+                <i class="bi bi-bell-plus me-2" aria-hidden="true"></i>Internal alert details
+            </h2>
+            <p class="small ops-card-subtitle mb-0">Leave recipient blank to broadcast across all operations staff</p>
+        </div>
+        <div class="p-3 p-lg-4">
+            <form method="post">
+                {% csrf_token %}
+
+                <div class="row g-3 mb-3">
+                    <div class="col-md-6">
+                        <label class="form-label fw-medium" for="title">Alert title *</label>
+                        <input type="text" id="title" name="title" maxlength="160" class="form-control" required>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label fw-medium" for="category">Category</label>
+                        <select id="category" name="category" class="form-select">
+                            {% for value, label in categories %}
+                                <option value="{{ value }}">{{ label }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label fw-medium" for="level">Severity level</label>
+                        <select id="level" name="level" class="form-select">
+                            {% for value, label in levels %}
+                                <option value="{{ value }}">{{ label }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+
+                <div class="row g-3 mb-3">
+                    <div class="col-md-6">
+                        <label class="form-label fw-medium" for="recipient">Recipient (optional)</label>
+                        <select id="recipient" name="recipient" class="form-select">
+                            <option value="">All operations staff (shared)</option>
+                            {% for staff in staff_users %}
+                                <option value="{{ staff.pk }}">{{ staff.full_name|default:staff.email }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label fw-medium" for="action_url">Action URL (optional)</label>
+                        <input type="text" id="action_url" name="action_url" maxlength="255" class="form-control" placeholder="/operations/stores/">
+                    </div>
+                </div>
+
+                <div class="mb-4">
+                    <label class="form-label fw-medium" for="message">Message details</label>
+                    <textarea id="message" name="message" rows="4" class="form-control"></textarea>
+                </div>
+
+                <div class="d-flex flex-wrap gap-2 pt-3 border-top">
+                    <button type="submit" class="btn btn-dark">
+                        <i class="bi bi-check2 me-1" aria-hidden="true"></i>Post alert
+                    </button>
+                    <a href="{% url 'operations:notifications' %}" class="btn ops-btn-gold-outline">Cancel</a>
+                </div>
+            </form>
+        </div>
+    </section>
+{% endblock %}

@@ -1,0 +1,464 @@
+{% extends "operations/base.html" %}
+
+{% block title %}Stores | The Spotlight{% endblock %}
+{% block breadcrumb %}Stores{% endblock %}
+{% block page_kicker %}Administration{% endblock %}
+{% block page_heading %}Stores management{% endblock %}
+{% block page_description %}
+    Approve draft storefronts, inspect store profiles, and manage active or suspended status.
+{% endblock %}
+{% block stores_nav_class %}active{% endblock %}
+
+{% block extra_css %}
+    <link rel="stylesheet" href="https://cdn.datatables.net/2.1.8/css/dataTables.bootstrap5.min.css">
+{% endblock %}
+
+{% block page_actions %}
+    <a class="btn ops-btn-gold-outline" href="{% url 'admin:stores_store_changelist' %}">
+        <i class="bi bi-sliders me-1" aria-hidden="true"></i>
+        Django admin
+    </a>
+    <a class="btn btn-dark" href="{% url 'operations:store-add' %}">
+        <i class="bi bi-plus-lg me-1" aria-hidden="true"></i>
+        New store
+    </a>
+{% endblock %}
+
+{% block content %}
+    {# KPI Summary Row #}
+    <section class="row g-3 mb-4" aria-label="Stores summary">
+        <div class="col-sm-6 col-xl-3">
+            <article class="ops-card ops-kpi-card h-100 p-3 p-lg-4">
+                <div class="d-flex align-items-start justify-content-between">
+                    <div>
+                        <p class="small text-secondary fw-medium mb-2">Draft / pending</p>
+                        <p class="fs-2 fw-bold ops-kpi-value mb-0">{{ draft_store_count }}</p>
+                    </div>
+                    <span class="ops-kpi-icon">
+                        <i class="bi bi-hourglass-split fs-5" aria-hidden="true"></i>
+                    </span>
+                </div>
+                <p class="small text-secondary mb-0 mt-3">Not public until activated</p>
+            </article>
+        </div>
+        <div class="col-sm-6 col-xl-3">
+            <article class="ops-card ops-kpi-card h-100 p-3 p-lg-4">
+                <div class="d-flex align-items-start justify-content-between">
+                    <div>
+                        <p class="small text-secondary fw-medium mb-2">Active stores</p>
+                        <p class="fs-2 fw-bold ops-kpi-value mb-0">{{ active_store_count }}</p>
+                    </div>
+                    <span class="ops-kpi-icon">
+                        <i class="bi bi-shop fs-5" aria-hidden="true"></i>
+                    </span>
+                </div>
+                <p class="small text-secondary mb-0 mt-3">Live and visible on marketplace</p>
+            </article>
+        </div>
+        <div class="col-sm-6 col-xl-3">
+            <article class="ops-card ops-kpi-card h-100 p-3 p-lg-4">
+                <div class="d-flex align-items-start justify-content-between">
+                    <div>
+                        <p class="small text-secondary fw-medium mb-2">Featured stores</p>
+                        <p class="fs-2 fw-bold ops-kpi-value mb-0">{{ featured_store_count }}</p>
+                    </div>
+                    <span class="ops-kpi-icon">
+                        <i class="bi bi-star fs-5" aria-hidden="true"></i>
+                    </span>
+                </div>
+                <p class="small text-secondary mb-0 mt-3">Highlighted at top of listings</p>
+            </article>
+        </div>
+        <div class="col-sm-6 col-xl-3">
+            <article class="ops-card ops-kpi-card h-100 p-3 p-lg-4">
+                <div class="d-flex align-items-start justify-content-between">
+                    <div>
+                        <p class="small text-secondary fw-medium mb-2">Suspended stores</p>
+                        <p class="fs-2 fw-bold ops-kpi-value mb-0">{{ suspended_store_count }}</p>
+                    </div>
+                    <span class="ops-kpi-icon">
+                        <i class="bi bi-slash-circle fs-5" aria-hidden="true"></i>
+                    </span>
+                </div>
+                <p class="small text-secondary mb-0 mt-3">Suspended by administration</p>
+            </article>
+        </div>
+    </section>
+
+    {# 1. Draft / Pending Activation Stores #}
+    <section class="ops-card mb-4" aria-labelledby="draft-stores-heading">
+        <div class="ops-card-header d-flex flex-wrap align-items-center justify-content-between gap-2 px-3 px-lg-4 py-3">
+            <div>
+                <h2 class="h5 ops-card-title mb-1" id="draft-stores-heading">
+                    <i class="bi bi-hourglass-split me-2" aria-hidden="true"></i>Draft stores awaiting activation
+                </h2>
+                <p class="small ops-card-subtitle mb-0">{{ draft_store_count }} stores currently in draft status</p>
+            </div>
+        </div>
+        <div class="p-3 p-lg-4">
+            <div class="table-responsive">
+                <table id="draft-stores-table" class="table ops-table align-middle w-100 mb-0">
+                    <thead>
+                        <tr>
+                            <th scope="col">Store</th>
+                            <th scope="col">Owner</th>
+                            <th scope="col">Business Type</th>
+                            <th scope="col">Catalog</th>
+                            <th scope="col">Status</th>
+                            <th scope="col">Created</th>
+                            <th class="text-end" scope="col" data-orderable="false">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for store in draft_stores %}
+                            <tr>
+                                <td class="fw-semibold">
+                                    <a href="#"
+                                       class="ops-row-link js-store-preview"
+                                       data-bs-toggle="modal"
+                                       data-bs-target="#storePreviewModal"
+                                       data-id="{{ store.pk }}"
+                                       data-title="{{ store.name }}"
+                                       data-tagline="{{ store.tagline }}"
+                                       data-owner="{% if store.owner %}{{ store.owner.full_name|default:store.owner.email }}{% else %}Unassigned{% endif %}"
+                                       data-email="{% if store.contact_email %}{{ store.contact_email }}{% elif store.owner %}{{ store.owner.email }}{% else %}—{% endif %}"
+                                       data-phone="{{ store.contact_phone|default:'—' }}"
+                                       data-whatsapp="{{ store.whatsapp|default:'—' }}"
+                                       data-location="{{ store.pickup_location|default:'—' }}"
+                                       data-business-type="{{ store.business_type.name }} ({{ store.get_store_type_display }})"
+                                       data-categories="{% for cat in store.categories.all %}{{ cat.name }}{% if not forloop.last %}, {% endif %}{% empty %}None{% endfor %}"
+                                       data-status="{{ store.status }}"
+                                       data-status-label="{{ store.get_status_display }}"
+                                       data-catalog="{{ store.product_count }} products · {{ store.service_count }} services{% if store.offers_delivery %} · Delivery{% endif %}"
+                                       data-rating="{{ store.rating_average }} ★ ({{ store.rating_count }} reviews)"
+                                       data-logo="{% if store.logo %}{{ store.logo.url }}{% endif %}"
+                                       data-body="{{ store.description|default:'No store description provided.' }}">
+                                        {{ store.name }}
+                                    </a>
+                                </td>
+                                <td>
+                                    {% if store.owner %}
+                                        {{ store.owner.full_name|default:store.owner.email }}
+                                    {% else %}
+                                        <span class="text-secondary">—</span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ store.business_type.name }} <span class="text-secondary small">· {{ store.get_store_type_display }}</span></td>
+                                <td class="small text-secondary text-nowrap">{{ store.product_count }} products · {{ store.service_count }} services</td>
+                                <td>
+                                    <span class="badge rounded-pill bg-warning-subtle text-warning-emphasis">{{ store.get_status_display }}</span>
+                                </td>
+                                <td class="text-nowrap" data-order="{{ store.created_at|date:'U' }}">
+                                    {{ store.created_at|date:"d M Y, H:i" }}
+                                </td>
+                                <td class="text-end text-nowrap">
+                                    <div class="d-inline-flex gap-1">
+                                        <button type="button"
+                                                class="btn btn-sm btn-outline-dark js-store-preview"
+                                                data-bs-toggle="modal"
+                                                data-bs-target="#storePreviewModal"
+                                                data-id="{{ store.pk }}"
+                                                data-title="{{ store.name }}"
+                                                data-tagline="{{ store.tagline }}"
+                                                data-owner="{% if store.owner %}{{ store.owner.full_name|default:store.owner.email }}{% else %}Unassigned{% endif %}"
+                                                data-email="{% if store.contact_email %}{{ store.contact_email }}{% elif store.owner %}{{ store.owner.email }}{% else %}—{% endif %}"
+                                                data-phone="{{ store.contact_phone|default:'—' }}"
+                                                data-whatsapp="{{ store.whatsapp|default:'—' }}"
+                                                data-location="{{ store.pickup_location|default:'—' }}"
+                                                data-business-type="{{ store.business_type.name }} ({{ store.get_store_type_display }})"
+                                                data-categories="{% for cat in store.categories.all %}{{ cat.name }}{% if not forloop.last %}, {% endif %}{% empty %}None{% endfor %}"
+                                                data-status="{{ store.status }}"
+                                                data-status-label="{{ store.get_status_display }}"
+                                                data-catalog="{{ store.product_count }} products · {{ store.service_count }} services{% if store.offers_delivery %} · Delivery{% endif %}"
+                                                data-rating="{{ store.rating_average }} ★ ({{ store.rating_count }} reviews)"
+                                                data-logo="{% if store.logo %}{{ store.logo.url }}{% endif %}"
+                                                data-body="{{ store.description|default:'No store description provided.' }}">
+                                            View
+                                        </button>
+                                        <a href="{% url 'operations:store-edit' store.pk %}" class="btn btn-sm btn-outline-secondary">Edit</a>
+                                        <form method="post" class="d-inline">
+                                            {% csrf_token %}
+                                            <input type="hidden" name="store_id" value="{{ store.pk }}">
+                                            <button type="submit" name="action" value="activate" class="btn btn-sm btn-success">Activate</button>
+                                            <button type="submit" name="action" value="delete" class="btn btn-sm btn-outline-danger" onclick="return confirm('Delete this draft store permanently?');">Delete</button>
+                                        </form>
+                                    </div>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </section>
+
+    {# 2. Active & Suspended Stores Directory #}
+    <section class="ops-card" aria-labelledby="managed-stores-heading">
+        <div class="ops-card-header d-flex flex-wrap align-items-center justify-content-between gap-2 px-3 px-lg-4 py-3">
+            <div>
+                <h2 class="h5 ops-card-title mb-1" id="managed-stores-heading">
+                    <i class="bi bi-shop me-2" aria-hidden="true"></i>Active &amp; suspended stores
+                </h2>
+                <p class="small ops-card-subtitle mb-0">{{ managed_stores|length }} published or moderated storefronts</p>
+            </div>
+        </div>
+        <div class="p-3 p-lg-4">
+            <div class="table-responsive">
+                <table id="managed-stores-table" class="table ops-table align-middle w-100 mb-0">
+                    <thead>
+                        <tr>
+                            <th scope="col">Store</th>
+                            <th scope="col">Owner</th>
+                            <th scope="col">Type &amp; Categories</th>
+                            <th scope="col">Catalog &amp; Rating</th>
+                            <th scope="col">Status</th>
+                            <th scope="col">Joined</th>
+                            <th class="text-end" scope="col" data-orderable="false">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for store in managed_stores %}
+                            <tr>
+                                <td class="fw-semibold">
+                                    <a href="#"
+                                       class="ops-row-link js-store-preview"
+                                       data-bs-toggle="modal"
+                                       data-bs-target="#storePreviewModal"
+                                       data-id="{{ store.pk }}"
+                                       data-title="{{ store.name }}"
+                                       data-tagline="{{ store.tagline }}"
+                                       data-owner="{% if store.owner %}{{ store.owner.full_name|default:store.owner.email }}{% else %}Unassigned{% endif %}"
+                                       data-email="{% if store.contact_email %}{{ store.contact_email }}{% elif store.owner %}{{ store.owner.email }}{% else %}—{% endif %}"
+                                       data-phone="{{ store.contact_phone|default:'—' }}"
+                                       data-whatsapp="{{ store.whatsapp|default:'—' }}"
+                                       data-location="{{ store.pickup_location|default:'—' }}"
+                                       data-business-type="{{ store.business_type.name }} ({{ store.get_store_type_display }})"
+                                       data-categories="{% for cat in store.categories.all %}{{ cat.name }}{% if not forloop.last %}, {% endif %}{% empty %}None{% endfor %}"
+                                       data-status="{{ store.status }}"
+                                       data-status-label="{{ store.get_status_display }}"
+                                       data-catalog="{{ store.product_count }} products · {{ store.service_count }} services{% if store.offers_delivery %} · Delivery{% endif %}"
+                                       data-rating="{{ store.rating_average }} ★ ({{ store.rating_count }} reviews)"
+                                       data-logo="{% if store.logo %}{{ store.logo.url }}{% endif %}"
+                                       data-body="{{ store.description|default:'No store description provided.' }}">
+                                        {{ store.name }}
+                                    </a>
+                                    {% if store.is_featured %}
+                                        <span class="badge rounded-pill bg-warning-subtle text-warning-emphasis ms-1">Featured</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if store.owner %}
+                                        {{ store.owner.full_name|default:store.owner.email }}
+                                    {% else %}
+                                        <span class="text-secondary">—</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <div class="fw-medium">{{ store.business_type.name }}</div>
+                                    <small class="text-secondary">
+                                        {% for cat in store.categories.all %}
+                                            {{ cat.name }}{% if not forloop.last %}, {% endif %}
+                                        {% empty %}
+                                            {{ store.get_store_type_display }}
+                                        {% endfor %}
+                                    </small>
+                                </td>
+                                <td class="small text-secondary text-nowrap">
+                                    <div>{{ store.product_count }} products · {{ store.service_count }} services</div>
+                                    <div>{{ store.rating_average }} ★ ({{ store.rating_count }})</div>
+                                </td>
+                                <td>
+                                    {% if store.status == "active" %}
+                                        <span class="badge rounded-pill bg-success-subtle text-success-emphasis">{{ store.get_status_display }}</span>
+                                    {% else %}
+                                        <span class="badge rounded-pill bg-danger-subtle text-danger-emphasis">{{ store.get_status_display }}</span>
+                                    {% endif %}
+                                </td>
+                                <td class="text-nowrap" data-order="{{ store.created_at|date:'U' }}">
+                                    {{ store.created_at|date:"d M Y" }}
+                                </td>
+                                <td class="text-end text-nowrap">
+                                    <div class="d-inline-flex gap-1">
+                                        <button type="button"
+                                                class="btn btn-sm btn-outline-dark js-store-preview"
+                                                data-bs-toggle="modal"
+                                                data-bs-target="#storePreviewModal"
+                                                data-id="{{ store.pk }}"
+                                                data-title="{{ store.name }}"
+                                                data-tagline="{{ store.tagline }}"
+                                                data-owner="{% if store.owner %}{{ store.owner.full_name|default:store.owner.email }}{% else %}Unassigned{% endif %}"
+                                                data-email="{% if store.contact_email %}{{ store.contact_email }}{% elif store.owner %}{{ store.owner.email }}{% else %}—{% endif %}"
+                                                data-phone="{{ store.contact_phone|default:'—' }}"
+                                                data-whatsapp="{{ store.whatsapp|default:'—' }}"
+                                                data-location="{{ store.pickup_location|default:'—' }}"
+                                                data-business-type="{{ store.business_type.name }} ({{ store.get_store_type_display }})"
+                                                data-categories="{% for cat in store.categories.all %}{{ cat.name }}{% if not forloop.last %}, {% endif %}{% empty %}None{% endfor %}"
+                                                data-status="{{ store.status }}"
+                                                data-status-label="{{ store.get_status_display }}"
+                                                data-catalog="{{ store.product_count }} products · {{ store.service_count }} services{% if store.offers_delivery %} · Delivery{% endif %}"
+                                                data-rating="{{ store.rating_average }} ★ ({{ store.rating_count }} reviews)"
+                                                data-logo="{% if store.logo %}{{ store.logo.url }}{% endif %}"
+                                                data-body="{{ store.description|default:'No store description provided.' }}">
+                                            View
+                                        </button>
+                                        <a href="{% url 'operations:store-edit' store.pk %}" class="btn btn-sm btn-outline-dark">Edit</a>
+                                        <form method="post" class="d-inline">
+                                            {% csrf_token %}
+                                            <input type="hidden" name="store_id" value="{{ store.pk }}">
+                                            {% if store.status == "active" %}
+                                                <button type="submit" name="action" value="suspend" class="btn btn-sm btn-outline-secondary">Suspend</button>
+                                            {% else %}
+                                                <button type="submit" name="action" value="activate" class="btn btn-sm btn-success">Activate</button>
+                                            {% endif %}
+                                            <button type="submit" name="action" value="delete" class="btn btn-sm btn-outline-danger" onclick="return confirm('Delete this store permanently?');">
+                                                Delete
+                                            </button>
+                                        </form>
+                                    </div>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </section>
+
+    {# Store Inspection & Moderation Modal #}
+    <div class="modal fade" id="storePreviewModal" tabindex="-1" aria-labelledby="storeModalTitle" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content ops-card border-0">
+                <div class="ops-card-header d-flex align-items-start justify-content-between gap-2 px-3 px-lg-4 py-3">
+                    <div class="d-flex align-items-center gap-3">
+                        <img id="storeModalLogo" src="" alt="Store logo" class="rounded border d-none" style="width: 48px; height: 48px; object-fit: cover;">
+                        <div>
+                            <span id="storeModalStatusBadge" class="badge rounded-pill bg-secondary-subtle text-secondary-emphasis mb-1"></span>
+                            <h3 class="h5 ops-card-title mb-0" id="storeModalTitle"></h3>
+                            <p id="storeModalTagline" class="small text-secondary mb-0 d-none"></p>
+                        </div>
+                    </div>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+
+                <form method="post">
+                    {% csrf_token %}
+                    <input type="hidden" name="store_id" id="storeModalId">
+
+                    <div class="modal-body p-3 p-lg-4">
+                        <div class="row g-3 mb-3 small text-secondary">
+                            <div class="col-sm-6">
+                                <strong class="text-dark d-block">Owner</strong>
+                                <span id="storeModalOwner"></span>
+                            </div>
+                            <div class="col-sm-6">
+                                <strong class="text-dark d-block">Business type &amp; categories</strong>
+                                <span id="storeModalBusinessType"></span> · <span id="storeModalCategories"></span>
+                            </div>
+                            <div class="col-sm-6">
+                                <strong class="text-dark d-block">Email &amp; Phone</strong>
+                                <span id="storeModalEmail"></span> · <span id="storeModalPhone"></span>
+                            </div>
+                            <div class="col-sm-6">
+                                <strong class="text-dark d-block">WhatsApp &amp; Pickup location</strong>
+                                <span id="storeModalWhatsapp"></span> · <span id="storeModalLocation"></span>
+                            </div>
+                            <div class="col-sm-6">
+                                <strong class="text-dark d-block">Catalog &amp; Fulfillment</strong>
+                                <span id="storeModalCatalog"></span>
+                            </div>
+                            <div class="col-sm-6">
+                                <strong class="text-dark d-block">Reputation</strong>
+                                <span id="storeModalRating"></span>
+                            </div>
+                        </div>
+
+                        <div class="p-3 bg-light rounded">
+                            <strong class="d-block small text-uppercase text-secondary mb-1">Store description</strong>
+                            <p id="storeModalBody" class="mb-0" style="white-space: pre-line;"></p>
+                        </div>
+                    </div>
+
+                    <div class="modal-footer border-top d-flex flex-wrap justify-content-between gap-2 px-3 px-lg-4 py-3">
+                        <div class="d-flex flex-wrap gap-2">
+                            <button type="submit" name="action" value="toggle_featured" class="btn btn-sm ops-btn-gold-outline">Toggle featured</button>
+                            <button type="submit" name="action" value="activate" class="btn btn-sm btn-success">Activate</button>
+                            <button type="submit" name="action" value="suspend" class="btn btn-sm btn-outline-danger">Suspend</button>
+                        </div>
+                        <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-dismiss="modal">Close</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block extra_js %}
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script src="https://cdn.datatables.net/2.1.8/js/dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/2.1.8/js/dataTables.bootstrap5.min.js"></script>
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            const commonConfig = {
+                pageLength: 10,
+                lengthMenu: [5, 10, 25, 50],
+                order: [],
+            };
+
+            new DataTable("#draft-stores-table", {
+                ...commonConfig,
+                language: {
+                    emptyTable: "No draft stores waiting for activation.",
+                    search: "Search drafts:",
+                },
+            });
+
+            new DataTable("#managed-stores-table", {
+                ...commonConfig,
+                language: {
+                    emptyTable: "No active or suspended stores yet.",
+                    search: "Search stores:",
+                },
+            });
+
+            const modal = document.getElementById("storePreviewModal");
+            if (modal) {
+                modal.addEventListener("show.bs.modal", function (event) {
+                    const btn = event.relatedTarget;
+                    if (!btn) return;
+
+                    document.getElementById("storeModalId").value = btn.dataset.id || "";
+                    document.getElementById("storeModalStatusBadge").textContent = btn.dataset.statusLabel || "";
+                    document.getElementById("storeModalTitle").textContent = btn.dataset.title || "";
+                    document.getElementById("storeModalOwner").textContent = btn.dataset.owner || "";
+                    document.getElementById("storeModalBusinessType").textContent = btn.dataset.businessType || "";
+                    document.getElementById("storeModalCategories").textContent = btn.dataset.categories || "";
+                    document.getElementById("storeModalEmail").textContent = btn.dataset.email || "";
+                    document.getElementById("storeModalPhone").textContent = btn.dataset.phone || "";
+                    document.getElementById("storeModalWhatsapp").textContent = btn.dataset.whatsapp || "";
+                    document.getElementById("storeModalLocation").textContent = btn.dataset.location || "";
+                    document.getElementById("storeModalCatalog").textContent = btn.dataset.catalog || "";
+                    document.getElementById("storeModalRating").textContent = btn.dataset.rating || "";
+                    document.getElementById("storeModalBody").textContent = btn.dataset.body || "";
+
+                    const taglineEl = document.getElementById("storeModalTagline");
+                    if (btn.dataset.tagline) {
+                        taglineEl.textContent = btn.dataset.tagline;
+                        taglineEl.classList.remove("d-none");
+                    } else {
+                        taglineEl.textContent = "";
+                        taglineEl.classList.add("d-none");
+                    }
+
+                    const logoEl = document.getElementById("storeModalLogo");
+                    if (btn.dataset.logo) {
+                        logoEl.src = btn.dataset.logo;
+                        logoEl.classList.remove("d-none");
+                    } else {
+                        logoEl.src = "";
+                        logoEl.classList.add("d-none");
+                    }
+                });
+            }
+        });
+    </script>
+{% endblock %}

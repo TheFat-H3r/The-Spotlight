@@ -1,0 +1,262 @@
+{% extends "operations/base.html" %}
+
+{% block title %}Operations Overview | The Spotlight{% endblock %}
+{% block breadcrumb %}Overview{% endblock %}
+{% block page_kicker %}Administration{% endblock %}
+{% block page_heading %}Operations overview{% endblock %}
+{% block page_description %}
+    A quick view of marketplace activity, orders, bookings, and store operations.
+{% endblock %}
+{% block overview_nav_class %}active{% endblock %}
+
+{% block extra_css %}
+    <link rel="stylesheet" href="https://cdn.datatables.net/2.1.8/css/dataTables.bootstrap5.min.css">
+{% endblock %}
+
+{% block page_actions %}
+    <a class="btn ops-btn-gold-outline" href="{% url 'admin:index' %}">
+        <i class="bi bi-sliders me-1" aria-hidden="true"></i>
+        Django admin
+    </a>
+{% endblock %}
+
+{% block content %}
+    <section class="row g-3 mb-4" aria-label="Marketplace summary">
+        <div class="col-sm-6 col-xl-3">
+            <article class="ops-card ops-kpi-card h-100 p-3 p-lg-4">
+                <div class="d-flex align-items-start justify-content-between">
+                    <div>
+                        <p class="small text-secondary fw-medium mb-2">Customer accounts</p>
+                        <p class="fs-2 fw-bold ops-kpi-value mb-0">{{ customer_count }}</p>
+                    </div>
+                    <span class="ops-kpi-icon">
+                        <i class="bi bi-people fs-5" aria-hidden="true"></i>
+                    </span>
+                </div>
+                <p class="small text-secondary mb-0 mt-3">Registered marketplace customers</p>
+            </article>
+        </div>
+        <div class="col-sm-6 col-xl-3">
+            <article class="ops-card ops-kpi-card h-100 p-3 p-lg-4">
+                <div class="d-flex align-items-start justify-content-between">
+                    <div>
+                        <p class="small text-secondary fw-medium mb-2">Active stores</p>
+                        <p class="fs-2 fw-bold ops-kpi-value mb-0">{{ active_store_count }}</p>
+                    </div>
+                    <span class="ops-kpi-icon">
+                        <i class="bi bi-shop fs-5" aria-hidden="true"></i>
+                    </span>
+                </div>
+                <p class="small text-secondary mb-0 mt-3">Stores visible in the marketplace</p>
+            </article>
+        </div>
+        <div class="col-sm-6 col-xl-3">
+            <article class="ops-card ops-kpi-card h-100 p-3 p-lg-4">
+                <div class="d-flex align-items-start justify-content-between">
+                    <div>
+                        <p class="small text-secondary fw-medium mb-2">Pending orders</p>
+                        <p class="fs-2 fw-bold ops-kpi-value mb-0">{{ pending_order_count }}</p>
+                    </div>
+                    <span class="ops-kpi-icon">
+                        <i class="bi bi-bag-check fs-5" aria-hidden="true"></i>
+                    </span>
+                </div>
+                <p class="small text-secondary mb-0 mt-3">Waiting for vendor confirmation</p>
+            </article>
+        </div>
+        <div class="col-sm-6 col-xl-3">
+            <article class="ops-card ops-kpi-card h-100 p-3 p-lg-4">
+                <div class="d-flex align-items-start justify-content-between">
+                    <div>
+                        <p class="small text-secondary fw-medium mb-2">Pending bookings</p>
+                        <p class="fs-2 fw-bold ops-kpi-value mb-0">{{ pending_booking_count }}</p>
+                    </div>
+                    <span class="ops-kpi-icon">
+                        <i class="bi bi-calendar2-check fs-5" aria-hidden="true"></i>
+                    </span>
+                </div>
+                <p class="small text-secondary mb-0 mt-3">Waiting for vendor response</p>
+            </article>
+        </div>
+    </section>
+
+    {# Recent Orders Table #}
+    <section class="ops-card mb-4" aria-labelledby="recent-orders-heading">
+        <div class="ops-card-header d-flex flex-wrap align-items-center justify-content-between gap-2 px-3 px-lg-4 py-3">
+            <div>
+                <h2 class="h5 ops-card-title mb-1" id="recent-orders-heading">
+                    <i class="bi bi-bag-check me-2" aria-hidden="true"></i>Recent orders
+                </h2>
+                <p class="small ops-card-subtitle mb-0">{{ open_order_count }} orders currently in progress</p>
+            </div>
+            <a class="btn btn-sm ops-btn-gold-outline" href="{% url 'admin:transactions_order_changelist' %}">
+                View all <i class="bi bi-arrow-up-right ms-1" aria-hidden="true"></i>
+            </a>
+        </div>
+        <div class="p-3 p-lg-4">
+            <div class="table-responsive">
+                <table id="recent-orders-table" class="table ops-table align-middle w-100 mb-0">
+                    <thead>
+                        <tr>
+                            <th scope="col">Order</th>
+                            <th scope="col">Customer</th>
+                            <th scope="col">Store</th>
+                            <th scope="col">Status</th>
+                            <th class="text-end" scope="col">Total</th>
+                            <th class="text-end" scope="col" data-orderable="false">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for order in recent_orders %}
+                            {% url 'admin:transactions_order_change' order.pk as manage_order_url %}
+                            <tr data-href="{{ manage_order_url }}">
+                                <td class="fw-semibold">
+                                    <a href="{{ manage_order_url }}" class="ops-row-link">
+                                        {{ order.order_number }}
+                                    </a>
+                                </td>
+                                <td>{{ order.customer_name|default:order.customer.email|default:"Guest" }}</td>
+                                <td>{{ order.store.name }}</td>
+                                <td>
+                                    {% if order.status == "pending" %}
+                                        <span class="badge rounded-pill bg-warning-subtle text-warning-emphasis">{{ order.get_status_display }}</span>
+                                    {% elif order.status == "confirmed" or order.status == "preparing" %}
+                                        <span class="badge rounded-pill bg-primary-subtle text-primary-emphasis">{{ order.get_status_display }}</span>
+                                    {% elif order.status == "ready" %}
+                                        <span class="badge rounded-pill bg-info-subtle text-info-emphasis">{{ order.get_status_display }}</span>
+                                    {% elif order.status == "completed" %}
+                                        <span class="badge rounded-pill bg-success-subtle text-success-emphasis">{{ order.get_status_display }}</span>
+                                    {% elif order.status == "cancelled" or order.status == "rejected" %}
+                                        <span class="badge rounded-pill bg-danger-subtle text-danger-emphasis">{{ order.get_status_display }}</span>
+                                    {% else %}
+                                        <span class="badge rounded-pill bg-secondary-subtle text-secondary-emphasis">{{ order.get_status_display }}</span>
+                                    {% endif %}
+                                </td>
+                                <td class="text-end fw-semibold text-nowrap" data-order="{{ order.total }}">MUR {{ order.total }}</td>
+                                <td class="text-end text-nowrap">
+                                    <a href="{{ manage_order_url }}"
+                                       class="btn btn-sm btn-outline-dark"
+                                       aria-label="Manage order {{ order.order_number }}">
+                                        Manage <i class="bi bi-chevron-right small ms-1" aria-hidden="true"></i>
+                                    </a>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </section>
+
+    {# Recent Bookings Table #}
+    <section class="ops-card" aria-labelledby="recent-bookings-heading">
+        <div class="ops-card-header d-flex flex-wrap align-items-center justify-content-between gap-2 px-3 px-lg-4 py-3">
+            <div>
+                <h2 class="h5 ops-card-title mb-1" id="recent-bookings-heading">
+                    <i class="bi bi-calendar2-check me-2" aria-hidden="true"></i>Recent bookings
+                </h2>
+                <p class="small ops-card-subtitle mb-0">Latest service booking requests</p>
+            </div>
+            <a class="btn btn-sm ops-btn-gold-outline" href="{% url 'admin:transactions_booking_changelist' %}">
+                View all <i class="bi bi-arrow-up-right ms-1" aria-hidden="true"></i>
+            </a>
+        </div>
+        <div class="p-3 p-lg-4">
+            <div class="table-responsive">
+                <table id="recent-bookings-table" class="table ops-table align-middle w-100 mb-0">
+                    <thead>
+                        <tr>
+                            <th scope="col">Reference</th>
+                            <th scope="col">Customer</th>
+                            <th scope="col">Service</th>
+                            <th scope="col">Appointment</th>
+                            <th scope="col">Status</th>
+                            <th class="text-end" scope="col" data-orderable="false">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for booking in recent_bookings %}
+                            {% url 'admin:transactions_booking_change' booking.pk as manage_booking_url %}
+                            <tr data-href="{{ manage_booking_url }}">
+                                <td class="fw-semibold">
+                                    <a href="{{ manage_booking_url }}" class="ops-row-link">
+                                        {{ booking.reference }}
+                                    </a>
+                                </td>
+                                <td>{{ booking.customer.full_name|default:booking.customer.email }}</td>
+                                <td>{{ booking.service.name }} <span class="text-secondary">· {{ booking.service.store.name }}</span></td>
+                                <td class="text-nowrap" data-order="{{ booking.start_at|date:'U' }}">
+                                    {{ booking.start_at|date:"d M Y, H:i" }}
+                                </td>
+                                <td>
+                                    {% if booking.status == "pending" %}
+                                        <span class="badge rounded-pill bg-warning-subtle text-warning-emphasis">{{ booking.get_status_display }}</span>
+                                    {% elif booking.status == "confirmed" %}
+                                        <span class="badge rounded-pill bg-primary-subtle text-primary-emphasis">{{ booking.get_status_display }}</span>
+                                    {% elif booking.status == "completed" %}
+                                        <span class="badge rounded-pill bg-success-subtle text-success-emphasis">{{ booking.get_status_display }}</span>
+                                    {% elif booking.status == "rejected" or booking.status == "cancelled_by_customer" or booking.status == "cancelled_by_vendor" %}
+                                        <span class="badge rounded-pill bg-danger-subtle text-danger-emphasis">{{ booking.get_status_display }}</span>
+                                    {% else %}
+                                        <span class="badge rounded-pill bg-secondary-subtle text-secondary-emphasis">{{ booking.get_status_display }}</span>
+                                    {% endif %}
+                                </td>
+                                <td class="text-end text-nowrap">
+                                    <a href="{{ manage_booking_url }}"
+                                       class="btn btn-sm btn-outline-dark"
+                                       aria-label="Manage booking {{ booking.reference }}">
+                                        Manage <i class="bi bi-chevron-right small ms-1" aria-hidden="true"></i>
+                                    </a>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </section>
+{% endblock %}
+
+{% block extra_js %}
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script src="https://cdn.datatables.net/2.1.8/js/dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/2.1.8/js/dataTables.bootstrap5.min.js"></script>
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            const commonConfig = {
+                pageLength: 10,
+                lengthMenu: [5, 10, 25, 50],
+                order: [],
+            };
+
+            new DataTable("#recent-orders-table", {
+                ...commonConfig,
+                language: {
+                    emptyTable: "No orders have been placed yet.",
+                    search: "Search orders:",
+                },
+            });
+
+            new DataTable("#recent-bookings-table", {
+                ...commonConfig,
+                language: {
+                    emptyTable: "No bookings have been submitted yet.",
+                    search: "Search bookings:",
+                },
+            });
+
+            // Navigate when clicking anywhere on a table row (excluding direct link/button clicks or text selection)
+            document.addEventListener("click", function (event) {
+                const row = event.target.closest("tr[data-href]");
+                if (!row) return;
+
+                // Let native links, buttons, or text highlighting behave normally
+                if (event.target.closest("a, button") || window.getSelection().toString()) {
+                    return;
+                }
+
+                window.location.href = row.dataset.href;
+            });
+        });
+    </script>
+{% endblock %}

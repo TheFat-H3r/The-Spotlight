@@ -1,0 +1,72 @@
+from django.urls import path
+from .views import admin_home, admin_notification_create, admin_settings, authorize_stores, booking_detail, broadcast_form, order_detail
+from .views import business_type_form, catalog_management, categories_management, category_form, complaint_form, complaints
+from .views import manage_bookings, manage_orders, manage_payouts, reviews_management, marketing, marketing_ad_form, marketing_announcement_form
+from .views import notifications_management, payout_detail, product_form, service_form, store_form, stores_management, user_form, users_management
+
+app_name = "operations"
+urlpatterns = [
+    # Workspace
+    path("", admin_home, name="admin-home"),
+
+    # Approvals & Moderation
+    path("stores/authorize/", authorize_stores, name="authorize-stores"),
+
+    # complaints
+    path("complaints/", complaints, name="complaints"),
+    path("complaints/add/", complaint_form, name="complaint-add"),
+    path("complaints/<int:pk>/edit/", complaint_form, name="complaint-edit"),
+
+    # Marketing
+    path("marketing/", marketing, name="marketing"),
+    path("marketing/ads/add/", marketing_ad_form, name="marketing-ad-add"),
+    path("marketing/ads/<int:pk>/edit/", marketing_ad_form, name="marketing-ad-edit"),
+    path("marketing/announcements/add/", marketing_announcement_form, name="marketing-announcement-add"),
+    path("marketing/announcements/<int:pk>/edit/", marketing_announcement_form, name="marketing-announcement-edit"),
+
+    # Stores management
+    path("stores/", stores_management, name="stores"),
+    path("stores/add/", store_form, name="store-add"),
+    path("stores/<int:pk>/edit/", store_form, name="store-edit"),
+    
+    # Categories / types
+    path("categories/", categories_management, name="categories"),
+    path("categories/add/", category_form, name="category-add"),
+    path("categories/<int:pk>/edit/", category_form, name="category-edit"),
+    path("business-types/add/", business_type_form, name="business-type-add"),
+    path("business-types/<int:pk>/edit/", business_type_form, name="business-type-edit"),
+    
+    # Catalog (product/services)
+    path("catalog/", catalog_management, name="catalog"),
+    path("catalog/products/add/", product_form, name="product-add"),
+    path("catalog/products/<int:pk>/edit/", product_form, name="product-edit"),
+    path("catalog/services/add/", service_form, name="service-add"),
+    path("catalog/services/<int:pk>/edit/", service_form, name="service-edit"),
+    
+    # Users
+    path("users/", users_management, name="users"),
+    path("users/add/", user_form, name="user-add"),
+    path("users/<int:pk>/edit/", user_form, name="user-edit"),
+
+    # Orders
+    path("orders/", manage_orders, name="orders"),
+    path("orders/<int:pk>/", order_detail, name="order-detail"),
+
+    # Bookings
+    path("bookings/", manage_bookings, name="bookings"),
+    path("bookings/<int:pk>/", booking_detail, name="booking-detail"),
+
+    # Transactions & Payouts
+    path("payouts/", manage_payouts, name="payouts"),
+    path("payouts/<int:pk>/", payout_detail, name="payout-detail"),
+
+    # System 
+    path("reviews/", reviews_management, name="reviews"),
+    path("settings/", admin_settings, name="admin-settings"),
+
+    # Communications
+    path("notifications/", notifications_management, name="notifications"),
+    path("notifications/alerts/add/", admin_notification_create, name="notification-add"),
+    path("notifications/broadcasts/add/", broadcast_form, name="broadcast-add"),
+    path("notifications/broadcasts/<int:pk>/edit/", broadcast_form, name="broadcast-edit"),
+]

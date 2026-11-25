@@ -405,6 +405,7 @@ class Booking(models.Model):
         if self.slot.start_at > timezone.now():
             raise ValidationError("A booking cannot be a no-show before it starts.")
         self._move_to(self.Status.NO_SHOW, [self.Status.CONFIRMED])
+    edit_request_url = None
 
 
 # ---------------------------------------------------------------------------

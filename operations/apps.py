@@ -1,6 +1,6 @@
 from django.apps import AppConfig
 
 
-class DashboardsConfig(AppConfig):
+class OperationsConfig(AppConfig):
     default_auto_field = 'django.db.models.BigAutoField'
-    name = 'dashboards'
+    name = 'operations'

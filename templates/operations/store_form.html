@@ -1,0 +1,163 @@
+{% extends "operations/base.html" %}
+
+{% block title %}{% if store %}Edit {{ store.name }}{% else %}New Store{% endif %} | The Spotlight{% endblock %}
+{% block breadcrumb %}Stores{% endblock %}
+{% block page_kicker %}Administration{% endblock %}
+{% block page_heading %}{% if store %}Edit store: {{ store.name }}{% else %}Create store{% endif %}{% endblock %}
+{% block page_description %}Configure storefront profile, owner, business classification, and moderation status.{% endblock %}
+{% block stores_nav_class %}active{% endblock %}
+
+{% block page_actions %}
+    <a class="btn ops-btn-gold-outline" href="{% url 'operations:stores' %}">
+        <i class="bi bi-arrow-left me-1" aria-hidden="true"></i>
+        Back to stores
+    </a>
+{% endblock %}
+
+{% block content %}
+    <section class="ops-card w-100" aria-labelledby="store-form-heading">
+        <div class="ops-card-header px-3 px-lg-4 py-3">
+            <h2 class="h5 ops-card-title mb-1" id="store-form-heading">
+                <i class="bi bi-shop me-2" aria-hidden="true"></i>Storefront details
+            </h2>
+            <p class="small ops-card-subtitle mb-0">
+                {% if store %}Catalog mode: {{ store.get_store_type_display }}{% else %}Catalog mode is set automatically from the selected business type{% endif %}
+            </p>
+        </div>
+        <div class="p-3 p-lg-4">
+            <form method="post" enctype="multipart/form-data">
+                {% csrf_token %}
+
+                <div class="row g-3 mb-3">
+                    <div class="col-md-4">
+                        <label class="form-label fw-medium" for="name">Store name *</label>
+                        <input type="text" id="name" name="name" maxlength="150" value="{{ store.name|default:'' }}" class="form-control" required>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label fw-medium" for="owner">Owner *</label>
+                        <select id="owner" name="owner" class="form-select" required>
+                            <option value="">Select owner...</option>
+                            {% for u in owners %}
+                                <option value="{{ u.pk }}" {% if store and store.owner_id == u.pk %}selected{% endif %}>
+                                    {{ u.full_name|default:u.email }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label fw-medium" for="business_type">Business type *</label>
+                        <select id="business_type" name="business_type" class="form-select" required>
+                            <option value="">Select business type...</option>
+                            {% for bt in business_types %}
+                                <option value="{{ bt.pk }}" {% if store and store.business_type_id == bt.pk %}selected{% endif %}>
+                                    {{ bt.name }} ({{ bt.get_store_type_display }})
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label fw-medium" for="status">Status</label>
+                        <select id="status" name="status" class="form-select">
+                            {% for value, label in statuses %}
+                                <option value="{{ value }}" {% if store and store.status == value %}selected{% elif not store and value == 'active' %}selected{% endif %}>
+                                    {{ label }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label fw-medium" for="tagline">Tagline</label>
+                    <input type="text" id="tagline" name="tagline" maxlength="160" value="{{ store.tagline|default:'' }}" class="form-control" placeholder="Short one-line summary shown on store cards">
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label fw-medium" for="description">Description</label>
+                    <textarea id="description" name="description" rows="4" class="form-control">{{ store.description|default:'' }}</textarea>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label fw-medium">Browsing categories</label>
+                    <div class="d-flex flex-wrap gap-3 p-3 bg-light rounded">
+                        {% for cat in categories %}
+                            <div class="form-check">
+                                <input class="form-check-input"
+                                       type="checkbox"
+                                       name="categories"
+                                       value="{{ cat.pk }}"
+                                       id="cat_{{ cat.pk }}"
+                                       {% if cat.pk in selected_category_ids %}checked{% endif %}>
+                                <label class="form-check-label" for="cat_{{ cat.pk }}">{{ cat.name }}</label>
+                            </div>
+                        {% empty %}
+                            <span class="small text-secondary">No categories created yet.</span>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <div class="row g-3 mb-3">
+                    <div class="col-md-3">
+                        <label class="form-label fw-medium" for="contact_phone">Contact phone</label>
+                        <input type="text" id="contact_phone" name="contact_phone" maxlength="16" value="{{ store.contact_phone|default:'' }}" class="form-control">
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label fw-medium" for="whatsapp">WhatsApp</label>
+                        <input type="text" id="whatsapp" name="whatsapp" maxlength="16" value="{{ store.whatsapp|default:'' }}" class="form-control">
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label fw-medium" for="contact_email">Contact email</label>
+                        <input type="email" id="contact_email" name="contact_email" value="{{ store.contact_email|default:'' }}" class="form-control">
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label fw-medium" for="pickup_location">Pickup location</label>
+                        <input type="text" id="pickup_location" name="pickup_location" maxlength="150" value="{{ store.pickup_location|default:'' }}" class="form-control" placeholder="e.g. Campus Hub / Hall">
+                    </div>
+                </div>
+
+                <div class="row g-3 mb-3">
+                    <div class="col-md-6">
+                        <label class="form-label fw-medium" for="logo">Store logo</label>
+                        {% if store and store.logo %}
+                            <div class="mb-2">
+                                <img src="{{ store.logo.url }}" alt="{{ store.name }} logo" class="rounded border" style="height: 56px; width: 56px; object-fit: cover;">
+                            </div>
+                        {% endif %}
+                        <input type="file" id="logo" name="logo" accept="image/*" class="form-control">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label fw-medium" for="banner">Store banner</label>
+                        {% if store and store.banner %}
+                            <div class="mb-2">
+                                <img src="{{ store.banner.url }}" alt="{{ store.name }} banner" class="rounded border" style="height: 56px; width: 140px; object-fit: cover;">
+                            </div>
+                        {% endif %}
+                        <input type="file" id="banner" name="banner" accept="image/*" class="form-control">
+                    </div>
+                </div>
+
+                <div class="d-flex flex-wrap gap-4 mb-4">
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="offers_delivery" name="offers_delivery" {% if store and store.offers_delivery %}checked{% endif %}>
+                        <label class="form-check-label fw-medium" for="offers_delivery">Offers delivery</label>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="is_accepting_orders" name="is_accepting_orders" {% if store %}{% if store.is_accepting_orders %}checked{% endif %}{% else %}checked{% endif %}>
+                        <label class="form-check-label fw-medium" for="is_accepting_orders">Accepting orders / bookings</label>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="is_featured" name="is_featured" {% if store and store.is_featured %}checked{% endif %}>
+                        <label class="form-check-label fw-medium" for="is_featured">Featured store</label>
+                    </div>
+                </div>
+
+                <div class="d-flex flex-wrap gap-2 pt-3 border-top">
+                    <button type="submit" class="btn btn-dark">
+                        <i class="bi bi-check2 me-1" aria-hidden="true"></i>Save store
+                    </button>
+                    <a href="{% url 'operations:stores' %}" class="btn ops-btn-gold-outline">Cancel</a>
+                </div>
+            </form>
+        </div>
+    </section>
+{% endblock %}
