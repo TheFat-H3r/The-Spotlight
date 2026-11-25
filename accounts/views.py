@@ -1,14 +1,25 @@
 import re
 
 from django.contrib import messages
-from django.contrib.auth import logout, authenticate, login
-from django.shortcuts import redirect, render
+from django.contrib.auth import (
+    authenticate,
+    login,
+    logout,
+    update_session_auth_hash,
+)
+from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
+from django.shortcuts import redirect, render
 from django.urls import reverse
 from django.views import View
+from django.views.decorators.http import require_POST
 
 from accounts.models import User
-from accounts.utils import redirect_by_role, send_password_reset_email, send_verification_email
+from accounts.utils import (
+    redirect_by_role,
+    send_password_reset_email,
+    send_verification_email,
+)
 from stores.models import Store
 
 
@@ -475,13 +486,181 @@ class PasswordResetConfirmView(View):
         messages.success(request, "Your password has been reset! You can now sign in with your new password.")
         return redirect('accounts:login')
 
+
 def logout_view(request):
     logout(request)
     return redirect("accounts:login")
 
-def user_settings(request):
 
-    context = {
-        'user':request.user,
+# =====================================================
+# USER SETTINGS MODULE
+# =====================================================
+
+@login_required(login_url='accounts:login')
+def user_settings(request):
+    user = request.user
+    notif_prefs = request.session.get('notification_prefs') or {}
+    gen_prefs = request.session.get('general_prefs') or {}
+    priv_prefs = request.session.get('privacy_prefs') or {}
+
+    prefs = {
+        'order_notifications': notif_prefs.get('order_notifications', True),
+        'booking_notifications': notif_prefs.get('booking_notifications', True),
+        'security_notifications': notif_prefs.get('security_notifications', True),
+        'marketing_notifications': notif_prefs.get('marketing_notifications', False),
+        'language': gen_prefs.get('language', 'en'),
+        'currency': gen_prefs.get('currency', 'MUR'),
+        'theme': gen_prefs.get('theme', 'system'),
+        'public_profile': priv_prefs.get('public_profile', True),
+        'personalised_recommendations': priv_prefs.get('personalised_recommendations', True),
     }
-    return render(request, 'accounts/user-settings.html', context)
+    return render(request, 'accounts/user-settings.html', {
+        'user': user,
+        'prefs': prefs,
+    })
+
+
+@login_required(login_url='accounts:login')
+@require_POST
+def settings_profile_view(request):
+    user = request.user
+    full_name = request.POST.get('full_name', '').strip()
+    email = request.POST.get('email', '').strip().lower()
+    phone = request.POST.get('phone', '').strip()
+    avatar = request.FILES.get('avatar')
+
+    if not full_name or not email:
+        messages.error(request, "Full name and email address are required.")
+        return redirect('accounts:settings')
+
+    if email != user.email:
+        if User.objects.filter(email__iexact=email).exclude(pk=user.pk).exists():
+            messages.error(request, "An account with this email address already exists.")
+            return redirect('accounts:settings')
+
+        user.email = email
+        user.is_email_verified = False
+        token = user.generate_email_verification_token()
+        verification_path = reverse('accounts:verify_email_confirm', kwargs={'token': token})
+        verification_url = request.build_absolute_uri(verification_path)
+        send_verification_email(
+            user_email=user.email,
+            user_name=full_name,
+            verification_url=verification_url,
+        )
+        messages.info(
+            request,
+            "Email updated. Please verify your new email address via the link sent to your inbox.",
+        )
+
+    user.full_name = full_name
+    user.phone = phone
+    if avatar:
+        user.avatar = avatar
+
+    user.save()
+    messages.success(request, "Profile information updated.")
+    return redirect('accounts:settings')
+
+
+@login_required(login_url='accounts:login')
+@require_POST
+def settings_notifications_view(request):
+    request.session['notification_prefs'] = {
+        'order_notifications': 'order_notifications' in request.POST,
+        'booking_notifications': 'booking_notifications' in request.POST,
+        'security_notifications': 'security_notifications' in request.POST,
+        'marketing_notifications': 'marketing_notifications' in request.POST,
+    }
+    messages.success(request, "Notification preferences saved.")
+    return redirect('accounts:settings')
+
+
+@login_required(login_url='accounts:login')
+@require_POST
+def settings_preferences_view(request):
+    request.session['general_prefs'] = {
+        'language': request.POST.get('language', 'en'),
+        'currency': request.POST.get('currency', 'MUR'),
+        'theme': request.POST.get('theme', 'system'),
+    }
+    messages.success(request, "General preferences saved.")
+    return redirect('accounts:settings')
+
+
+@login_required(login_url='accounts:login')
+@require_POST
+def settings_privacy_view(request):
+    request.session['privacy_prefs'] = {
+        'public_profile': 'public_profile' in request.POST,
+        'personalised_recommendations': 'personalised_recommendations' in request.POST,
+    }
+    messages.success(request, "Privacy settings saved.")
+    return redirect('accounts:settings')
+
+
+@login_required(login_url='accounts:login')
+def settings_password_change_view(request):
+    user = request.user
+    if request.method == 'POST':
+        current_password = request.POST.get('current_password', '')
+        new_password = request.POST.get('new_password', '')
+        confirm_password = request.POST.get('confirm_password', '')
+
+        if user.has_usable_password():
+            if not user.check_password(current_password):
+                messages.error(request, "Current password is incorrect.")
+                return render(request, 'accounts/password_change.html')
+
+        if len(new_password) < 8:
+            messages.error(request, "Password must be at least 8 characters long.")
+            return render(request, 'accounts/password_change.html')
+
+        if (
+            not any(c.isdigit() for c in new_password)
+            or not any(c.isalpha() for c in new_password)
+            or not any(c in "!@#$%^&*()-_=+[]{}|;:'\",.<>?/`~" for c in new_password)
+        ):
+            messages.error(request, "Password must include a number, letter & symbol.")
+            return render(request, 'accounts/password_change.html')
+
+        if new_password != confirm_password:
+            messages.error(request, "New passwords do not match.")
+            return render(request, 'accounts/password_change.html')
+
+        user.set_password(new_password)
+        user.auth_provider = User.AuthProvider.EMAIL
+        user.save()
+        update_session_auth_hash(request, user)
+        messages.success(request, "Your password has been updated.")
+        return redirect('accounts:settings')
+
+    return render(request, 'accounts/password_change.html')
+
+
+@login_required(login_url='accounts:login')
+def settings_sessions_view(request):
+    if request.method == 'POST' and request.POST.get('action') == 'sign_out_current':
+        logout(request)
+        messages.info(request, "You have been signed out of this session.")
+        return redirect('accounts:login')
+
+    return render(request, 'accounts/sessions.html', {
+        'session_key': request.session.session_key,
+        'user_agent': request.META.get('HTTP_USER_AGENT', 'Unknown device'),
+    })
+
+
+@login_required(login_url='accounts:login')
+@require_POST
+def delete_account_view(request):
+    confirmation_text = (request.POST.get('confirm_delete') or '').strip()
+    if confirmation_text != 'DELETE':
+        messages.error(request, 'Type "DELETE" to confirm account deletion.')
+        return redirect('accounts:settings')
+
+    user = request.user
+    user.is_active = False
+    user.save()
+    logout(request)
+    return render(request, 'accounts/account_deleted.html')

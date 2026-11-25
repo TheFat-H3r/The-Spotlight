@@ -1,0 +1,71 @@
+{% extends "core/base.html" %}
+{% load static %}
+
+{% block title %}Active Sessions | The Spotlight{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/subpages.css' %}">
+{% endblock %}
+
+{% block content %}
+<main class="account-subpage">
+
+    <header class="account-subpage__header">
+        <a href="{% url 'accounts:settings' %}" class="account-subpage__back">← Back to Account Settings</a>
+        <span class="account-subpage__eyebrow">02 / PROTECTION</span>
+        <h1>Active Sessions</h1>
+        <p>Review your current sign-in session or sign out of this browser.</p>
+    </header>
+
+    {% if messages %}
+        <div class="account-subpage__alerts" role="status" aria-live="polite">
+            {% for message in messages %}
+                <div class="account-subpage__alert account-subpage__alert--{{ message.tags|default:'info' }}">
+                    {{ message }}
+                </div>
+            {% endfor %}
+        </div>
+    {% endif %}
+
+    <section class="account-subpage__card">
+        <div class="session-item">
+            <div>
+                <strong class="session-item__title">Current Browser Session</strong>
+                <span class="session-item__meta">Device / Browser: {{ user_agent }}</span>
+                <span class="session-item__meta">Session ID: {{ session_key|default:"Active" }}</span>
+            </div>
+            <span class="session-badge">Active now</span>
+        </div>
+
+        <form method="post" action="{% url 'accounts:sessions' %}" id="signOutSessionForm">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="sign_out_current">
+
+            <div class="account-subpage__actions">
+                <a href="{% url 'accounts:settings' %}" class="account-subpage__btn-secondary">
+                    Back to Settings
+                </a>
+                <button type="submit" class="account-subpage__btn-danger">
+                    Sign Out Current Session
+                </button>
+            </div>
+        </form>
+    </section>
+
+</main>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+    const form = document.getElementById("signOutSessionForm");
+    if (!form) return;
+
+    form.addEventListener("submit", (e) => {
+        if (!window.confirm("Sign out of this session and return to the login page?")) {
+            e.preventDefault();
+        }
+    });
+});
+</script>
+{% endblock %}

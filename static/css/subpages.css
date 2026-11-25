@@ -1,0 +1,310 @@
+/* =====================================================
+   THE SPOTLIGHT - ACCOUNT SUBPAGES
+   Theme: Black | White | Peach | Warm Orange
+===================================================== */
+
+.account-subpage {
+    --primary-black: #050505;
+    --dark-charcoal: #211C18;
+    --peach: #FFC18E;
+    --peach-light: #FFF1E5;
+    --orange: #B86B32;
+    --orange-hover: #A65B27;
+    --white: #FFFFFF;
+    --light-background: #F8F8F8;
+    --muted-text: #7A7A7A;
+    --border-color: #E5E5E5;
+    --success: #218653;
+    --danger: #D94747;
+
+    width: min(760px, calc(100% - 40px));
+    margin: 0 auto;
+    padding: 48px 0 85px;
+    color: var(--primary-black);
+}
+
+.account-subpage__header {
+    margin-bottom: 24px;
+}
+
+.account-subpage__back {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 14px;
+    color: var(--orange);
+    font-size: 12px;
+    font-weight: 700;
+    text-decoration: none;
+}
+
+.account-subpage__back:hover {
+    color: var(--orange-hover);
+}
+
+.account-subpage__eyebrow {
+    display: block;
+    color: var(--orange);
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: 1.7px;
+    text-transform: uppercase;
+}
+
+.account-subpage__header h1 {
+    margin: 6px 0;
+    color: var(--primary-black);
+    font-size: clamp(26px, 3vw, 34px);
+    font-weight: 800;
+    letter-spacing: -0.8px;
+}
+
+.account-subpage__header p {
+    margin: 0;
+    color: var(--muted-text);
+    font-size: 14px;
+}
+
+.account-subpage__alerts {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-bottom: 20px;
+}
+
+.account-subpage__alert {
+    padding: 12px 16px;
+    border-radius: 10px;
+    font-size: 13px;
+    font-weight: 600;
+    border: 1px solid var(--border-color);
+    background: var(--white);
+}
+
+.account-subpage__alert--success {
+    color: var(--success);
+    background: #F0FDF4;
+    border-color: #BBF7D0;
+}
+
+.account-subpage__alert--error {
+    color: var(--danger);
+    background: #FEF2F2;
+    border-color: #FECACA;
+}
+
+.account-subpage__alert--info {
+    color: var(--orange-hover);
+    background: var(--peach-light);
+    border-color: #EAC09F;
+}
+
+.account-subpage__card {
+    padding: 28px;
+    background: var(--white);
+    border: 1px solid var(--border-color);
+    border-radius: 14px;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.03);
+}
+
+.account-subpage__card--dark {
+    background: var(--dark-charcoal);
+    border-color: #382E26;
+    color: var(--white);
+}
+
+.account-subpage__card--dark p {
+    color: #C5B6A8;
+}
+
+.account-subpage__fields {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+}
+
+.account-subpage__field {
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+}
+
+.account-subpage__field label {
+    font-size: 12px;
+    font-weight: 700;
+    color: #262626;
+}
+
+.account-subpage__field input {
+    width: 100%;
+    min-height: 44px;
+    padding: 0 14px;
+    font: inherit;
+    font-size: 13px;
+    color: var(--primary-black);
+    background: var(--white);
+    border: 1px solid #D8D8D8;
+    border-radius: 8px;
+    outline: none;
+}
+
+.account-subpage__field input:focus {
+    border-color: var(--orange);
+    box-shadow: 0 0 0 3px rgba(184, 107, 50, 0.14);
+}
+
+.account-subpage__hint {
+    margin: 0;
+    font-size: 11px;
+    color: var(--muted-text);
+}
+
+.account-subpage__actions {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 12px;
+    margin-top: 24px;
+    padding-top: 20px;
+    border-top: 1px solid var(--border-color);
+}
+
+.account-subpage__btn-primary,
+.account-subpage__btn-secondary,
+.account-subpage__btn-danger {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 42px;
+    padding: 0 18px;
+    border-radius: 8px;
+    font: inherit;
+    font-size: 12px;
+    font-weight: 700;
+    text-decoration: none;
+    cursor: pointer;
+    transition: background-color 160ms ease, color 160ms ease, border-color 160ms ease;
+}
+
+.account-subpage__btn-primary {
+    background: var(--peach);
+    color: var(--primary-black);
+    border: 1px solid var(--peach);
+}
+
+.account-subpage__btn-primary:hover {
+    background: #F5A96E;
+    border-color: #F5A96E;
+}
+
+.account-subpage__btn-secondary {
+    background: var(--white);
+    color: var(--orange);
+    border: 1px solid #EAC09F;
+}
+
+.account-subpage__btn-secondary:hover {
+    background: var(--peach-light);
+}
+
+.account-subpage__btn-danger {
+    background: var(--danger);
+    color: var(--white);
+    border: 1px solid var(--danger);
+}
+
+.account-subpage__btn-danger:hover {
+    background: #B93535;
+    border-color: #B93535;
+}
+
+/* Sessions list */
+.session-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 16px;
+    background: var(--light-background);
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+}
+
+.session-item__title {
+    display: block;
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--primary-black);
+}
+
+.session-item__meta {
+    display: block;
+    margin-top: 4px;
+    font-size: 12px;
+    color: var(--muted-text);
+    word-break: break-word;
+}
+
+.session-badge {
+    flex-shrink: 0;
+    padding: 5px 11px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--success);
+    background: #DCFCE7;
+}
+
+/* Deleted confirmation state */
+.deleted-card {
+    text-align: center;
+    padding: 40px 28px;
+}
+
+.deleted-card__badge {
+    display: inline-block;
+    padding: 6px 12px;
+    margin-bottom: 14px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 800;
+    color: var(--peach);
+    background: rgba(255, 193, 142, 0.15);
+}
+
+.deleted-card h1 {
+    margin: 0 0 10px;
+    font-size: 28px;
+    font-weight: 800;
+    color: var(--white);
+}
+
+.deleted-card p {
+    max-width: 480px;
+    margin: 0 auto 24px;
+    font-size: 14px;
+    line-height: 1.6;
+}
+
+.deleted-card__actions {
+    display: flex;
+    justify-content: center;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+@media (max-width: 600px) {
+    .account-subpage {
+        width: calc(100% - 24px);
+        padding: 32px 0 60px;
+    }
+
+    .account-subpage__card {
+        padding: 20px;
+    }
+
+    .session-item {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+}

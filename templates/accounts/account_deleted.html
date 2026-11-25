@@ -1,0 +1,32 @@
+{% extends "core/base.html" %}
+{% load static %}
+
+{% block title %}Account Deactivated | The Spotlight{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/subpages.css' %}">
+{% endblock %}
+
+{% block content %}
+<main class="account-subpage">
+
+    <section class="account-subpage__card account-subpage__card--dark deleted-card">
+        <span class="deleted-card__badge">ACCOUNT DEACTIVATED</span>
+        <h1>Your Account Has Been Deactivated</h1>
+        <p>
+            You have been signed out of The Spotlight. If you ever decide to return,
+            contact our support team to review account reactivation options.
+        </p>
+
+        <div class="deleted-card__actions">
+            <a href="{% url 'core:home' %}" class="account-subpage__btn-primary">
+                Return to Marketplace →
+            </a>
+            <a href="{% url 'core:contact-support' %}" class="account-subpage__btn-secondary">
+                Contact Support
+            </a>
+        </div>
+    </section>
+
+</main>
+{% endblock %}

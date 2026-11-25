@@ -118,3 +118,5 @@ def about_us(request):
 
 def contact_us(request):
     return render(request, 'core/contact.html')
+def contact_support(request):
+    return render(request, 'core/customer_support.html')
