@@ -105,7 +105,40 @@ def product_detail(request, slug):
     return render(request, 'core/product_detail.html', {'slug': slug})
 
 def service_list(request):
-    return render(request, 'core/service_list.html')
+    services = (
+        Service.objects
+        .filter(is_available=True)
+        .select_related("category", "store")
+        .order_by("-is_featured", "-created_at")
+    )
+
+    categories = (
+        Service.objects
+        .filter(is_available=True, category__isnull=False)
+        .values("category_id", "category__name")
+        .order_by("category__name")
+        .distinct()
+    )
+
+    # Category filtering
+    category_id = request.GET.get("category")
+
+    if category_id:
+        services = services.filter(category_id=category_id)
+
+    # Pagination
+    paginator = Paginator(services, 12)
+    page_obj = paginator.get_page(request.GET.get("page"))
+
+    context = {
+        "services": page_obj,
+        "page_obj": page_obj,
+        "categories": categories,
+        "total_services": paginator.count,
+        "selected_category": category_id,
+    }
+
+    return render(request, "core/service_list.html", context)
 
 def service_detail(request, slug):
     return render(request, 'core/service_detail.html', {'slug': slug})
