@@ -389,6 +389,7 @@ button {
   font-size: 1.6rem;
   transition: all 0.4s;
 }
+
 .product-btn:hover {
   background-color: #f7c18b;
   color: #FFFFFF;

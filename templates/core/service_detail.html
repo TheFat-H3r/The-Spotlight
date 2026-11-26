@@ -145,7 +145,7 @@
                         <!-- Quantity and cart -->
                         {% if service.is_available %}
                             <div class="product-quantity">
-                                <a href="#" class="shop-btn">
+                                <a href="{% url 'core:create-booking' service.slug service.store.slug %}" class="shop-btn">
                                     <span>Book Now</span>
                                 </a>
                             </div>

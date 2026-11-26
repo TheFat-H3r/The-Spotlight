@@ -118,10 +118,10 @@ def product_detail(request, slug):
         is_available=True,
     )
 
-    related_services = Service.objects.none()
+    related_products = Product.objects.none()
 
     if product.category_id:
-        related_services = (
+        related_products = (
             Service.objects
             .filter(
                 category_id=product.category_id,
@@ -134,8 +134,9 @@ def product_detail(request, slug):
 
     context = {
         "product": product,
-        "related_services": related_services,
+        "related_products": related_products,
     }
+    print("related_products")
 
     return render(request, "core/product_detail.html", context)
 

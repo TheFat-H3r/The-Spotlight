@@ -250,40 +250,24 @@ class ProfileView(LoginRequiredMixin, View):
     template_name = 'core/profile.html'
     login_url = 'core:login'
 
-    def _get_role_data(self, user):
-        
-        customer_profile = None
-        vendor_profile = None
-
-        if user.role == User.Role.CUSTOMER:
-            customer_profile = user
-
-        if user.role == User.Role.VENDOR:
-            default_name = user.full_name or user.email.split('@')[0]
-            vendor_profile, _ = Store.objects.get_or_create(
-                owner=user,
-                defaults={
-                    'name': default_name,
-                    'slug': Store.generate_unique_slug(default_name), # type: ignore
-                    'contact_email': user.email,
-                    'contact_phone': user.phone or '',
-                }
-            )
-
-        return customer_profile, vendor_profile
-
+    @login_required
     def get(self, request):
-        user = request.user
-        customer_profile, vendor_profile = self._get_role_data(user)
-        edit_mode = request.GET.get('edit') == 'true'
+        if request.user.is_authenticated:
+            if request.user.is_email_verified:
+                if request.user.role == "customer":
+                    return redirect('core:home')
+                elif request.user.role == "vendor":
+                    return redirect('shopkeeper:home')
+                elif request.user.role == "admin":
+                    return redirect('operations:home')
+            return redirect('accounts:resend_verification')
+        
+
 
         context = {
-            'user_obj': user,
-            'customer_profile': customer_profile,
-            'vendor_profile': vendor_profile,
+            'user_obj': request.user,
             'residence_choices': User.Residence.choices,
             'course_choices': User.Course.choices,
-            'edit_mode': edit_mode,
         }
         return render(request, self.template_name, context)
 
@@ -576,7 +560,6 @@ def become_vendor(request):
 
 # --- Catalog: Products, Services & Stores ---
 def product_list(request):
-    # Get all available products
     products = (
         Product.objects
         .filter(is_available=True)
@@ -584,7 +567,6 @@ def product_list(request):
         .order_by("-is_featured", "-created_at")
     )
 
-    # Get unique categories belonging to available products
     categories = (
         Product.objects
         .filter(is_available=True, category__isnull=False)
@@ -592,8 +574,6 @@ def product_list(request):
         .order_by("category__name")
         .distinct()
     )
-
-    # Filter products by category if selected
     category_id = request.GET.get("category")
 
     if category_id:
@@ -621,11 +601,11 @@ def product_detail(request, slug):
         is_available=True,
     )
 
-    related_services = Service.objects.none()
+    related_products = Product.objects.none()
 
     if product.category_id:
-        related_services = (
-            Service.objects
+        related_products = (
+            Product.objects
             .filter(
                 category_id=product.category_id,
                 is_available=True,
@@ -637,9 +617,8 @@ def product_detail(request, slug):
 
     context = {
         "product": product,
-        "related_services": related_services,
+        "related_products": related_products,
     }
-
     return render(request, "core/product_detail.html", context)
 
 def service_list(request):
@@ -1115,6 +1094,164 @@ logger = logging.getLogger(__name__)
 # ==========================================
 # 1. CUSTOMER VIEWS (Placing & Viewing History)
 # ==========================================
+@login_required
+def create_booking(request, service_slug, store_slug):
+    store = Store.objects.filter(
+        slug=store_slug,
+        status=Store.Status.ACTIVE,
+    ).first()
+    if not store or not store.accepts_bookings:
+        return redirect("stores-home")
+
+    service = Service.objects.filter(
+        slug=service_slug,
+        store=store,
+        is_available=True,
+    ).first()
+    if not service:
+        return redirect("stores-home")
+
+    slots = AvailabilitySlot.objects.all().filter(
+        service=service,
+        is_active=True,
+    ).order_by("start_at")
+    default_phone = getattr(request.user, "phone", "")
+    form_data = {
+        "customer_phone": default_phone,
+        "seats": 1,
+        "customer_note": "",
+        "slot_id": "",
+    }
+    form_error = ""
+
+    if request.method == "POST":
+        form_data.update({
+            "customer_phone": request.POST.get("customer_phone", "").strip(),
+            "seats": request.POST.get("seats", "1").strip(),
+            "customer_note": request.POST.get("customer_note", "").strip(),
+            "slot_id": request.POST.get("slot_id", "").strip(),
+        })
+
+        try:
+            seats = int(form_data["seats"])
+        except (ValueError, TypeError):
+            seats = 0
+
+        if not form_data["customer_phone"]:
+            form_error = "Enter a phone number so the provider can contact you."
+        elif seats < 1:
+            form_error = "Choose at least one seat."
+        elif not form_data["slot_id"].isdigit():
+            form_error = "Choose an available appointment time."
+        else:
+            slot = slots.filter(pk=form_data["slot_id"]).first()
+            if not slot:
+                form_error = "That time is no longer available. Please choose another."
+            else:
+                try:
+                    with transaction.atomic():
+                        booking = slot.book(
+                            customer=request.user,
+                            seats=seats,
+                            note=form_data["customer_note"],
+                            phone=form_data["customer_phone"],
+                        )
+                        VendorNotification.objects.create(
+                            store=store,
+                            title=f"New booking {booking.reference}",
+                            message=(
+                                f"New booking request from {request.user.get_full_name() or request.user.email}\n"
+                                f"Service: {service.name}\n"
+                                f"Date and time: {booking.start_at:%a, %d %b %Y, %H:%M}\n"
+                                f"People: {booking.seats}\n"
+                                f"Phone/WhatsApp: {booking.customer_phone}\n"
+                                f"Customer email: {request.user.email}\n"
+                                f"Customer note: {booking.customer_note or 'None'}\n"
+                                f"Estimated total: MUR {booking.total_price}"
+                            ),
+                        )
+                except ValidationError as error:
+                    form_error = " ".join(error.messages)
+                else:
+                    _send_booking_notifications(request, booking)
+                    messages.success(request, "Your booking request has been submitted.")
+                    return render(
+                        request,
+                        "transactions/booking_success.html",
+                        {"booking": booking},
+                    )
+
+    context = {
+        "store": store,
+        "service": service,
+        "slots": slots,
+        "default_name": request.user.get_full_name() or request.user.email,
+        "default_email": request.user.email,
+        "form_data": form_data,
+        "form_error": form_error,
+    }
+    return render(request, "core/create_booking.html", context)
+
+
+def _send_booking_notifications(request, booking):
+    store = booking.service.store
+    vendor_email = store.contact_email or store.owner.email
+    sender = getattr(settings, "DEFAULT_FROM_EMAIL", "The Spotlight <noreply@example.com>")
+    base_url = request.build_absolute_uri("/").rstrip("/")
+    store_logo_url = _abs_url(base_url, store.logo.url) if store.logo else ""
+    service_image_url = (
+        _abs_url(base_url, booking.service.image.url) if booking.service.image else ""
+    )
+    common_context = {
+        "booking": booking,
+        "customer": booking.customer,
+        "service": booking.service,
+        "store": store,
+        "store_logo_url": store_logo_url,
+        "service_image_url": service_image_url,
+        "store_url": _abs_url(
+            base_url,
+            reverse("store:store-profile", kwargs={"slug": store.slug}),
+        ),
+        "global_track_url": _abs_url(
+            base_url,
+            reverse("transactions:customer-bookings"),
+        ) + f"?ref={booking.reference}",
+    }
+
+    email_jobs = [
+        (
+            booking.customer.email,
+            f"[The Spotlight] Booking request received — {booking.reference}",
+            "emails/customer_booking_confirmation.html",
+            common_context,
+        ),
+        (
+            vendor_email,
+            f"[The Spotlight] New booking request — {booking.reference}",
+            "emails/vendor_new_booking.html",
+            common_context,
+        ),
+    ]
+
+    for recipient, subject, template_name, context in email_jobs:
+        if not recipient:
+            continue
+        html_body = render_to_string(template_name, context)
+        message = EmailMultiAlternatives(
+            subject=subject,
+            body=strip_tags(html_body),
+            from_email=sender,
+            to=[recipient],
+        )
+        message.attach_alternative(html_body, "text/html")
+        if not message.send(fail_silently=True):
+            logger.warning(
+                "Could not send booking notification email for booking %s.",
+                booking.reference,
+            )
+
+
 @login_required
 def cart_detail(request):
     cart, _ = Cart.objects.get_or_create(customer=request.user)
@@ -1758,163 +1895,6 @@ def delete_customer_booking(request, booking_id):
     return redirect("transactions:customer-bookings")
 
 
-
-@login_required
-def create_booking(request, store_slug, service_slug):
-    store = Store.objects.filter(
-        slug=store_slug,
-        status=Store.Status.ACTIVE,
-    ).first()
-    if not store or not store.accepts_bookings:
-        return redirect("stores-home")
-
-    service = Service.objects.filter(
-        slug=service_slug,
-        store=store,
-        is_available=True,
-    ).first()
-    if not service:
-        return redirect("stores-home")
-
-    slots = AvailabilitySlot.objects.all().filter(
-        service=service,
-        is_active=True,
-    ).order_by("start_at")
-    default_phone = getattr(request.user, "phone", "")
-    form_data = {
-        "customer_phone": default_phone,
-        "seats": 1,
-        "customer_note": "",
-        "slot_id": "",
-    }
-    form_error = ""
-
-    if request.method == "POST":
-        form_data.update({
-            "customer_phone": request.POST.get("customer_phone", "").strip(),
-            "seats": request.POST.get("seats", "1").strip(),
-            "customer_note": request.POST.get("customer_note", "").strip(),
-            "slot_id": request.POST.get("slot_id", "").strip(),
-        })
-
-        try:
-            seats = int(form_data["seats"])
-        except (ValueError, TypeError):
-            seats = 0
-
-        if not form_data["customer_phone"]:
-            form_error = "Enter a phone number so the provider can contact you."
-        elif seats < 1:
-            form_error = "Choose at least one seat."
-        elif not form_data["slot_id"].isdigit():
-            form_error = "Choose an available appointment time."
-        else:
-            slot = slots.filter(pk=form_data["slot_id"]).first()
-            if not slot:
-                form_error = "That time is no longer available. Please choose another."
-            else:
-                try:
-                    with transaction.atomic():
-                        booking = slot.book(
-                            customer=request.user,
-                            seats=seats,
-                            note=form_data["customer_note"],
-                            phone=form_data["customer_phone"],
-                        )
-                        VendorNotification.objects.create(
-                            store=store,
-                            title=f"New booking {booking.reference}",
-                            message=(
-                                f"New booking request from {request.user.get_full_name() or request.user.email}\n"
-                                f"Service: {service.name}\n"
-                                f"Date and time: {booking.start_at:%a, %d %b %Y, %H:%M}\n"
-                                f"People: {booking.seats}\n"
-                                f"Phone/WhatsApp: {booking.customer_phone}\n"
-                                f"Customer email: {request.user.email}\n"
-                                f"Customer note: {booking.customer_note or 'None'}\n"
-                                f"Estimated total: MUR {booking.total_price}"
-                            ),
-                        )
-                except ValidationError as error:
-                    form_error = " ".join(error.messages)
-                else:
-                    _send_booking_notifications(request, booking)
-                    messages.success(request, "Your booking request has been submitted.")
-                    return render(
-                        request,
-                        "transactions/booking_success.html",
-                        {"booking": booking},
-                    )
-
-    context = {
-        "store": store,
-        "service": service,
-        "slots": slots,
-        "default_name": request.user.get_full_name() or request.user.email,
-        "default_email": request.user.email,
-        "form_data": form_data,
-        "form_error": form_error,
-    }
-    return render(request, "transactions/create_booking.html", context)
-
-
-def _send_booking_notifications(request, booking):
-    store = booking.service.store
-    vendor_email = store.contact_email or store.owner.email
-    sender = getattr(settings, "DEFAULT_FROM_EMAIL", "The Spotlight <noreply@example.com>")
-    base_url = request.build_absolute_uri("/").rstrip("/")
-    store_logo_url = _abs_url(base_url, store.logo.url) if store.logo else ""
-    service_image_url = (
-        _abs_url(base_url, booking.service.image.url) if booking.service.image else ""
-    )
-    common_context = {
-        "booking": booking,
-        "customer": booking.customer,
-        "service": booking.service,
-        "store": store,
-        "store_logo_url": store_logo_url,
-        "service_image_url": service_image_url,
-        "store_url": _abs_url(
-            base_url,
-            reverse("store:store-profile", kwargs={"slug": store.slug}),
-        ),
-        "global_track_url": _abs_url(
-            base_url,
-            reverse("transactions:customer-bookings"),
-        ) + f"?ref={booking.reference}",
-    }
-
-    email_jobs = [
-        (
-            booking.customer.email,
-            f"[The Spotlight] Booking request received — {booking.reference}",
-            "emails/customer_booking_confirmation.html",
-            common_context,
-        ),
-        (
-            vendor_email,
-            f"[The Spotlight] New booking request — {booking.reference}",
-            "emails/vendor_new_booking.html",
-            common_context,
-        ),
-    ]
-
-    for recipient, subject, template_name, context in email_jobs:
-        if not recipient:
-            continue
-        html_body = render_to_string(template_name, context)
-        message = EmailMultiAlternatives(
-            subject=subject,
-            body=strip_tags(html_body),
-            from_email=sender,
-            to=[recipient],
-        )
-        message.attach_alternative(html_body, "text/html")
-        if not message.send(fail_silently=True):
-            logger.warning(
-                "Could not send booking notification email for booking %s.",
-                booking.reference,
-            )
 
 
 # ==========================================

@@ -145,8 +145,8 @@
                         <!-- Quantity and cart -->
                         {% if product.is_available %}
                             <div class="product-quantity">
-                                <a href="#" class="shop-btn">
-                                    <span>Book Now</span>
+                                <a href="{% url 'core:add_to_cart' product.slug %}" class="shop-btn">
+                                    <span>Add to Cart</span>
                                 </a>
                             </div>
                         {% endif %}
@@ -290,7 +290,7 @@
 
 
 <!-- Related Products -->
-{% if related_Products %}
+{% if related_products %}
 <section class="product weekly-sale product-weekly footer-padding">
     <div class="container">
 
@@ -301,7 +301,7 @@
         <div class="weekly-sale-section">
             <div class="row g-5">
 
-                {% for Product in related_Products %}
+                {% for Product in related_products %}
 
                     <div class="col-lg-3 col-md-6">
                         <div class="product-wrapper" data-aos="fade-up">
@@ -331,7 +331,7 @@
 
                                     <div class="price">
                                         <span class="new-price">
-                                            From {{ product.starting_price }}
+                                            From {{ product.price }}
                                         </span>
                                     </div>
 
@@ -339,10 +339,8 @@
                             </div>
 
                             <div class="product-cart-btn">
-                                <a href="{% url 'core:product_detail' product.slug %}"
-                                   class="product-btn">
-                                    View Product
-                                </a>
+                                <a href="{% url 'core:add_to_cart' product.slug %}" class="product-btn">Add to cart</a>
+                                <a href="{% url 'core:product_detail' product.slug %}" class="product-btn">View Product</a>
                             </div>
 
                         </div>

@@ -103,6 +103,7 @@
                                         </div>
 
                                         <div class="product-cart-btn">
+                                            <a href="{% url 'core:add_to_cart' product.slug %}" class="product-btn">Add to cart</a>
                                             <a href="{% url 'core:product_detail' product.slug %}" class="product-btn">View Product</a>
                                         </div>
 

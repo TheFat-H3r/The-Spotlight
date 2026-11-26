@@ -267,6 +267,13 @@
                                         <span class="list-text">Contact</span>
                                     </a>
                                 </li>
+                                {% if not user.is_authenticated %}
+                                <li>
+                                    <a href="{% url 'core:login' %}">
+                                        <span class="list-text">Login</span>
+                                    </a>
+                                </li>
+                                {% endif %}
                             </ul>
                         </div>
                     </div>
@@ -306,12 +313,14 @@
                             <!-- Cart -->
                             <div class="header-cart">
                                 <a href="{% url 'core:cart' %}" class="cart-item">
-                                    <span>
-                                        <i class="fa-solid fa-cart-shopping" style="color: #000;"></i>
-                                    </span>
-                                    <span class="cart-text d-none d-xl-inline">
-                                        Cart {% if navbar_cart_count %}({{ navbar_cart_count }}){% endif %}
-                                    </span>
+                                    <i class="fa-solid fa-cart-shopping list-text shop-text" style="color: #000;"></i>
+                                    {% if navbar_cart_count > 0 %}
+                                        <span id="cart-badge"
+                                            class="position-absolute top-0 start-100 translate-middle badge rounded-pill cart-badge">
+                                        {% if navbar_cart_count > 99 %}99+{% else %}{{ navbar_cart_count }}{% endif %}
+                                        <span class="visually-hidden">items in cart</span>
+                                        </span>
+                                    {% endif %}
                                 </a>
                                 <div class="cart-submenu">
                                     <div class="cart-wrapper-item">
@@ -355,11 +364,8 @@
 
                             <!-- View My Dashboard Button -->
                             <div class="header-vendor-btn d-none d-sm-block">
-                                <a href="{% url 'core:user_profile' %}" class="shop-btn">
-                                    <span class="list-text shop-text">Dashboard</span>
-                                    <span class="icon">
-                                        <i class="fa-solid fa-gauge"></i>
-                                    </span>
+                                <a href="{% url 'core:user_profile' %}" class="shop-btn">                         
+                                    <i class="fa-solid fa-user list-text shop-text"></i>
                                 </a>
                             </div>
 
@@ -377,7 +383,7 @@
                                 <a href="{% url 'core:become_vendor' %}" class="shop-btn">
                                     <span class="list-text shop-text">Become a Vendor</span>
                                     <span class="icon">
-                                        <i class="fa-solid fa-arrow-right"></i>
+                                        <i class="fa-solid fa-arrow-right list-text shop-text"></i>
                                     </span>
                                 </a>
                             </div>
@@ -415,6 +421,9 @@
                     <li><a href="{% url 'core:faq' %}" class="fw-semibold text-decoration-none d-block py-1">Support</a></li>
                     <li><a href="{% url 'core:about' %}" class="fw-semibold text-decoration-none d-block py-1">About</a></li>
                     <li><a href="{% url 'core:contact' %}" class="fw-semibold text-decoration-none d-block py-1">Contact</a></li>
+                    {% if not user.is_authenticated %}
+                    <li><a href="{% url 'core:login' %}" class="fw-semibold text-decoration-none d-block py-1">Login</a></li>
+                    {% endif %}
                 </ul>
 
                 <!-- Mobile All Categories -->

@@ -20,7 +20,6 @@ from django.urls import path
 app_name = 'core'
 
 urlpatterns = [
-    # path("", home_redirect_view, name="home"),
     path("register/", RegisterView.as_view(), name="register"),
     path('verify/<str:token>/', VerifyEmailConfirmView.as_view(), name='verify_email_confirm'),
     path('resend-verification/', ResendVerificationEmailView.as_view(), name='resend_verification'),
@@ -56,6 +55,7 @@ urlpatterns = [
     path('flash-sale/', flash_sale, name='flash_sale'),
 
     # Shopping & Orders
+    path('services/<slug:service_slug>/<slug:store_slug>/booking/new/', create_booking, name='create-booking'),
     path("cart/", cart_detail, name="cart"),
     path("cart/add/<slug:slug>/", add_to_cart, name="add_to_cart"),
     path("cart/update/<int:item_id>/", update_cart,  name="update_cart"),
@@ -92,9 +92,6 @@ urlpatterns = [
     path("cart/item/<int:item_id>/update/", update_cart_item, name="update_cart_item"),
     path("cart/item/<int:item_id>/remove/", remove_cart_item, name="remove_cart_item"),
     path("checkout/", checkout, name="checkout"),
-
-    #Service Booking
-    path('store/<slug:store_slug>/<slug:service_slug>/booking/new/', create_booking, name='create-booking'),
 
     # Business Owner transaction management routes
     path('vendor/orders/', owner_orders_list, name='owner-orders'),
