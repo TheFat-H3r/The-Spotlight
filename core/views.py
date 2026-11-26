@@ -42,6 +42,10 @@ def contact(request):
 def faq(request):
     return render(request, 'core/faq.html')
 
+def report(request, slug, store):
+    return render(request, 'core/report.html')
+
+
 def privacy(request):
     return render(request, 'core/privacy.html')
 
@@ -102,7 +106,32 @@ def product_list(request):
     return render(request, "core/product_list.html", context)
 
 def product_detail(request, slug):
-    return render(request, 'core/product_detail.html', {'slug': slug})
+    product = get_object_or_404(
+        Product.objects.select_related("category", "store"),
+        slug=slug,
+        is_available=True,
+    )
+
+    related_services = Service.objects.none()
+
+    if product.category_id:
+        related_services = (
+            Service.objects
+            .filter(
+                category_id=product.category_id,
+                is_available=True,
+            )
+            .exclude(pk=None)
+            .select_related("store", "category")
+            .order_by("-is_featured", "-created_at")[:4]
+        )
+
+    context = {
+        "product": product,
+        "related_services": related_services,
+    }
+
+    return render(request, "core/product_detail.html", context)
 
 def service_list(request):
     services = (
@@ -141,7 +170,32 @@ def service_list(request):
     return render(request, "core/service_list.html", context)
 
 def service_detail(request, slug):
-    return render(request, 'core/service_detail.html', {'slug': slug})
+    service = get_object_or_404(
+            Service.objects.select_related("category", "store"),
+            slug=slug,
+            is_available=True,
+        )
+    
+    related_services = Service.objects.none()
+    
+    if service.category_id:
+        related_services = (
+                Service.objects
+                .filter(
+                    category_id=service.category_id,
+                    is_available=True,
+                )
+                .exclude(pk=None)
+                .select_related("store", "category")
+                .order_by("-is_featured", "-created_at")[:4]
+            )
+    
+    context = {
+            "service": service,
+            "related_services": related_services,
+        }
+    
+    return render(request, 'core/service_detail.html', context)
 
 def category_detail(request, slug):
     return render(request, 'core/category_detail.html', {'category_slug': slug})
@@ -155,7 +209,6 @@ def store_list(request):
     
     return render(request, 'core/store_list.html', context)
 
-from django.shortcuts import get_object_or_404, render
 
 def store_detail(request, slug):
     store = get_object_or_404(

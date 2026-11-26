@@ -1,7 +1,7 @@
 # core/urls.py
 from django.urls import path
 from .views import (
-    home, about, contact, faq, privacy, terms,
+    home, about, contact, faq, privacy, report, terms,
     login_view, create_account, user_profile, become_vendor,
     product_list, product_detail, category_detail,
     service_list, service_detail, store_list, store_detail, flash_sale,
@@ -16,6 +16,7 @@ urlpatterns = [
     path('about/', about, name='about'),
     path('contact/', contact, name='contact'),
     path('faq/', faq, name='faq'),
+    path('report/<slug:slug>/<slug:store>', report, name='report'),
     path('privacy-policy/', privacy, name='privacy'),
     path('terms-of-service/', terms, name='terms'),
 
