@@ -2,6 +2,42 @@
 {% load static %}
 
 {% block title %}Marketplace | The Spotlight{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Mobile (< 768px): image sits cleanly above text with zero overlap */
+    .hero-ad-media {
+        height: 220px;
+    }
+    .hero-ad-caption {
+        background: #000000;
+    }
+
+    /* Desktop / Tablet (>= 768px): full-bleed banner with bottom gradient overlay */
+    @media (min-width: 768px) {
+        .hero-ad-slide {
+            height: 400px;
+        }
+        .hero-ad-media {
+            height: 100%;
+            opacity: 0.78;
+        }
+        .hero-ad-caption {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: linear-gradient(to top, rgba(0, 0, 0, 0.94) 0%, rgba(0, 0, 0, 0.58) 65%, transparent 100%);
+        }
+        #bigHeroAdCarousel .carousel-control-prev,
+        #bigHeroAdCarousel .carousel-control-next {
+            max-height: none !important;
+        }
+    }
+</style>
+{% endblock %}
+
+
 {% block content %}
 
 <!-- 1. TOP PROMOTIONAL BANNER -->
@@ -186,29 +222,33 @@
     </div>
 </section>
 
-<!-- 4. PROMO PAIR 1 (2 COL-6 AD CARDS) -->
+<!-- 4. PROMO PAIR 1 (2 COL-6 AD CARDS — RESPONSIVE STACK ON MOBILE) -->
 <section class="container py-3 reveal-section">
     <div class="row g-4">
         {% for ad in advertisements|slice:":2" %}
             <div class="col-12 col-md-6">
-                <article class="market-card h-100 overflow-hidden">
-                    <div class="row g-0 h-100 align-items-center">
-                        <div class="col-sm-5 h-100">
+                <article class="market-card h-100 overflow-hidden d-flex flex-column">
+                    <div class="row g-0 flex-grow-1">
+                        <!-- Image Column: full-width top banner on mobile, left 5 cols on sm+ -->
+                        <div class="col-12 col-sm-5">
                             {% if ad.banner_image %}
                                 <img src="{{ ad.banner_image.url }}"
                                      alt="{{ ad.title }}"
-                                     class="w-100 h-100 object-fit-cover"
-                                     style="min-height: 190px;">
+                                     class="w-100 h-100 object-fit-cover d-block"
+                                     style="height: 180px; min-height: 180px;">
                             {% else %}
-                                <div class="image-placeholder h-100" style="min-height: 190px;">
+                                <div class="image-placeholder w-100 h-100 d-flex align-items-center justify-content-center"
+                                     style="min-height: 180px;">
                                     Sponsored Ad
                                 </div>
                             {% endif %}
                         </div>
-                        <div class="col-sm-7">
-                            <div class="p-3 p-lg-4">
+
+                        <!-- Text Column: clean padded area below image on mobile, right 7 cols on sm+ -->
+                        <div class="col-12 col-sm-7 d-flex align-items-center">
+                            <div class="p-3 p-sm-4 w-100">
                                 <span class="section-label">SPONSORED</span>
-                                <h5 class="fw-bold text-black mt-1">{{ ad.title }}</h5>
+                                <h5 class="fw-bold text-black mt-1 mb-2">{{ ad.title }}</h5>
                                 <p class="text-muted small mb-2">
                                     {{ ad.description|truncatewords:14 }}
                                 </p>
@@ -234,7 +274,7 @@
                         <h5 class="fw-bold text-black mt-1">Feature Your Products Here</h5>
                         <p class="text-muted small">Reach students and campus buyers directly on the homepage.</p>
                     </div>
-                    <div>
+                    <div class="mt-2">
                         <a href="{% url 'store:store-create' %}" class="btn btn-outline-spotlight btn-sm">Get Started →</a>
                     </div>
                 </article>
@@ -246,7 +286,7 @@
                         <h5 class="fw-bold text-black mt-1">Discover Student Services</h5>
                         <p class="text-muted small">Book tutoring, photography, design, and local campus services.</p>
                     </div>
-                    <div>
+                    <div class="mt-2">
                         <a href="{% url 'store:store-services-list' %}" class="btn btn-outline-spotlight btn-sm">Browse Services →</a>
                     </div>
                 </article>
@@ -331,11 +371,11 @@
     </div>
 </section>
 
-<!-- 6. BIG HERO AD SLIDER (FULL-WIDTH FEATURED CAMPAIGN) -->
+<!-- 6. BIG HERO AD SLIDER (STACKED IMAGE + TEXT ON MOBILE, OVERLAY ON MD+) -->
 <section class="container py-3 reveal-section">
-    <div id="bigHeroAdCarousel" class="carousel slide rounded-4 overflow-hidden shadow-sm border" data-bs-ride="carousel">
+    <div id="bigHeroAdCarousel" class="carousel slide rounded-4 overflow-hidden shadow-sm border bg-black" data-bs-ride="carousel">
         {% if advertisements|length > 1 %}
-            <div class="carousel-indicators">
+            <div class="carousel-indicators mb-2 mb-md-3">
                 {% for ad in advertisements %}
                     <button type="button"
                             data-bs-target="#bigHeroAdCarousel"
@@ -350,26 +390,30 @@
         <div class="carousel-inner">
             {% for ad in advertisements %}
                 <div class="carousel-item {% if forloop.first %}active{% endif %}">
-                    <div class="position-relative bg-dark" style="height: 400px;">
-                        {% if ad.banner_image %}
-                            <img src="{{ ad.banner_image.url }}"
-                                 class="d-block w-100 h-100 object-fit-cover opacity-75"
-                                 alt="{{ ad.title }}">
-                        {% else %}
-                            <div class="w-100 h-100 bg-black"></div>
-                        {% endif %}
+                    <!-- Wrapper: stacked flex column on mobile, fixed 400px relative container on md+ -->
+                    <div class="d-flex flex-column d-md-block position-relative bg-black hero-ad-slide">
+                        <!-- Image Area: unobstructed 220px banner on mobile, full background on md+ -->
+                        <div class="w-100 hero-ad-media">
+                            {% if ad.banner_image %}
+                                <img src="{{ ad.banner_image.url }}"
+                                     class="d-block w-100 h-100 object-fit-cover"
+                                     alt="{{ ad.title }}">
+                            {% else %}
+                                <div class="w-100 h-100 bg-dark"></div>
+                            {% endif %}
+                        </div>
 
-                        <div class="position-absolute bottom-0 start-0 end-0 p-4 p-md-5 text-white"
-                             style="background: linear-gradient(to top, rgba(0,0,0,0.92) 0%, rgba(0,0,0,0.55) 60%, transparent 100%);">
+                        <!-- Text Area: separate dark block below image on mobile, bottom gradient overlay on md+ -->
+                        <div class="hero-ad-caption p-4 pb-5 p-md-5 text-white">
                             <span class="section-label text-gold">
                                 FEATURED CAMPAIGN{% if ad.store %} • {{ ad.store.name|upper }}{% endif %}
                             </span>
-                            <h3 class="fw-bold text-white mt-1 mb-2">{{ ad.title }}</h3>
+                            <h3 class="fw-bold text-white mt-1 mb-2 fs-4 fs-md-3">{{ ad.title }}</h3>
                             <p class="text-light small mb-3 col-lg-8">
                                 {{ ad.description|truncatewords:25 }}
                             </p>
                             <a href="{{ ad.target_url|default:'#' }}" target="_blank" rel="noopener"
-                               class="btn btn-spotlight">
+                               class="btn btn-spotlight btn-sm btn-md-normal">
                                 Learn More →
                             </a>
                         </div>
@@ -377,13 +421,13 @@
                 </div>
             {% empty %}
                 <div class="carousel-item active">
-                    <div class="position-relative bg-black d-flex align-items-end" style="height: 360px;">
-                        <div class="p-4 p-md-5 text-white w-100">
-                            <span class="section-label text-gold">THE SPOTLIGHT SHOWCASE</span>
-                            <h3 class="fw-bold text-white mt-1 mb-2">Launch & Grow Your Campus Business</h3>
-                            <p class="text-light small mb-3 col-lg-8">
-                                Open your storefront in minutes and connect with buyers across campus.
-                            </p>
+                    <div class="d-flex flex-column justify-content-end bg-black p-4 p-md-5 text-white" style="min-height: 280px;">
+                        <span class="section-label text-gold">THE SPOTLIGHT SHOWCASE</span>
+                        <h3 class="fw-bold text-white mt-1 mb-2">Launch & Grow Your Campus Business</h3>
+                        <p class="text-light small mb-3 col-lg-8">
+                            Open your storefront in minutes and connect with buyers across campus.
+                        </p>
+                        <div>
                             <a href="{% url 'store:store-create' %}" class="btn btn-spotlight">
                                 Become a Seller →
                             </a>
@@ -394,17 +438,19 @@
         </div>
 
         {% if advertisements|length > 1 %}
-            <button class="carousel-control-prev" type="button" data-bs-target="#bigHeroAdCarousel" data-bs-slide="prev">
+            <button class="carousel-control-prev" type="button" data-bs-target="#bigHeroAdCarousel" data-bs-slide="prev" style="max-height: 220px;">
                 <span class="carousel-control-prev-icon" aria-hidden="true"></span>
                 <span class="visually-hidden">Previous</span>
             </button>
-            <button class="carousel-control-next" type="button" data-bs-target="#bigHeroAdCarousel" data-bs-slide="next">
+            <button class="carousel-control-next" type="button" data-bs-target="#bigHeroAdCarousel" data-bs-slide="next" style="max-height: 220px;">
                 <span class="carousel-control-next-icon" aria-hidden="true"></span>
                 <span class="visually-hidden">Next</span>
             </button>
         {% endif %}
     </div>
 </section>
+
+
 
 <!-- 7. MAIN MARKETPLACE LAYOUT (FILTERS + PRODUCTS & SERVICES + SIDEBAR) -->
 <section class="container-fluid marketplace-container py-5 bg-white">

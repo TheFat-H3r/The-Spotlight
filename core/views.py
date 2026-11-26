@@ -104,11 +104,12 @@ def home(request):
         "featured_stores": featured_stores[:12],
         "business_types": business_types,
         "featured_categories": featured_categories,
-        "featured_products": products[:6],
+        "featured_products": Product.objects.filter(is_available=True, is_featured=True),
         "featured_services": services[:4],
         "advertisements": advertisements,
         "announcements": announcements,
         "featured_reviews": featured_reviews,
+        "flash_sale_products": Product.objects.filter(is_available=True, is_featured=True).order_by("-created_at")[:4]
     }
 
     return render(request, "core/home.html", context)
