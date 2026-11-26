@@ -1,3 +1,4 @@
+from django.core.paginator import Paginator
 from django.shortcuts import get_object_or_404, redirect, render
 
 from marketing.models import Advertisement, Announcement
@@ -62,7 +63,43 @@ def become_vendor(request):
 
 # --- Catalog: Products, Services & Stores ---
 def product_list(request):
-    return render(request, 'core/product_list.html')
+    # Get all available products
+    products = (
+        Product.objects
+        .filter(is_available=True)
+        .select_related("category", "store")
+        .order_by("-is_featured", "-created_at")
+    )
+
+    # Get unique categories belonging to available products
+    categories = (
+        Product.objects
+        .filter(is_available=True, category__isnull=False)
+        .values("category_id", "category__name")
+        .order_by("category__name")
+        .distinct()
+    )
+
+    # Filter products by category if selected
+    category_id = request.GET.get("category")
+
+    if category_id:
+        products = products.filter(category_id=category_id)
+
+    # Pagination: 12 products per page
+    paginator = Paginator(products, 12)
+    page_number = request.GET.get("page")
+    page_obj = paginator.get_page(page_number)
+
+    context = {
+        "products": page_obj,
+        "page_obj": page_obj,
+        "categories": categories,
+        "total_products": paginator.count,
+        "selected_category": category_id,
+    }
+
+    return render(request, "core/product_list.html", context)
 
 def product_detail(request, slug):
     return render(request, 'core/product_detail.html', {'slug': slug})
