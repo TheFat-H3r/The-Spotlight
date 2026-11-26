@@ -62,12 +62,14 @@ class User(AbstractBaseUser, PermissionsMixin):
         SONGHAI = "Songhai", "Songhai"
         KONGO = "Kongo", "Kongo"
         AKSUM = "Aksum", "Aksum"
+        OUTSIDE = "Outside", "Outside"
     
     class Course(models.TextChoices):
         CS = "CS", "CS"
         SE = "SE", "SE"
         EL = "EL", "EL"
         IBT = "IBT", "IBT"
+        NonStudent = "NonStudent", "NonStudent"
 
     phone_validator = RegexValidator(
         regex=r"^\+?\d{7,15}$",
@@ -99,7 +101,7 @@ class User(AbstractBaseUser, PermissionsMixin):
     )
 
     # Locating
-    course = models.CharField(max_length=4, choices=Course.choices, blank=True, help_text="Your course of study.")
+    course = models.CharField(max_length=10, choices=Course.choices, blank=True, help_text="Your course of study.")
     cohort = models.CharField(
             max_length=4,
             blank=True,

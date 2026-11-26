@@ -1,11 +1,13 @@
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
+from django.db import IntegrityError, transaction
 from django.shortcuts import get_object_or_404, redirect, render
 
 from transactions.models import Order, OrderItem
 from .models import BusinessType, Category, Store, Product, Service, Review
 
 business_types = BusinessType.objects.all()
+all_stores = Store.objects.filter(status="active")
 
 def stores_list(request):
   stores = Store.objects.filter(status="active").select_related("business_type").prefetch_related("categories").order_by(
@@ -31,6 +33,7 @@ def stores_list(request):
       'categories': categories,
       'selected_category': selected_category,
       'business_types': business_types,
+      'all_stores': all_stores,
   }
   return render(request, 'stores/store_list.html', context)
 
@@ -63,6 +66,7 @@ def all_services(request):
       'categories': categories,
       'selected_category': selected_category,
       'business_types': business_types,
+      'all_stores': all_stores,
   }
   return render(request, 'stores/service_list.html', context)
 
@@ -95,6 +99,7 @@ def all_products(request):
       'categories': categories,
       'selected_category': selected_category,
       'business_types': business_types,
+      'all_stores': all_stores,
   }
   return render(request, 'stores/product_list.html', context)
 
@@ -119,6 +124,7 @@ def store(request, slug):
       'store': filtered_store,
       'store_reviews': store_reviews,
       'business_types': business_types,
+      'all_stores': all_stores,
   }
 
   if store_products is not None:
@@ -142,16 +148,106 @@ def store_dashboard(request):
   context = {
       'store': user_store,
       'business_types': business_types,
+      'all_stores': all_stores,
   }
   return render(request, 'stores/store_dashboard.html', context)
 
 
 @login_required
-def store_create(request):
-  
-  
-  return render(request, 'stores/store_form.html')
+def become_vendor(request):
+    user_role = getattr(request.user, "role", None)
 
+    # Reject admin accounts from applying/creating a vendor store
+    if user_role == "admin":
+        messages.error(request, "Admin accounts cannot create or manage seller stores.")
+        return redirect("core:home")
+
+    business_types = BusinessType.objects.all()
+    categories = Category.objects.all()
+
+    context = {
+        "business_types": business_types,
+      'all_stores': all_stores,
+        "categories": categories,
+    }
+
+    if request.method == "POST":
+        contact_email = request.POST.get("contact_email", "").strip() or request.user.email
+        contact_phone = request.POST.get("contact_phone", "").strip()
+        whatsapp = request.POST.get("whatsapp", "").strip()
+        name = request.POST.get("name", "").strip()
+        tagline = request.POST.get("tagline", "").strip()
+        description = request.POST.get("description", "").strip()
+        business_type_id = request.POST.get("business_type", "").strip()
+        category_ids = request.POST.getlist("categories")
+        pickup_location = request.POST.get("pickup_location", "").strip()
+        offers_delivery = request.POST.get("offers_delivery") == "on"
+        agree_terms = request.POST.get("agree_terms")
+        logo = request.FILES.get("logo")
+        banner = request.FILES.get("banner")
+
+        context["form_data"] = request.POST
+
+        if not all([contact_email, contact_phone, name, business_type_id, pickup_location, agree_terms]):
+            messages.error(request, "Please fill in all required fields and accept the terms and conditions.")
+            return render(request, "core/become-vendor.html", context)
+
+        # Enforce unique_store_name_per_owner constraint cleanly
+        if Store.objects.filter(owner=request.user, name__iexact=name).exists():
+            messages.error(request, f"You already have a store named '{name}'. Please choose another name.")
+            return render(request, "core/become-vendor.html", context)
+
+        # Validate BusinessType
+        business_type = BusinessType.objects.filter(pk=business_type_id).first()
+        if not business_type:
+            messages.error(request, "Please select a valid business type.")
+            return render(request, "core/become-vendor.html", context)
+
+        # Validate file size (max 5MB)
+        max_size = 5 * 1024 * 1024
+        if (logo and logo.size > max_size) or (banner and banner.size > max_size):
+            messages.error(request, "Logo and cover images must be 5MB or smaller.")
+            return render(request, "core/become-vendor.html", context)
+
+        try:
+            with transaction.atomic():
+                store = Store(
+                    name=name,
+                    tagline=tagline,
+                    description=description,
+                    business_type=business_type,
+                    contact_email=contact_email,
+                    contact_phone=contact_phone,
+                    whatsapp=whatsapp,
+                    pickup_location=pickup_location,
+                    offers_delivery=offers_delivery,
+                    logo=logo,
+                    banner=banner,
+                    status=Store.Status.DRAFT,
+                )
+                store.owner = request.user
+                store.save()
+
+                if category_ids:
+                    valid_categories = Category.objects.filter(pk__in=category_ids)
+                    store.categories.set(valid_categories)
+
+                # Promote customer role to vendor
+                if request.user.role == "customer":
+                    request.user.role = "vendor"
+                    request.user.save(update_fields=["role"])
+
+        except IntegrityError:
+            messages.error(request, "Could not create your store due to a duplicate name. Please try again.")
+            return render(request, "core/become-vendor.html", context)
+
+        messages.success(
+            request,
+            f"Your store '{store.name}' has been created as a draft and submitted for review!",
+        )
+        return redirect("shopkeeper:home") 
+
+    return render(request, "stores/store_form.html", context)
 
 @login_required
 def store_update(request, slug):
@@ -184,6 +280,7 @@ def product_detail(request, slug):
   context = { 
     'product': product,
     'business_types': business_types,
+    'all_stores': all_stores,
   }
   return render(request, 'stores/product_detail.html', context)
 
@@ -192,6 +289,7 @@ def service_detail(request, slug):
   context = { 
     'service': service,
     'business_types': business_types,
+    'all_stores': all_stores,
     }
   return render(request, 'stores/service_detail.html', context)
 

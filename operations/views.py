@@ -530,7 +530,7 @@ def store_form(request, pk=None):
         if pk
         else None
     )
-    owners = User.objects.filter(is_active=True).order_by("first_name", "email")
+    owners = User.objects.filter(is_active=True).order_by("full_name", "email")
     business_types = BusinessType.objects.all().order_by("name")
     categories = Category.objects.all().order_by("name")
 
@@ -1601,7 +1601,7 @@ def admin_settings(request):
                     user.full_clean(exclude=["password"])
                     user.save()
                     messages.success(request, "Admin profile updated.")
-                    return redirect("operations:settings")
+                    return redirect("operations:admin-settings")
                 except ValidationError as exc:
                     for field, errs in exc.message_dict.items():
                         for err in errs:
@@ -1627,7 +1627,7 @@ def admin_settings(request):
                     user.save(update_fields=["password", "updated_at"])
                     update_session_auth_hash(request, user)
                     messages.success(request, "Password updated successfully.")
-                    return redirect("operations:settings")
+                    return redirect("operations:admin-settings")
 
         # 3. Platform & Marketplace Configuration
         elif form_type == "platform":
@@ -1668,7 +1668,7 @@ def admin_settings(request):
                     platform_settings.save()
 
                     messages.success(request, "Platform settings saved.")
-                    return redirect("operations:settings")
+                    return redirect("operations:admin-settings")
 
     return render(
         request,
