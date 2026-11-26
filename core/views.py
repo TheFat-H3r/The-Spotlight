@@ -113,7 +113,7 @@ def product_detail(request, slug):
     )
 
     related_services = Service.objects.none()
-    
+
     if product.category_id:
         related_services = (
             Service.objects
@@ -273,6 +273,7 @@ def flash_sale(request):
 
 # --- Shopping & Orders ---
 def cart(request):
+    
     return render(request, 'core/cart.html')
 
 def wishlist(request):
