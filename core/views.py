@@ -100,7 +100,7 @@ def home(request):
         .order_by("-overall_rating", "-created_at")[:6]
     )
     context = {
-        # "active_ads": active_ads, #Don't disclose by now
+        "active_ads": active_ads, #Don't disclose by now
         "featured_stores": featured_stores[:12],
         "business_types": business_types,
         "featured_categories": featured_categories,

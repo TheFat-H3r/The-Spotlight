@@ -68,35 +68,39 @@
           </button>
           <ul class="dropdown-menu dropdown-menu-end dropdown-menu-spotlight shadow-lg mt-2"
               aria-labelledby="profileDropdown">
-            {% if request.user.is_authenticated %}
-              <li>
-                <span class="dropdown-item-text small text-gold fw-semibold text-truncate d-block" style="max-width: 220px;">
-                  {{ request.user.email }}
-                </span>
-              </li>
-              <li><hr class="dropdown-divider"></li>
-              <li><a class="dropdown-item" href="{% url 'accounts:profile' %}">
-                <i class="bi bi-person me-2 text-gold" aria-hidden="true"></i>My account
-              </a></li>
-              <li><a class="dropdown-item" href="{% url 'transactions:customer-orders' %}">
-                <i class="bi bi-receipt me-2 text-gold" aria-hidden="true"></i>My orders
-              </a></li>
-              <li><a class="dropdown-item" href="{% url 'transactions:customer-bookings' %}">
-                <i class="bi bi-calendar-check me-2 text-gold" aria-hidden="true"></i>My bookings
-              </a></li>
-              {% if request.user.is_authenticated and request.user.role == "customer" %}
-              <li><a class="dropdown-item" href="{% url 'store:store-create' %}">
-                <i class="bi bi-shop me-2 text-gold" aria-hidden="true"></i>Become a vendor
-              </a></li>
-              {% endif %}
-              <li><a class="dropdown-item" href="#">
-                <i class="bi bi-gear me-2 text-gold" aria-hidden="true"></i>Settings
-              </a></li>
-              <li><hr class="dropdown-divider"></li>
-              <li><a class="dropdown-item" href="{% url 'accounts:logout' %}">
-                <i class="bi bi-box-arrow-right me-2 text-gold" aria-hidden="true"></i>Sign out
-              </a></li>
-            {% else %}
+              {% if request.user.is_authenticated %}
+                <li>
+                  <span class="dropdown-item-text small text-gold fw-semibold text-truncate d-block" style="max-width: 220px;">
+                    {{ request.user.email }}
+                  </span>
+                </li>
+                <li><hr class="dropdown-divider"></li>
+                <li>
+                  <a class="dropdown-item" href="{% if request.user.role == 'admin' or request.user.is_staff or request.user.is_superuser %}{% url 'operations:admin-home' %}{% elif request.user.role == 'vendor' %}{% url 'shopkeeper:home' %}{% else %}{% url 'accounts:profile' %}{% endif %}">
+                    <i class="bi bi-person me-2 text-gold" aria-hidden="true"></i>My account
+                  </a>
+                </li>
+                <li><a class="dropdown-item" href="{% url 'transactions:customer-orders' %}">
+                  <i class="bi bi-receipt me-2 text-gold" aria-hidden="true"></i>My orders
+                </a></li>
+                <li><a class="dropdown-item" href="{% url 'transactions:customer-bookings' %}">
+                  <i class="bi bi-calendar-check me-2 text-gold" aria-hidden="true"></i>My bookings
+                </a></li>
+                {% if request.user.role == "customer" %}
+                <li><a class="dropdown-item" href="{% url 'store:store-create' %}">
+                  <i class="bi bi-shop me-2 text-gold" aria-hidden="true"></i>Become a vendor
+                </a></li>
+                {% endif %}
+                <li>
+                  <a class="dropdown-item" href="{% if request.user.role == 'admin' or request.user.is_staff or request.user.is_superuser %}{% url 'operations:admin-home' %}{% elif request.user.role == 'vendor' %}{% url 'shopkeeper:home' %}{% else %}{% url 'accounts:user-settings' %}{% endif %}">
+                    <i class="bi bi-gear me-2 text-gold" aria-hidden="true"></i>Settings
+                  </a>
+                </li>
+                <li><hr class="dropdown-divider"></li>
+                <li><a class="dropdown-item" href="{% url 'accounts:logout' %}">
+                  <i class="bi bi-box-arrow-right me-2 text-gold" aria-hidden="true"></i>Sign out
+                </a></li>
+              {% else %}
               <li><a class="dropdown-item" href="{% url 'accounts:login' %}">
                 <i class="bi bi-box-arrow-in-right me-2 text-gold" aria-hidden="true"></i>Sign in
               </a></li>

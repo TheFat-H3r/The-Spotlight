@@ -4,7 +4,7 @@
 {% block title %}Marketplace | The Spotlight{% endblock %}
 {% block content %}
 
-<!-- 1. Promotional advertisements -->
+<!-- 1. TOP PROMOTIONAL BANNER -->
 {% if active_ads %}
 <section class="advertisement-section">
     <div id="advertisementCarousel"
@@ -16,7 +16,6 @@
             {% for ad in active_ads %}
                 <div class="carousel-item {% if forloop.first %}active{% endif %}">
                     <div class="advertisement-banner">
-
                         {% if ad.image %}
                             <img src="{{ ad.image.url }}"
                                  class="advertisement-image"
@@ -57,7 +56,7 @@
 </section>
 {% endif %}
 
-<!-- 2. Marketplace introduction (Logo Image instead of text label) -->
+<!-- 2. MARKETPLACE HERO & SEARCH -->
 <section class="marketplace-hero py-5">
     <div class="container">
         <div class="row align-items-center">
@@ -86,7 +85,177 @@
     </div>
 </section>
 
-<!-- 3. Featured stores -->
+<!-- 3. FLASH SALES (4 PRODUCT CARDS MAX) -->
+<section class="container py-5 reveal-section">
+    <div class="section-heading d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
+        <div>
+            <span class="section-label">LIMITED TIME DEALS</span>
+            <h2 class="fw-bold text-black mb-0">Flash Sales</h2>
+        </div>
+        <a href="{% url 'store:store-products-list' %}" class="btn btn-outline-spotlight">
+            View All Deals
+        </a>
+    </div>
+
+    <div class="row g-4">
+        {% for product in flash_sale_products|default:featured_products|slice:":4" %}
+            <div class="col-12 col-sm-6 col-lg-3">
+                <article class="market-card product-card h-100">
+                    <div class="product-image-wrapper">
+                        {% if product.image %}
+                            <img src="{{ product.image.url }}"
+                                 class="card-image"
+                                 alt="{{ product.name }}">
+                        {% else %}
+                            <div class="image-placeholder">
+                                Product image
+                            </div>
+                        {% endif %}
+
+                        <span class="featured-badge bg-danger text-white">Flash Sale</span>
+                    </div>
+
+                    <div class="card-body p-3">
+                        <h5 class="fw-bold text-black">{{ product.name }}</h5>
+
+                        <p class="text-muted small mb-1">
+                            {{ product.category.name|default:"General" }}
+                        </p>
+
+                        <p class="small text-black mb-2">
+                            Vendor:
+                            {% if product.store %}
+                                <a href="{% url 'store:store-profile' product.store.slug %}"
+                                   class="fw-semibold text-gold-link text-decoration-none">
+                                    {{ product.store.name }}
+                                </a>
+                            {% else %}
+                                Not specified
+                            {% endif %}
+                        </p>
+
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                {% if product.sale_price %}
+                                    <span class="fw-bold text-danger">MUR {{ product.sale_price }}</span>
+                                    <small class="text-muted text-decoration-line-through ms-1">MUR {{ product.price }}</small>
+                                {% else %}
+                                    <span class="fw-bold text-black">MUR {{ product.price }}</span>
+                                {% endif %}
+                            </div>
+
+                            {% if product.rating_average %}
+                                <span class="rating">
+                                    ★ {{ product.rating_average }}
+                                </span>
+                            {% endif %}
+                        </div>
+
+                        <div class="d-flex gap-2 mt-3">
+                            <button type="button"
+                                    class="btn btn-outline-spotlight btn-sm flex-fill quick-view-button"
+                                    data-name="{{ product.name|escape }}"
+                                    data-description="{{ product.description|default:''|escape }}"
+                                    data-price="MUR {{ product.sale_price|default:product.price }}"
+                                    data-image="{% if product.image %}{{ product.image.url }}{% endif %}"
+                                    data-url="{% url 'store:product-detail' slug=product.slug|default:'#' %}">
+                                Details
+                            </button>
+
+                            <form method="post" action="{% url 'transactions:add_to_cart' product.id %}" class="flex-fill">
+                                {% csrf_token %}
+                                <input type="hidden" name="quantity" value="1">
+                                <button type="submit" class="btn btn-spotlight btn-sm w-100">
+                                    Add to Cart
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </article>
+            </div>
+        {% empty %}
+            <div class="col-12">
+                <div class="empty-state p-4 text-center">
+                    <h5 class="text-black">No flash sales active right now</h5>
+                    <p class="text-muted mb-0">
+                        Check back soon for limited-time campus discounts.
+                    </p>
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+</section>
+
+<!-- 4. PROMO PAIR 1 (2 COL-6 AD CARDS) -->
+<section class="container py-3 reveal-section">
+    <div class="row g-4">
+        {% for ad in advertisements|slice:":2" %}
+            <div class="col-12 col-md-6">
+                <article class="market-card h-100 overflow-hidden">
+                    <div class="row g-0 h-100 align-items-center">
+                        <div class="col-sm-5 h-100">
+                            {% if ad.banner_image %}
+                                <img src="{{ ad.banner_image.url }}"
+                                     alt="{{ ad.title }}"
+                                     class="w-100 h-100 object-fit-cover"
+                                     style="min-height: 190px;">
+                            {% else %}
+                                <div class="image-placeholder h-100" style="min-height: 190px;">
+                                    Sponsored Ad
+                                </div>
+                            {% endif %}
+                        </div>
+                        <div class="col-sm-7">
+                            <div class="p-3 p-lg-4">
+                                <span class="section-label">SPONSORED</span>
+                                <h5 class="fw-bold text-black mt-1">{{ ad.title }}</h5>
+                                <p class="text-muted small mb-2">
+                                    {{ ad.description|truncatewords:14 }}
+                                </p>
+                                {% if ad.store %}
+                                    <small class="text-muted d-block mb-3">
+                                        By <b>{{ ad.store.name }}</b>
+                                    </small>
+                                {% endif %}
+                                <a href="{{ ad.target_url|default:'#' }}" target="_blank" rel="noopener"
+                                   class="btn btn-spotlight btn-sm">
+                                    Explore →
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </article>
+            </div>
+        {% empty %}
+            <div class="col-12 col-md-6">
+                <article class="market-card p-4 h-100 d-flex flex-column justify-content-between">
+                    <div>
+                        <span class="section-label">PROMOTE YOUR STORE</span>
+                        <h5 class="fw-bold text-black mt-1">Feature Your Products Here</h5>
+                        <p class="text-muted small">Reach students and campus buyers directly on the homepage.</p>
+                    </div>
+                    <div>
+                        <a href="{% url 'store:store-create' %}" class="btn btn-outline-spotlight btn-sm">Get Started →</a>
+                    </div>
+                </article>
+            </div>
+            <div class="col-12 col-md-6">
+                <article class="market-card p-4 h-100 d-flex flex-column justify-content-between">
+                    <div>
+                        <span class="section-label">CAMPUS DEALS</span>
+                        <h5 class="fw-bold text-black mt-1">Discover Student Services</h5>
+                        <p class="text-muted small">Book tutoring, photography, design, and local campus services.</p>
+                    </div>
+                    <div>
+                        <a href="{% url 'store:store-services-list' %}" class="btn btn-outline-spotlight btn-sm">Browse Services →</a>
+                    </div>
+                </article>
+            </div>
+        {% endfor %}
+    </div>
+</section>
+
+<!-- 5. FEATURED STORES -->
 <section class="container py-5 reveal-section">
     <div class="section-heading d-flex justify-content-between align-items-center mb-4">
         <div>
@@ -99,18 +268,14 @@
     </div>
 
     <div class="vendor-carousel-wrapper">
-
         <button class="carousel-arrow" id="vendorPrev"
                 type="button" aria-label="Previous stores">
             ‹
         </button>
 
         <div class="vendor-carousel" id="vendorCarousel">
-
             {% for store in featured_stores %}
-
                 <article class="vendor-card">
-
                     <a href="{% url 'store:store-profile' store.slug %}"
                        class="text-decoration-none text-black">
 
@@ -146,22 +311,19 @@
                         </span>
                     </a>
                 </article>
-
             {% empty %}
                 <p class="text-muted">
                     Featured stores will appear here when available.
                 </p>
             {% endfor %}
-
         </div>
 
         <button class="carousel-arrow" id="vendorNext"
                 type="button" aria-label="Next stores">
             ›
         </button>
-
     </div>
-    <!-- View all stores -->
+
     <div class="text-center mt-4">
         <a href="{% url 'store:store-list' %}" class="btn btn-outline-spotlight">
             View All Stores
@@ -169,8 +331,83 @@
     </div>
 </section>
 
-<!-- 4. Main marketplace layout -->
-<section class="container-fluid marketplace-container py-4 bg-white">
+<!-- 6. BIG HERO AD SLIDER (FULL-WIDTH FEATURED CAMPAIGN) -->
+<section class="container py-3 reveal-section">
+    <div id="bigHeroAdCarousel" class="carousel slide rounded-4 overflow-hidden shadow-sm border" data-bs-ride="carousel">
+        {% if advertisements|length > 1 %}
+            <div class="carousel-indicators">
+                {% for ad in advertisements %}
+                    <button type="button"
+                            data-bs-target="#bigHeroAdCarousel"
+                            data-bs-slide-to="{{ forloop.counter0 }}"
+                            class="{% if forloop.first %}active{% endif %}"
+                            {% if forloop.first %}aria-current="true"{% endif %}
+                            aria-label="Slide {{ forloop.counter }}"></button>
+                {% endfor %}
+            </div>
+        {% endif %}
+
+        <div class="carousel-inner">
+            {% for ad in advertisements %}
+                <div class="carousel-item {% if forloop.first %}active{% endif %}">
+                    <div class="position-relative bg-dark" style="height: 400px;">
+                        {% if ad.banner_image %}
+                            <img src="{{ ad.banner_image.url }}"
+                                 class="d-block w-100 h-100 object-fit-cover opacity-75"
+                                 alt="{{ ad.title }}">
+                        {% else %}
+                            <div class="w-100 h-100 bg-black"></div>
+                        {% endif %}
+
+                        <div class="position-absolute bottom-0 start-0 end-0 p-4 p-md-5 text-white"
+                             style="background: linear-gradient(to top, rgba(0,0,0,0.92) 0%, rgba(0,0,0,0.55) 60%, transparent 100%);">
+                            <span class="section-label text-gold">
+                                FEATURED CAMPAIGN{% if ad.store %} • {{ ad.store.name|upper }}{% endif %}
+                            </span>
+                            <h3 class="fw-bold text-white mt-1 mb-2">{{ ad.title }}</h3>
+                            <p class="text-light small mb-3 col-lg-8">
+                                {{ ad.description|truncatewords:25 }}
+                            </p>
+                            <a href="{{ ad.target_url|default:'#' }}" target="_blank" rel="noopener"
+                               class="btn btn-spotlight">
+                                Learn More →
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            {% empty %}
+                <div class="carousel-item active">
+                    <div class="position-relative bg-black d-flex align-items-end" style="height: 360px;">
+                        <div class="p-4 p-md-5 text-white w-100">
+                            <span class="section-label text-gold">THE SPOTLIGHT SHOWCASE</span>
+                            <h3 class="fw-bold text-white mt-1 mb-2">Launch & Grow Your Campus Business</h3>
+                            <p class="text-light small mb-3 col-lg-8">
+                                Open your storefront in minutes and connect with buyers across campus.
+                            </p>
+                            <a href="{% url 'store:store-create' %}" class="btn btn-spotlight">
+                                Become a Seller →
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+
+        {% if advertisements|length > 1 %}
+            <button class="carousel-control-prev" type="button" data-bs-target="#bigHeroAdCarousel" data-bs-slide="prev">
+                <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                <span class="visually-hidden">Previous</span>
+            </button>
+            <button class="carousel-control-next" type="button" data-bs-target="#bigHeroAdCarousel" data-bs-slide="next">
+                <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                <span class="visually-hidden">Next</span>
+            </button>
+        {% endif %}
+    </div>
+</section>
+
+<!-- 7. MAIN MARKETPLACE LAYOUT (FILTERS + PRODUCTS & SERVICES + SIDEBAR) -->
+<section class="container-fluid marketplace-container py-5 bg-white">
     <div class="row g-4">
 
         <!-- LEFT SIDEBAR: FILTERS -->
@@ -184,7 +421,6 @@
 
             <div class="collapse d-lg-block" id="marketplaceFilters">
                 <div class="filter-panel p-3">
-
                     <div class="d-flex justify-content-between align-items-center mb-3">
                         <h5 class="fw-bold mb-0 text-black">Filters</h5>
                         <a href="{% url 'core:home' %}"
@@ -194,15 +430,12 @@
                     </div>
 
                     <form method="get" action="{% url 'core:home' %}">
-
                         <div class="filter-group mb-4">
                             <label for="vendorType" class="fw-bold mb-2 text-black">
                                 Vendor Type
                             </label>
-
                             <select name="vendor_type" id="vendorType" class="form-select">
                                 <option value="">All vendors</option>
-
                                 {% for type in business_types %}
                                     <option value="{{ type.slug }}"
                                         {% if request.GET.vendor_type == type.slug %}selected{% endif %}>
@@ -216,10 +449,8 @@
                             <label for="category" class="fw-bold mb-2 text-black">
                                 Category
                             </label>
-
                             <select name="category" id="category" class="form-select">
                                 <option value="">All categories</option>
-
                                 {% for category in featured_categories %}
                                     <option value="{{ category.slug }}"
                                         {% if request.GET.category == category.slug %}selected{% endif %}>
@@ -233,7 +464,6 @@
                             <label for="maxPrice" class="fw-bold mb-2 text-black">
                                 Maximum Price (MUR)
                             </label>
-
                             <input type="number" id="maxPrice" name="max_price"
                                    class="form-control" min="0"
                                    value="{{ request.GET.max_price }}"
@@ -244,7 +474,6 @@
                             <label for="location" class="fw-bold mb-2 text-black">
                                 Location
                             </label>
-
                             <input type="text" id="location" name="location"
                                    class="form-control"
                                    value="{{ request.GET.location }}"
@@ -254,15 +483,15 @@
                         <button type="submit" class="btn btn-spotlight w-100">
                             Apply Filters
                         </button>
-
                     </form>
                 </div>
             </div>
         </aside>
 
-        <!-- CENTRE: PRODUCTS AND SERVICES -->
+        <!-- CENTRE: FEATURED PRODUCTS AND SERVICES -->
         <main class="col-lg-7">
 
+            <!-- Products List -->
             <section id="products-section" class="mb-5 reveal-section">
                 <div class="section-heading mb-4">
                     <span class="section-label">SHOP FROM OUR VENDORS</span>
@@ -273,12 +502,9 @@
                 </div>
 
                 <div class="row g-4">
-
                     {% for product in featured_products|slice:":6" %}
                         <div class="col-12 col-md-6 col-lg-4">
-
                             <article class="market-card product-card h-100">
-
                                 <div class="product-image-wrapper">
                                     {% if product.image %}
                                         <img src="{{ product.image.url }}"
@@ -348,7 +574,6 @@
                                 </div>
                             </article>
                         </div>
-
                     {% empty %}
                         <div class="col-12">
                             <div class="empty-state p-4 text-center">
@@ -359,7 +584,6 @@
                             </div>
                         </div>
                     {% endfor %}
-
                 </div>
 
                 <div class="text-center mt-4">
@@ -369,7 +593,8 @@
                 </div>
             </section>
 
-            <section id="services-section" class="mb-5 reveal-section">
+            <!-- Services List -->
+            <section id="services-section" class="mb-4 reveal-section">
                 <div class="section-heading mb-4">
                     <span class="section-label">DISCOVER WHAT YOU CAN BOOK</span>
                     <h2 class="fw-bold text-black">Featured Services</h2>
@@ -379,12 +604,9 @@
                 </div>
 
                 <div class="row g-4">
-
                     {% for service in featured_services|slice:":4" %}
                         <div class="col-12 col-md-6">
-
                             <article class="market-card service-card h-100">
-
                                 {% if service.image %}
                                     <img src="{{ service.image.url }}"
                                          class="card-image"
@@ -423,7 +645,7 @@
                                     <p class="fw-bold text-black mt-2">
                                         Starting from MUR {{ service.starting_price }}
                                     </p>
-                                    
+
                                     <div class="d-flex gap-2 mt-3">
                                         <button type="button"
                                                 class="btn btn-outline-spotlight btn-sm flex-fill quick-view-button"
@@ -434,18 +656,15 @@
                                                 data-url="{% url 'store:service-detail' slug=service.slug|default:'#' %}">
                                             Details
                                         </button>
-                                        <!-- View Service Button and booking link -->
-                                        
+
                                         <a href="{% url 'transactions:create-booking' store_slug=service.store.slug service_slug=service.slug %}"
-                                        class="btn btn-spotlight btn-sm w-100">
+                                           class="btn btn-spotlight btn-sm w-100">
                                             Book Now
                                         </a>
                                     </div>
                                 </div>
-
                             </article>
                         </div>
-
                     {% empty %}
                         <div class="col-12">
                             <div class="empty-state p-4 text-center">
@@ -456,83 +675,19 @@
                             </div>
                         </div>
                     {% endfor %}
-
                 </div>
+
                 <div class="text-center mt-4">
                     <a href="{% url 'store:store-services-list' %}" class="btn btn-outline-spotlight">
                         View All Services
                     </a>
                 </div>
             </section>
-
         </main>
 
-        <!-- RIGHT SIDEBAR: PORTFOLIOS, SUPPORT AND ANNOUNCEMENTS -->
+        <!-- RIGHT SIDEBAR: ANNOUNCEMENTS, HELP & SIDEBAR ADS -->
         <aside class="col-lg-3">
-
-            <section class="sidebar-panel p-3 mb-4" data-slider>
-                <div class="d-flex justify-content-between align-items-center mb-3">
-                    <h5 class="fw-bold mb-0 text-black">Advertisements</h5>
-                    {% if advertisements|length > 1 %}
-                    <div class="sidebar-slider-controls">
-                        <button type="button" class="btn btn-sm btn-light border" data-prev aria-label="Previous">‹</button>
-                        <button type="button" class="btn btn-sm btn-light border" data-next aria-label="Next">›</button>
-                    </div>
-                    {% endif %}
-                </div>
-
-                {% if advertisements %}
-                    <div class="sidebar-slider-viewport">
-                        <div class="sidebar-slider-track">
-                            {% for advertisement in advertisements %}
-                                <div class="sidebar-slide">
-                                    <article class="achievement-card h-100">
-                                        {% if advertisement.banner_image %}
-                                            <img src="{{ advertisement.banner_image.url }}"
-                                                class="achievement-image w-100"
-                                                alt="{{ advertisement.title }}">
-                                        {% endif %}
-
-                                        <div class="p-3">
-                                            <h6 class="fw-bold text-black">{{ advertisement.title }}</h6>
-
-                                            <p class="small text-muted">
-                                                {{ advertisement.description|truncatewords:15 }}
-                                            </p>
-
-                                            {% if advertisement.store %}
-                                                <small class="text-muted d-block mb-1">
-                                                    By <b>{{ advertisement.store.name }}</b>
-                                                </small>
-                                            {% endif %}
-
-                                            <a href="{{ advertisement.target_url }}" target="_blank" class="text-gold-link small fw-bold text-decoration-none">
-                                                Explore advertisement →
-                                            </a>
-                                        </div>
-                                    </article>
-                                </div>
-                            {% endfor %}
-                        </div>
-                    </div>
-                {% else %}
-                    <p class="text-muted small mb-0">
-                        No Advertisement. Advertisements will appear here.
-                    </p>
-                {% endif %}
-            </section>
-
-            <section class="sidebar-panel support-panel p-4 mb-4">
-                <h5 class="fw-bold text-gold">Need Help?</h5>
-                <p class="small text-muted">
-                    Have a question about using The Spotlight?
-                    Contact our support team.
-                </p>
-                <a href="core:contact-support" class="btn btn-spotlight btn-sm w-100">
-                    Contact Support
-                </a>
-            </section>
-
+            <!-- Announcements placed first so sidebar starts with updates rather than another ad -->
             <section class="sidebar-panel p-3 mb-4" data-slider>
                 <div class="d-flex justify-content-between align-items-center mb-3">
                     <h5 class="fw-bold mb-0 text-black">Announcements</h5>
@@ -570,7 +725,7 @@
 
                                         {% if announcement.target_url %}
                                             <a href="{{ announcement.target_url }}"
-                                            class="text-gold-link small fw-bold text-decoration-none">
+                                               class="text-gold-link small fw-bold text-decoration-none">
                                                 Read More →
                                             </a>
                                         {% endif %}
@@ -586,11 +741,195 @@
                 {% endif %}
             </section>
 
+            <!-- Support Panel separating announcements from sidebar ads -->
+            <section class="sidebar-panel support-panel p-4 mb-4">
+                <h5 class="fw-bold text-gold">Need Help?</h5>
+                <p class="small text-muted">
+                    Have a question about using The Spotlight?
+                    Contact our support team.
+                </p>
+                <a href="{% url 'core:contact-support' %}" class="btn btn-spotlight btn-sm w-100">
+                    Contact Support
+                </a>
+            </section>
+
+            <!-- Sidebar Advertisements -->
+            <section class="sidebar-panel p-3 mb-4" data-slider>
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h5 class="fw-bold mb-0 text-black">Advertisements</h5>
+                    {% if advertisements|length > 1 %}
+                    <div class="sidebar-slider-controls">
+                        <button type="button" class="btn btn-sm btn-light border" data-prev aria-label="Previous">‹</button>
+                        <button type="button" class="btn btn-sm btn-light border" data-next aria-label="Next">›</button>
+                    </div>
+                    {% endif %}
+                </div>
+
+                {% if advertisements %}
+                    <div class="sidebar-slider-viewport">
+                        <div class="sidebar-slider-track">
+                            {% for advertisement in advertisements %}
+                                <div class="sidebar-slide">
+                                    <article class="achievement-card h-100">
+                                        {% if advertisement.banner_image %}
+                                            <img src="{{ advertisement.banner_image.url }}"
+                                                 class="achievement-image w-100"
+                                                 alt="{{ advertisement.title }}">
+                                        {% endif %}
+
+                                        <div class="p-3">
+                                            <h6 class="fw-bold text-black">{{ advertisement.title }}</h6>
+
+                                            <p class="small text-muted">
+                                                {{ advertisement.description|truncatewords:15 }}
+                                            </p>
+
+                                            {% if advertisement.store %}
+                                                <small class="text-muted d-block mb-1">
+                                                    By <b>{{ advertisement.store.name }}</b>
+                                                </small>
+                                            {% endif %}
+
+                                            <a href="{{ advertisement.target_url }}" target="_blank" class="text-gold-link small fw-bold text-decoration-none">
+                                                Explore advertisement →
+                                            </a>
+                                        </div>
+                                    </article>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                {% else %}
+                    <p class="text-muted small mb-0">
+                        No Advertisement. Advertisements will appear here.
+                    </p>
+                {% endif %}
+            </section>
         </aside>
     </div>
 </section>
 
-<!-- 5. Customer reviews -->
+<!-- 8. PROMO PAIR 2 (2 COL-5 ADS) + NOTIFICATIONS FEED (COL-2 STATIC IMAGE + DYNAMIC TEXT SLIDER) -->
+<section class="container py-4 reveal-section">
+    <div class="row g-4 align-items-stretch">
+        {% for ad in advertisements|slice:"2:4" %}
+            <div class="col-12 col-md-6 col-lg-5">
+                <article class="market-card h-100 overflow-hidden d-flex flex-column">
+                    {% if ad.banner_image %}
+                        <img src="{{ ad.banner_image.url }}"
+                             alt="{{ ad.title }}"
+                             class="w-100 object-fit-cover"
+                             style="height: 170px;">
+                    {% else %}
+                        <div class="image-placeholder" style="height: 170px;">
+                            Sponsored Ad
+                        </div>
+                    {% endif %}
+
+                    <div class="p-3 p-lg-4 d-flex flex-column justify-content-between flex-grow-1">
+                        <div>
+                            <span class="section-label">SPOTLIGHT AD</span>
+                            <h5 class="fw-bold text-black mt-1">{{ ad.title }}</h5>
+                            <p class="text-muted small mb-3">
+                                {{ ad.description|truncatewords:16 }}
+                            </p>
+                        </div>
+                        <div>
+                            <a href="{{ ad.target_url|default:'#' }}" target="_blank" rel="noopener"
+                               class="btn btn-outline-spotlight btn-sm">
+                                View Offer →
+                            </a>
+                        </div>
+                    </div>
+                </article>
+            </div>
+        {% empty %}
+            <div class="col-12 col-md-6 col-lg-5">
+                <article class="market-card p-4 h-100 d-flex flex-column justify-content-between">
+                    <div>
+                        <span class="section-label">FEATURED SPOT</span>
+                        <h5 class="fw-bold text-black mt-1">Boost Your Visibility</h5>
+                        <p class="text-muted small">Run targeted campaigns for your store launches and seasonal promos.</p>
+                    </div>
+                    <div>
+                        <a href="{% url 'store:store-list' %}" class="btn btn-outline-spotlight btn-sm">Explore Stores →</a>
+                    </div>
+                </article>
+            </div>
+            <div class="col-12 col-md-6 col-lg-5">
+                <article class="market-card p-4 h-100 d-flex flex-column justify-content-between">
+                    <div>
+                        <span class="section-label">NEW ARRIVALS</span>
+                        <h5 class="fw-bold text-black mt-1">Fresh Campus Listings</h5>
+                        <p class="text-muted small">Check out the latest products added by student entrepreneurs.</p>
+                    </div>
+                    <div>
+                        <a href="{% url 'store:store-products-list' %}" class="btn btn-outline-spotlight btn-sm">Shop Now →</a>
+                    </div>
+                </article>
+            </div>
+        {% endfor %}
+
+        <!-- Col-2 Notifications Area: Static Image + Dynamic Text Slider -->
+        <div class="col-12 col-lg-2">
+            <article class="market-card h-100 overflow-hidden d-flex flex-column">
+                <div class="position-relative bg-black" style="height: 120px;">
+                    <img src="{% static 'img/sallers-cover.png' %}"
+                         alt="Notifications"
+                         class="w-100 h-100 object-fit-cover opacity-75">
+                    <span class="badge bg-dark text-gold position-absolute top-0 start-0 m-2">
+                        <i class="bi bi-bell-fill me-1" aria-hidden="true"></i> Updates
+                    </span>
+                </div>
+
+                <div class="p-3 d-flex flex-column justify-content-between flex-grow-1">
+                    <div id="notificationsTextSlider" class="carousel slide" data-bs-ride="carousel" data-bs-interval="4000">
+                        <div class="carousel-inner">
+                            {% for note in announcements %}
+                                <div class="carousel-item {% if forloop.first %}active{% endif %}">
+                                    <span class="section-label d-block mb-1">NOTICE</span>
+                                    <h6 class="fw-bold text-black small mb-1">
+                                        {{ note.title|truncatechars:42 }}
+                                    </h6>
+                                    <p class="text-muted small mb-2" style="font-size: 0.78rem;">
+                                        {{ note.content|truncatewords:12 }}
+                                    </p>
+                                    {% if note.target_url %}
+                                        <a href="{{ note.target_url }}" class="text-gold-link small fw-bold text-decoration-none">
+                                            Details →
+                                        </a>
+                                    {% endif %}
+                                </div>
+                            {% empty %}
+                                <div class="carousel-item active">
+                                    <span class="section-label d-block mb-1">LIVE FEED</span>
+                                    <h6 class="fw-bold text-black small mb-1">Welcome to The Spotlight</h6>
+                                    <p class="text-muted small mb-0" style="font-size: 0.78rem;">
+                                        Platform alerts, campus drops, and store updates appear here.
+                                    </p>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+
+                    {% if announcements|length > 1 %}
+                        <div class="d-flex justify-content-between align-items-center pt-2 mt-2 border-top">
+                            <button type="button" class="btn btn-sm btn-light border py-0 px-2"
+                                    data-bs-target="#notificationsTextSlider" data-bs-slide="prev"
+                                    aria-label="Previous notification">‹</button>
+                            <small class="text-muted" style="font-size: 0.7rem;">Updates</small>
+                            <button type="button" class="btn btn-sm btn-light border py-0 px-2"
+                                    data-bs-target="#notificationsTextSlider" data-bs-slide="next"
+                                    aria-label="Next notification">›</button>
+                        </div>
+                    {% endif %}
+                </div>
+            </article>
+        </div>
+    </div>
+</section>
+
+<!-- 9. CUSTOMER REVIEWS -->
 <section class="container py-5 reveal-section">
     <div class="section-heading mb-4">
         <span class="section-label">CUSTOMER EXPERIENCES</span>
@@ -604,9 +943,7 @@
         {% for review in featured_reviews %}
             <div class="col-md-6 col-lg-4">
                 <article class="review-card p-4 h-100">
-
                     <div class="d-flex align-items-center gap-3 mb-3">
-
                         {% if review.author.avatar %}
                             <img src="{{ review.author.avatar.url }}"
                                  class="review-avatar"
@@ -626,7 +963,6 @@
                                 {{ review.created_at|date:"d M Y" }}
                             </small>
                         </div>
-
                     </div>
 
                     <div class="review-stars" aria-label="{{ review.overall_rating }} out of 5 stars">
@@ -648,7 +984,6 @@
                             Reviewed: {{ review.store.name }}
                         </small>
                     {% endif %}
-
                 </article>
             </div>
         {% empty %}
@@ -664,7 +999,7 @@
     </div>
 </section>
 
-<!-- 6. Product Quick View Modal -->
+<!-- 10. PRODUCT QUICK VIEW MODAL -->
 <div class="modal fade" id="quickViewModal" tabindex="-1"
      aria-labelledby="quickViewTitle" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered modal-lg">
@@ -688,11 +1023,9 @@
                         <h4 id="quickViewName" class="text-black fw-bold"></h4>
                         <p id="quickViewDescription" class="text-muted"></p>
                         <p id="quickViewPrice" class="fw-bold text-black fs-5"></p>
-                        <!-- Buy now -->
                         <a id="quickViewBuyNow" href="#" class="btn btn-spotlight">
                             Buy Now
                         </a>
-                        <!-- View product details -->
                         <a id="quickViewLink" href="{% url 'store:product-detail' slug='placeholder' %}"
                            class="btn btn-outline-spotlight btn-sm">
                             More Details
