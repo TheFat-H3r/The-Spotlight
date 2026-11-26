@@ -77,9 +77,16 @@ def category_detail(request, slug):
     return render(request, 'core/category_detail.html', {'category_slug': slug})
 
 def store_list(request):
-    return render(request, 'core/store_list.html')
+    stores = Store.objects.filter(status="active")
+    
+    context = {
+        "stores": stores,
+    }
+    
+    return render(request, 'core/store_list.html', context)
 
 def store_detail(request, slug):
+    
     return render(request, 'core/store_detail.html', {'slug': slug})
 
 def flash_sale(request):
