@@ -1,0 +1,159 @@
+
+{% extends 'core/base2.html' %}
+{% load static %}
+{% load socialaccount %}
+
+{% block title %}Register | The Spotlight{% endblock %}
+
+{% block content %}
+
+    <!--------------- login-section--------------->
+    <section class="login account footer-padding">
+        <div class="container">
+            <div class="login-section account-section">
+                <div class="review-form">
+
+                    <h5 class="comment-title">Create Account</h5>
+
+                    <!-- Django Messages -->
+                    {% if messages %}
+                        {% for message in messages %}
+                            <div class="alert alert-danger mb-3">
+                                {{ message }}
+                            </div>
+                        {% endfor %}
+                    {% endif %}
+
+                    <!-- Google Registration -->
+                    <div class="review-form-name mb-3">
+                        <a href="{% provider_login_url 'google' process='login' %}"
+                           class="shop-btn d-flex align-items-center justify-content-center gap-2">
+                            <i class="fa-brands fa-google"></i>
+                            Continue with Google
+                        </a>
+                    </div>
+
+                    <div class="text-center mb-3">
+                        <span>Or register with email</span>
+                    </div>
+
+                    <!-- Registration Form -->
+                    <form method="POST" action="{% url 'core:register' %}">
+                        {% csrf_token %}
+
+                        <!-- Full Name -->
+                        <div class="review-form-name">
+                            <label for="full_name" class="form-label">Full Name*</label>
+                            <input
+                                type="text"
+                                id="full_name"
+                                name="full_name"
+                                value="{{ full_name|default:'' }}"
+                                class="form-control"
+                                placeholder="Jane Doe"
+                                required>
+                        </div>
+
+                        <!-- Email and Phone -->
+                        <div class="account-inner-form">
+
+                            <div class="review-form-name">
+                                <label for="email" class="form-label">Email Address*</label>
+                                <input
+                                    type="email"
+                                    id="email"
+                                    name="email"
+                                    value="{{ email|default:'' }}"
+                                    class="form-control"
+                                    placeholder="jane@example.com"
+                                    required>
+                            </div>
+
+                            <div class="review-form-name">
+                                <label for="phone" class="form-label">Phone Number*</label>
+                                <input
+                                    type="tel"
+                                    id="phone"
+                                    name="phone"
+                                    value="{{ phone|default:'' }}"
+                                    class="form-control"
+                                    placeholder="+1234567890"
+                                    required>
+                            </div>
+
+                        </div>
+
+                        <!-- Account Role -->
+                        <div class="review-form-name">
+                            <label for="role" class="form-label">Register as a*</label>
+                            <select id="role" name="role" class="form-select">
+                                <option value="customer"
+                                    {% if role == 'customer' or not role %}selected{% endif %}>
+                                    Customer
+                                </option>
+
+                                <option value="vendor"
+                                    {% if role == 'vendor' %}selected{% endif %}>
+                                    Vendor
+                                </option>
+                            </select>
+                        </div>
+
+                        <!-- Password -->
+                        <div class="review-form-name">
+                            <label for="password" class="form-label">Password*</label>
+                            <input
+                                type="password"
+                                id="password"
+                                name="password"
+                                class="form-control"
+                                placeholder="At least 8 characters"
+                                minlength="8"
+                                required>
+                        </div>
+
+                        <!-- Confirm Password -->
+                        <div class="review-form-name">
+                            <label for="confirm_password" class="form-label">Confirm Password*</label>
+                            <input
+                                type="password"
+                                id="confirm_password"
+                                name="confirm_password"
+                                class="form-control"
+                                placeholder="Repeat your password"
+                                required>
+                        </div>
+
+                        <!-- Terms and Conditions -->
+                        <div class="review-form-name checkbox">
+                            <div class="checkbox-item">
+                                <input type="checkbox" id="terms" required>
+                                <p class="remember">
+                                    I agree to all terms and conditions of
+                                    <span class="inner-text">The Spotlight.</span>
+                                </p>
+                            </div>
+                        </div>
+
+                        <!-- Submit -->
+                        <div class="login-btn text-center">
+                            <button type="submit" class="shop-btn">
+                                Create Spotlight Account
+                                <i class="fa-solid fa-arrow-right"></i>
+                            </button>
+
+                            <span class="shop-account">
+                                Already have an account?
+                                <a href="{% url 'core:login' %}">Sign In</a>
+                            </span>
+                        </div>
+
+                    </form>
+
+                </div>
+            </div>
+        </div>
+    </section>
+    <!--------------- login-section-end --------------->
+
+{% endblock %}

@@ -4,14 +4,14 @@ from django.conf.urls.static import static
 from The_Spotlight import settings # type: ignore
 
 urlpatterns = [
-    path('', include('core.urls')),
+    path('', include('markethome.urls')),
     path('admin/', admin.site.urls),
     path('portal/', include('operations.urls')),
-    path('', include('accounts.urls')),
+    # path('', include('accounts.urls')),
     path("auth/", include("allauth.urls")),
-    path('stores/', include('stores.urls')),
-    path('', include('transactions.urls')),
-    path('', include('marketing.urls')),
+    # path('stores/', include('stores.urls')),
+    # path('', include('transactions.urls')),
+    # path('', include('marketing.urls')),
     path('shopkeeper/', include('shopkeeper.urls')),
 ]
 

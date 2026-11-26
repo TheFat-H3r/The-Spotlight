@@ -1,0 +1,383 @@
+:root {
+    --ops-black: #0a0a0c;
+    --ops-black-elevated: #16171b;
+    --ops-gold: #e4ad43;
+    --ops-gold-soft: rgba(228, 173, 67, 0.14);
+    --ops-ink: #202b3c;
+    --ops-muted: #748196;
+    --ops-canvas: #f3f5f8;
+    --ops-border: #e3e8ef;
+    --bs-offcanvas-width: 276px;
+}
+
+body {
+    background: var(--ops-canvas);
+    color: var(--ops-ink);
+    font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+.ops-shell {
+    min-height: 100vh;
+}
+
+.ops-sidebar {
+    --bs-offcanvas-bg: var(--ops-black);
+    --bs-offcanvas-color: #fff;
+    --bs-offcanvas-border-color: rgba(255, 255, 255, .07);
+    background-color: var(--ops-black) !important;
+    color: #fff;
+    width: 276px;
+    border-right: 1px solid rgba(255, 255, 255, .07);
+}
+
+.ops-sidebar .offcanvas-body {
+    background-color: var(--ops-black);
+    min-height: 100%;
+    scrollbar-width: thin;
+    scrollbar-color: #2b2d35 transparent;
+}
+
+.ops-brand {
+    min-height: 82px;
+    background: linear-gradient(180deg, rgba(228, 173, 67, 0.06) 0%, transparent 100%);
+    border-bottom: 1px solid rgba(255, 255, 255, .08);
+}
+
+.ops-brand img {
+    width: 42px;
+    height: 42px;
+    object-fit: contain;
+}
+
+.ops-brand-name {
+    font-size: .98rem;
+    font-weight: 750;
+    letter-spacing: .01em;
+}
+
+.ops-brand-caption {
+    color: var(--ops-gold);
+    font-size: .68rem;
+    font-weight: 600;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+}
+
+.ops-sidebar-caption {
+    color: #7d8590;
+    font-size: .67rem;
+    font-weight: 700;
+    letter-spacing: .12em;
+    padding: 1.25rem 1.1rem .45rem;
+    text-transform: uppercase;
+}
+
+.ops-nav-link {
+    align-items: center;
+    border-radius: .55rem;
+    color: #b8bfc9;
+    display: flex;
+    font-size: .89rem;
+    font-weight: 500;
+    gap: .75rem;
+    margin: .15rem .65rem;
+    padding: .62rem .8rem;
+    text-decoration: none;
+    transition: background-color .15s ease, color .15s ease;
+}
+
+.ops-nav-link:hover {
+    background: var(--ops-black-elevated);
+    color: #fff;
+}
+
+.ops-nav-link.active {
+    background: var(--ops-gold-soft);
+    box-shadow: inset 3px 0 var(--ops-gold);
+    color: #fff;
+    font-weight: 600;
+}
+
+.ops-nav-link i {
+    color: var(--ops-gold);
+    font-size: 1rem;
+    text-align: center;
+    width: 1.15rem;
+}
+
+.ops-nav-badge {
+    background: var(--ops-gold);
+    border-radius: 999px;
+    color: #0a0a0c;
+    font-size: .68rem;
+    font-weight: 750;
+    line-height: 1;
+    margin-left: auto;
+    padding: .25rem .5rem;
+}
+
+.ops-sidebar-footer {
+    background: #070709;
+    border-top: 1px solid rgba(255, 255, 255, .08);
+    margin-top: auto;
+    padding: .75rem .5rem;
+}
+
+.ops-main {
+    min-width: 0;
+}
+
+.ops-topbar {
+    align-items: center;
+    background: #fff;
+    border-bottom: 1px solid var(--ops-border);
+    display: flex;
+    gap: 1rem;
+    min-height: 70px;
+    padding: .75rem clamp(1rem, 3vw, 2rem);
+}
+
+.ops-context {
+    color: var(--ops-muted);
+    font-size: .82rem;
+}
+
+.ops-context strong {
+    color: var(--ops-ink);
+    font-weight: 650;
+}
+
+.ops-user {
+    align-items: center;
+    border-left: 1px solid var(--ops-border);
+    display: flex;
+    gap: .65rem;
+    margin-left: .35rem;
+    padding-left: 1rem;
+}
+
+.ops-user-icon {
+    align-items: center;
+    background: #f6ecd5;
+    border-radius: 50%;
+    color: #8a641c;
+    display: inline-flex;
+    height: 2.25rem;
+    justify-content: center;
+    width: 2.25rem;
+}
+
+.ops-content {
+    margin: 0 auto;
+    max-width: 1600px;
+    padding: clamp(1.25rem, 3vw, 2.25rem);
+}
+
+.ops-page-heading {
+    align-items: flex-end;
+    border-bottom: 1px solid var(--ops-border);
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    justify-content: space-between;
+    margin-bottom: 1.5rem;
+    padding-bottom: 1.25rem;
+}
+
+.ops-eyebrow {
+    color: #9b711f;
+    font-size: .7rem;
+    font-weight: 750;
+    letter-spacing: .14em;
+    margin-bottom: .45rem;
+    text-transform: uppercase;
+}
+
+.ops-page-heading h1 {
+    font-size: clamp(1.45rem, 3vw, 1.9rem);
+    font-weight: 750;
+    letter-spacing: -.025em;
+    margin: 0;
+}
+
+.ops-page-description {
+    color: var(--ops-muted);
+    margin: .4rem 0 0;
+    max-width: 58rem;
+}
+
+.ops-card {
+    background: #fff;
+    border: 1px solid var(--ops-border);
+    border-radius: .85rem;
+    box-shadow: 0 4px 16px rgba(23, 34, 53, .04);
+}
+
+@media (min-width: 992px) {
+    .ops-sidebar {
+flex: 0 0 276px;
+height: 100vh;
+position: sticky;
+top: 0;
+    }
+
+    .ops-sidebar .offcanvas-body {
+height: 100%;
+overflow-y: auto;
+    }
+}
+
+/* KPI Summary Cards */
+.ops-kpi-card {
+    transition: transform .15s ease, border-color .15s ease;
+}
+
+.ops-kpi-card:hover {
+    border-color: var(--ops-gold);
+    transform: translateY(-2px);
+}
+
+.ops-kpi-value {
+    color: var(--ops-ink);
+    letter-spacing: -.02em;
+}
+
+.ops-kpi-icon {
+    align-items: center;
+    background: var(--ops-black);
+    border-radius: .65rem;
+    color: var(--ops-gold);
+    display: inline-flex;
+    height: 3rem;
+    justify-content: center;
+    width: 3rem;
+}
+
+/* Dark Section Card Headers (matching sidebar) */
+.ops-card-header {
+    background: var(--ops-black);
+    border-bottom: 2px solid var(--ops-gold);
+    border-top-left-radius: calc(.85rem - 1px);
+    border-top-right-radius: calc(.85rem - 1px);
+    color: #fff;
+}
+
+.ops-card-header .ops-card-title {
+    color: #fff;
+    font-weight: 700;
+    letter-spacing: -.01em;
+}
+
+.ops-card-header .ops-card-title i {
+    color: var(--ops-gold);
+}
+
+.ops-card-header .ops-card-subtitle {
+    color: #9ba8ba;
+}
+
+.ops-btn-gold-outline {
+    border: 1px solid rgba(228, 173, 67, 0.45);
+    color: var(--ops-gold);
+    font-weight: 600;
+    transition: background-color .15s ease, color .15s ease, border-color .15s ease;
+}
+
+.ops-btn-gold-outline:hover {
+    background: var(--ops-gold);
+    border-color: var(--ops-gold);
+    color: var(--ops-black);
+}
+
+/* Table Headers & Rows */
+.ops-table thead th {
+    background-color: var(--ops-black-elevated) !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    color: var(--ops-gold) !important;
+    font-size: .74rem;
+    font-weight: 700;
+    letter-spacing: .08em;
+    padding-bottom: .85rem;
+    padding-top: .85rem;
+    text-transform: uppercase;
+    white-space: nowrap;
+}
+
+/* DataTables Sort Arrows: White by default, Gold on hover & active */
+.ops-table thead th span.dt-column-order {
+    opacity: 1 !important;
+}
+
+.ops-table thead th span.dt-column-order::before,
+.ops-table thead th span.dt-column-order::after {
+    color: rgba(255, 255, 255, 0.75) !important;
+    opacity: 1 !important;
+    transition: color .15s ease;
+}
+
+.ops-table thead th.dt-orderable-asc:hover span.dt-column-order::before,
+.ops-table thead th.dt-orderable-desc:hover span.dt-column-order::after,
+.ops-table thead th.dt-ordering-asc span.dt-column-order::before,
+.ops-table thead th.dt-ordering-desc span.dt-column-order::after {
+    color: var(--ops-gold) !important;
+}
+
+.ops-table tbody td {
+    border-color: var(--ops-border);
+    color: var(--ops-ink);
+    font-size: .9rem;
+    padding-bottom: .8rem;
+    padding-top: .8rem;
+}
+
+.ops-table tbody tr[data-href] {
+    cursor: pointer;
+}
+
+.ops-table tbody tr:hover td {
+    background-color: rgba(228, 173, 67, 0.07);
+}
+
+.ops-row-link {
+    color: var(--ops-ink);
+    text-decoration: none;
+    transition: color .15s ease;
+}
+
+.ops-table tbody tr:hover .ops-row-link,
+.ops-row-link:hover {
+    color: #9b711f;
+    text-decoration: underline;
+}
+
+/* DataTables Search, Length & Pagination Theme */
+.dt-container .dt-search label,
+.dt-container .dt-length label,
+.dt-container .dt-info {
+    color: var(--ops-muted);
+    font-size: .84rem;
+}
+
+.dt-container .form-control:focus,
+.dt-container .form-select:focus {
+    border-color: var(--ops-gold);
+    box-shadow: 0 0 0 .2rem var(--ops-gold-soft);
+}
+
+.dt-container .pagination .page-item.active .page-link {
+    background-color: var(--ops-black);
+    border-color: var(--ops-black);
+    color: var(--ops-gold);
+    font-weight: 600;
+}
+
+.dt-container .pagination .page-link {
+    color: var(--ops-ink);
+    font-size: .85rem;
+}
+
+.dt-container .pagination .page-link:hover {
+    background-color: var(--ops-gold-soft);
+    border-color: var(--ops-border);
+    color: var(--ops-black);
+}
