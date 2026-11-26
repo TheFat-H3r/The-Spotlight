@@ -275,14 +275,30 @@ def store_toggle_orders(request, slug):
   return redirect('store-dashboard')
 
 def product_detail(request, slug):
-  product = Product.objects.filter(slug=slug).first()
-  
-  context = { 
-    'product': product,
-    'business_types': business_types,
-    'all_stores': all_stores,
-  }
-  return render(request, 'stores/product_detail.html', context)
+    product = get_object_or_404(
+        Product.objects.select_related("store", "category"),
+        slug=slug,
+        is_available=True,
+    )
+
+    related_products = (
+        Product.objects.filter(category=product.category, is_available=True)
+        .exclude(pk=product.pk)
+        .select_related("store", "category")[:4]
+        if product.category
+        else Product.objects.none()
+    )
+
+    reviews = Review.objects.filter(order_item__product=product).select_related("author").order_by("-created_at")
+
+    context = {
+        "product": product,
+        "related_products": related_products,
+        "reviews": reviews,
+        "business_types": BusinessType.objects.all(),
+        "all_stores": Store.objects.filter(status="active"),
+    }
+    return render(request, "stores/product_detail.html", context)
 
 def service_detail(request, slug):
   service = Service.objects.filter(slug=slug).first()

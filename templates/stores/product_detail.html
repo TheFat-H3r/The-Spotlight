@@ -3,49 +3,288 @@
 
 {% block title %}{{ product.name }} | The Spotlight{% endblock %}
 
+{% block extra_css %}
+<style>
+    /* Small devices (< 768px): keep all 4 related product cards in a single swipeable row */
+    .related-products-row {
+        scroll-snap-type: x mandatory;
+        -webkit-overflow-scrolling: touch;
+    }
+    .related-product-card {
+        flex: 0 0 68%;
+        min-width: 210px;
+        scroll-snap-align: start;
+    }
+
+    /* Tablets & Desktops (>= 768px): clean 4-column single row */
+    @media (min-width: 768px) {
+        .related-products-row {
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+            gap: 1.25rem;
+            overflow-x: visible;
+        }
+        .related-product-card {
+            flex: unset;
+            min-width: 0;
+        }
+    }
+</style>
+{% endblock %}
+
 {% block content %}
 <section class="container py-5">
-    <a href="{% url 'store:store-products-list' %}" class="text-cyan">
+    <a href="{% url 'store:store-products-list' %}" class="text-gold-link fw-semibold text-decoration-none">
         ← Back to All Products
     </a>
 
-    <div class="row g-5 mt-3">
+    <!-- 1. Main Product Details -->
+    <div class="row g-4 g-lg-5 mt-2 align-items-start">
         <div class="col-md-6">
             {% if product.image %}
                 <img src="{{ product.image.url }}"
-                     class="img-fluid rounded-4"
+                     class="img-fluid rounded-4 border w-100 object-fit-cover"
+                     style="max-height: 480px;"
                      alt="{{ product.name }}">
             {% else %}
-                <div class="image-placeholder">Product image</div>
+                <div class="image-placeholder rounded-4 d-flex align-items-center justify-content-center"
+                     style="height: 380px;">
+                    Product image
+                </div>
             {% endif %}
         </div>
 
         <div class="col-md-6">
-            <span class="section-label">PRODUCT DETAILS</span>
-            <h1 class="fw-bold">{{ product.name }}</h1>
-
-            <p class="text-muted">{{ product.description }}</p>
-
-            <h3 class="text-cyan fw-bold">
-                MUR {{ product.price }}
-            </h3>
-
-            <p>
-                <strong>Vendor:</strong>
-                <a href="{% url 'store:store-profile' product.store.slug %}">
-                    {{ product.store.name }}
-                </a>
-            </p>
+            <span class="section-label">
+                {{ product.category.name|default:"PRODUCT DETAILS"|upper }}
+            </span>
+            <h1 class="fw-bold text-black mt-1">{{ product.name }}</h1>
 
             {% if product.rating_average %}
-                <p>★ {{ product.rating_average }}</p>
+                <p class="mb-2 text-black fw-semibold">
+                    <span class="text-gold">★</span> {{ product.rating_average }}
+                    {% if product.rating_count %}
+                        <span class="text-muted small">({{ product.rating_count }} reviews)</span>
+                    {% endif %}
+                </p>
             {% endif %}
 
-            <!-- Connect this button to the real cart implementation -->
-            <button class="btn btn-spotlight" type="button">
-                Add to Cart 
-            </button>
+            <div class="my-3">
+                {% if product.sale_price %}
+                    <h3 class="fw-bold text-danger d-inline me-2">MUR {{ product.sale_price }}</h3>
+                    <span class="text-muted text-decoration-line-through fs-5">MUR {{ product.price }}</span>
+                {% else %}
+                    <h3 class="fw-bold text-black mb-0">MUR {{ product.price }}</h3>
+                {% endif %}
+            </div>
+
+            <p class="text-muted leading-relaxed">
+                {{ product.description|default:"No description provided for this product." }}
+            </p>
+
+            <!-- Add to Cart Form -->
+            <form method="post" action="{% url 'transactions:add_to_cart' product.id %}" class="d-flex flex-wrap align-items-center gap-2 my-4">
+                {% csrf_token %}
+                <input type="number" name="quantity" value="1" min="1"
+                       max="{{ product.stock|default:99 }}"
+                       class="form-control" style="width: 85px;" aria-label="Quantity">
+                <button class="btn btn-spotlight px-4" type="submit">
+                    Add to Cart
+                </button>
+            </form>
+
+            <!-- Compact Store Details Card -->
+            {% if product.store %}
+                <div class="market-card p-3 p-sm-4 rounded-4 border mt-4 bg-white">
+                    <div class="d-flex align-items-center justify-content-between gap-3">
+                        <div class="d-flex align-items-center gap-3 min-w-0">
+                            {% if product.store.logo %}
+                                <img src="{{ product.store.logo.url }}"
+                                     alt="{{ product.store.name }}"
+                                     class="rounded-3 border object-fit-cover flex-shrink-0"
+                                     style="width: 54px; height: 54px;">
+                            {% else %}
+                                <div class="rounded-3 bg-black text-gold fw-bold d-flex align-items-center justify-content-center flex-shrink-0"
+                                     style="width: 54px; height: 54px; font-size: 1.25rem;">
+                                    {{ product.store.name|first|upper }}
+                                </div>
+                            {% endif %}
+
+                            <div class="min-w-0">
+                                <span class="section-label d-block" style="font-size: 0.68rem;">SOLD BY</span>
+                                <h6 class="fw-bold text-black mb-0 text-truncate">
+                                    {{ product.store.name }}
+                                </h6>
+                                {% if product.store.tagline %}
+                                    <p class="text-muted small mb-1 text-truncate">
+                                        {{ product.store.tagline }}
+                                    </p>
+                                {% endif %}
+                                <div class="small text-muted d-flex flex-wrap align-items-center gap-2">
+                                    {% if product.store.rating_average %}
+                                        <span>★ {{ product.store.rating_average }} ({{ product.store.rating_count|default:0 }})</span>
+                                    {% endif %}
+                                    {% if product.store.business_type %}
+                                        <span>• {{ product.store.business_type }}</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+
+                        <a href="{% url 'store:store-profile' product.store.slug %}"
+                           class="btn btn-outline-spotlight btn-sm flex-shrink-0">
+                            Visit Store →
+                        </a>
+                    </div>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- 2. Customer Reviews Section -->
+    <div class="mt-5 pt-4 border-top">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <span class="section-label">VERIFIED FEEDBACK</span>
+                <h3 class="fw-bold text-dark mb-0">
+                    Customer Reviews
+                    {% if reviews %}
+                        <span class="text-muted fs-5 fw-normal">({{ reviews|length }})</span>
+                    {% endif %}
+                </h3>
+            </div>
+        </div>
+
+        {% if reviews %}
+            <div class="row g-3">
+                {% for review in reviews %}
+                    <div class="col-12 col-md-6">
+                        <article class="review-card p-3 p-sm-4 h-100 rounded-4 border">
+                            <div class="d-flex justify-content-between align-items-start gap-2 mb-2">
+                                <div class="d-flex align-items-center gap-2">
+                                    {% if review.author.avatar %}
+                                        <img src="{{ review.author.avatar.url }}"
+                                             alt="{{ review.author.full_name }}"
+                                             class="review-avatar">
+                                    {% else %}
+                                        <div class="review-avatar-placeholder">
+                                            {{ review.author.full_name|default:review.author.email|first|upper }}
+                                        </div>
+                                    {% endif %}
+                                    <div>
+                                        <h6 class="fw-bold text-black mb-0 small">
+                                            {{ review.author.full_name|default:"Customer" }}
+                                        </h6>
+                                        <small class="text-muted" style="font-size: 0.75rem;">
+                                            {{ review.created_at|date:"d M Y" }}
+                                        </small>
+                                    </div>
+                                </div>
+
+                                <div class="review-stars small" aria-label="{{ review.overall_rating }} out of 5 stars">
+                                    {% for star in "12345" %}
+                                        {% if forloop.counter <= review.overall_rating %}★{% else %}☆{% endif %}
+                                    {% endfor %}
+                                </div>
+                            </div>
+
+                            <p class="review-text text-black small mb-0 mt-2">
+                                {{ review.body }}
+                            </p>
+                        </article>
+                    </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="empty-state p-4 text-center rounded-4 border">
+                <p class="text-muted mb-0 small">
+                    No customer reviews for this product yet.
+                </p>
+            </div>
+        {% endif %}
+    </div>
+
+    <!-- 3. Related Products (Same Category, 4 Cards, Single Row Even on Small Devices) -->
+    <div class="mt-5 pt-4 border-top">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <div>
+                <span class="section-label">
+                    {% if product.category %}MORE IN {{ product.category.name|upper }}{% else %}YOU MAY ALSO LIKE{% endif %}
+                </span>
+                <h3 class="fw-bold text-black mb-0">Related Products</h3>
+            </div>
+            <a href="{% url 'store:store-products-list' %}{% if product.category %}?category={{ product.category.slug }}{% endif %}"
+               class="btn btn-outline-spotlight btn-sm">
+                View All →
+            </a>
+        </div>
+
+        <!-- Horizontal flex row on < md (stays 1 row on mobile), 4-column grid on md+ -->
+        <div class="related-products-row d-flex flex-nowrap overflow-x-auto gap-3 pb-2 d-md-grid">
+            {% for item in related_products|slice:":4" %}
+                <article class="market-card product-card related-product-card h-100 d-flex flex-column">
+                    <a href="{% url 'store:product-detail' slug=item.slug %}" class="text-decoration-none">
+                        <div class="product-image-wrapper">
+                            {% if item.image %}
+                                <img src="{{ item.image.url }}"
+                                     class="card-image"
+                                     alt="{{ item.name }}">
+                            {% else %}
+                                <div class="image-placeholder">
+                                    Product image
+                                </div>
+                            {% endif %}
+                        </div>
+                    </a>
+
+                    <div class="card-body p-2 p-sm-3 d-flex flex-column justify-content-between flex-grow-1">
+                        <div>
+                            <a href="{% url 'store:product-detail' slug=item.slug %}" class="text-decoration-none">
+                                <h6 class="fw-bold text-black mb-1 text-truncate">{{ item.name }}</h6>
+                            </a>
+                            <p class="text-muted small mb-1 text-truncate">
+                                {{ item.category.name|default:"General" }}
+                            </p>
+                            {% if item.store %}
+                                <p class="small text-muted mb-2 text-truncate">
+                                    By <a href="{% url 'store:store-profile' item.store.slug %}"
+                                          class="text-gold-link fw-semibold text-decoration-none">{{ item.store.name }}</a>
+                                </p>
+                            {% endif %}
+                        </div>
+
+                        <div>
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <span class="fw-bold text-black small">
+                                    MUR {{ item.sale_price|default:item.price }}
+                                </span>
+                                {% if item.rating_average %}
+                                    <span class="rating small">★ {{ item.rating_average }}</span>
+                                {% endif %}
+                            </div>
+
+                            <div class="d-flex gap-1">
+                                <a href="{% url 'store:product-detail' slug=item.slug %}"
+                                   class="btn btn-outline-spotlight btn-sm flex-fill px-2">
+                                    View
+                                </a>
+                                <form method="post" action="{% url 'transactions:add_to_cart' item.id %}" class="flex-fill">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="quantity" value="1">
+                                    <button type="submit" class="btn btn-spotlight btn-sm w-100 px-2">
+                                        Add
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </article>
+            {% empty %}
+                <div class="empty-state p-4 text-center w-100" style="grid-column: 1 / -1;">
+                    <p class="text-muted mb-0 small">No related products found in this category.</p>
+                </div>
+            {% endfor %}
         </div>
     </div>
 </section>
+
 {% endblock %}
