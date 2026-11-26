@@ -1,8 +1,14 @@
+from django.contrib.auth.decorators import login_required
+from django.contrib import messages
 from django.core.paginator import Paginator
+from django.db import transaction
+from django.db.models import F
 from django.shortcuts import get_object_or_404, redirect, render
+from django.views.decorators.http import require_POST
 
 from marketing.models import Advertisement, Announcement
 from stores.models import Category, Product, Review, Service, Store
+from transactions.models import Cart, CartItem
 
 # --- Main & Static Pages ---
 def home(request):
@@ -272,9 +278,149 @@ def flash_sale(request):
     return render(request, 'core/flash-sale.html')
 
 # --- Shopping & Orders ---
-def cart(request):
-    
-    return render(request, 'core/cart.html')
+@login_required
+def cart_detail(request):
+    cart, _ = Cart.objects.get_or_create(customer=request.user)
+
+    items = cart.items.select_related( # type: ignore
+        "product",
+        "product__store",
+        "product__category",
+    )
+
+    context = {
+        "cart": cart,
+        "items": items,
+        "total_items": cart.total_items,
+        "subtotal": cart.subtotal,
+    }
+
+    return render(request, "core/cart.html", context)
+
+
+@login_required
+@require_POST
+def add_to_cart(request, slug):
+    quantity = request.POST.get("quantity", 1)
+
+    try:
+        quantity = int(quantity)
+        if quantity < 1:
+            raise ValueError
+    except (TypeError, ValueError):
+        messages.error(request, "Please enter a valid quantity.") # type: ignore
+        return redirect("core:product_detail", slug=slug)
+
+    with transaction.atomic():
+        product = get_object_or_404(
+            Product.objects.select_for_update(),
+            slug=slug,
+            is_available=True,
+        )
+
+        cart, _ = Cart.objects.get_or_create(customer=request.user)
+
+        cart_item = CartItem.objects.filter(
+            cart=cart,
+            product=product,
+        ).first()
+
+        current_quantity = cart_item.quantity if cart_item else 0
+        new_quantity = current_quantity + quantity
+
+        if new_quantity > product.stock:
+            messages.error(
+                request,
+                f"Only {product.stock} units of {product.name} are available."
+            )
+            return redirect("core:product_detail", slug=slug)
+
+        if cart_item:
+            CartItem.objects.filter(pk=cart_item.pk).update(
+                quantity=F("quantity") + quantity
+            )
+        else:
+            CartItem.objects.create(
+                cart=cart,
+                product=product,
+                quantity=quantity,
+            )
+
+    messages.success(request, f"{product.name} added to your cart.")
+    return redirect("core:cart")
+
+
+@login_required
+@require_POST
+def update_cart(request, item_id):
+    quantity = request.POST.get("quantity")
+
+    try:
+        quantity = int(quantity)
+        if quantity < 0:
+            raise ValueError
+    except (TypeError, ValueError):
+        messages.error(request, "Please enter a valid quantity.")
+        return redirect("core:cart")
+
+    cart = get_object_or_404(Cart, customer=request.user)
+
+    with transaction.atomic():
+        item = get_object_or_404(
+            CartItem.objects.select_related("product"),
+            pk=item_id,
+            cart=cart,
+        )
+
+        if quantity == 0:
+            item.delete()
+            messages.success(request, "Item removed from your cart.")
+
+        elif not item.product.is_available:
+            messages.error(request, "This product is no longer available.")
+
+        elif quantity > item.product.stock:
+            messages.error(
+                request,
+                f"Only {item.product.stock} units of "
+                f"{item.product.name} are available."
+            )
+
+        else:
+            item.quantity = quantity
+            item.save(update_fields=["quantity"])
+            messages.success(request, "Cart updated successfully.")
+
+    return redirect("core:cart")
+
+
+@login_required
+@require_POST
+def delete_cart_item(request, item_id):
+    cart = get_object_or_404(Cart, customer=request.user)
+
+    item = get_object_or_404(
+        CartItem,
+        pk=item_id,
+        cart=cart,
+    )
+
+    item.delete()
+
+    messages.success(request, "Item removed from your cart.")
+
+    return redirect("core:cart")
+
+@login_required
+@require_POST
+def clear_cart(request):
+    cart = get_object_or_404(Cart, customer=request.user)
+
+    cart.items.all().delete() # type: ignore
+
+    messages.success(request, "Your cart has been cleared.")
+
+    return redirect("core:cart")
 
 def wishlist(request):
     return render(request, 'core/wishlist.html')

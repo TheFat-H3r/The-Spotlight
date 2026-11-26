@@ -1,12 +1,13 @@
-# core/urls.py
 from django.urls import path
+
 from .views import (
-    home, about, contact, faq, privacy, report, terms,
-    login_view, create_account, user_profile, become_vendor,
+    clear_cart, delete_cart_item, home, about, contact, faq, privacy, report, terms,
+    login_view, create_account, update_cart, user_profile, become_vendor,
     product_list, product_detail, category_detail,
-    service_list, service_detail, store_list, store_detail, flash_sale,
-    cart, wishlist, checkout, order_detail,
+    service_list, service_detail, store_list, store_detail, flash_sale, 
+    wishlist, checkout, order_detail, add_to_cart
 )
+from transactions.views import cart_detail
 
 app_name = 'core'
 
@@ -39,7 +40,11 @@ urlpatterns = [
     path('flash-sale/', flash_sale, name='flash_sale'),
 
     # Shopping & Orders
-    path('cart/', cart, name='cart'),
+    path("cart/", cart_detail, name="cart"),
+    path("cart/add/<slug:slug>/", add_to_cart, name="add_to_cart"),
+    path("cart/update/<int:item_id>/", update_cart,  name="update_cart"),
+    path("cart/delete/<int:item_id>/", delete_cart_item, name="delete_cart_item"),
+    path("cart/clear/", clear_cart, name="clear_cart"),
     path('wishlist/', wishlist, name='wishlist'),
     path('checkout/', checkout, name='checkout'),
     path('orders/<int:order_id>/', order_detail, name='order_detail'),

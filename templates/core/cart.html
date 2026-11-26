@@ -1,3 +1,4 @@
+
 {% extends 'core/base2.html' %}
 {% load static %}
 
@@ -11,7 +12,7 @@
             <div class="blog-bradcrum">
                 <span><a href="{% url 'core:home' %}">Home</a></span>
                 <span class="devider">/</span>
-                <span><a href="#">Cart</a></span>
+                <span><a href="{% url 'core:cart' %}">Cart</a></span>
             </div>
             <div class="blog-heading about-heading">
                 <h1 class="heading">Cart</h1>
@@ -20,256 +21,234 @@
     </section>
     <!--------------- blog-tittle-section-end---------------->
 
-    {% if cart %}
+
+    {% if items %}
+
     <!--------------- cart-section---------------->
     <section class="product-cart product footer-padding">
         <div class="container">
+
             <div class="cart-section">
                 <table>
                     <tbody>
+
+                        <!-- Table headings -->
                         <tr class="table-row table-top-row">
                             <td class="table-wrapper wrapper-product">
                                 <h5 class="table-heading">PRODUCT</h5>
                             </td>
+
                             <td class="table-wrapper">
                                 <div class="table-wrapper-center">
                                     <h5 class="table-heading">PRICE</h5>
                                 </div>
                             </td>
+
                             <td class="table-wrapper">
                                 <div class="table-wrapper-center">
                                     <h5 class="table-heading">QUANTITY</h5>
                                 </div>
                             </td>
+
                             <td class="table-wrapper wrapper-total">
                                 <div class="table-wrapper-center">
                                     <h5 class="table-heading">TOTAL</h5>
                                 </div>
                             </td>
+
                             <td class="table-wrapper">
                                 <div class="table-wrapper-center">
                                     <h5 class="table-heading">ACTION</h5>
                                 </div>
                             </td>
                         </tr>
+
+
+                        <!-- Cart items -->
+                        {% for item in items %}
                         <tr class="table-row ticket-row">
+
+                            <!-- Product -->
                             <td class="table-wrapper wrapper-product">
                                 <div class="wrapper">
+
                                     <div class="wrapper-img">
-                                        <img src="{% static 'core/images/homepage-one/product-img/product-img-1.webp' %}"
-                                            alt="img">
+                                        {% if item.product.image %}
+                                            <img src="{{ item.product.image.url }}"
+                                                 alt="{{ item.product.name }}">
+                                        {% else %}
+                                            <img src="{% static 'core/images/homepage-one/product-img/product-img-1.webp' %}"
+                                                 alt="{{ item.product.name }}">
+                                        {% endif %}
                                     </div>
+
                                     <div class="wrapper-content">
-                                        <h5 class="heading">Classic Oxford Shirt</h5>
+                                        <h5 class="heading">
+                                            <a href="{% url 'core:product_detail' item.product.slug %}">
+                                                {{ item.product.name }}
+                                            </a>
+                                        </h5>
+
+                                        {% if item.variant_name %}
+                                            <p>{{ item.variant_name }}</p>
+                                        {% endif %}
                                     </div>
+
                                 </div>
                             </td>
+
+
+                            <!-- Price -->
                             <td class="table-wrapper">
                                 <div class="table-wrapper-center">
-                                    <h5 class="heading">$10.00</h5>
+                                    <h5 class="heading">
+                                        {{ item.product.price|floatformat:2 }}
+                                    </h5>
                                 </div>
                             </td>
+
+
+                            <!-- Quantity -->
                             <td class="table-wrapper">
                                 <div class="table-wrapper-center">
-                                    <div class="quantity">
-                                        <span class="minus">
-                                            -
-                                        </span>
-                                        <span class="number">1</span>
-                                        <span class="plus">
-                                            +
-                                        </span>
+                                    <div class="quantity-form">
+                                        <div class="table-wrapper-center">
+                                            <div class="input-group quantity-control">
+                                                <form method="POST" action="{% url 'core:delete_cart_item' item.pk %}" class="d-inline">
+                                                    {% csrf_token %}
+                                                    <button type="submit" class="btn btn-outline-secondary btn-plus">
+                                                        <i class="fa-solid fa-minus"></i>
+                                                    </button>
+                                                </form>
+
+                                                <span class="form-control text-center quantity-input">
+                                                    {{ item.quantity }}
+                                                </span>
+
+                                                <form method="POST" action="{% url 'core:add_to_cart' item.product.slug %}" class="d-inline">
+                                                    {% csrf_token %}
+                                                    <button type="submit" class="btn btn-outline-secondary btn-plus">
+                                                        <i class="fa-solid fa-plus"></i>
+                                                    </button>
+                                                </form>
+                                            </div>
+                                        </div>
+
                                     </div>
+
                                 </div>
                             </td>
+
+
+                            <!-- Line total -->
                             <td class="table-wrapper wrapper-total">
                                 <div class="table-wrapper-center">
-                                    <h5 class="heading">$60.00</h5>
+                                    <h5 class="heading">
+                                        {{ item.line_total|floatformat:2 }}
+                                    </h5>
                                 </div>
                             </td>
+
+
+                            <!-- Delete item -->
                             <td class="table-wrapper">
                                 <div class="table-wrapper-center">
-                                    <span>
-                                        <svg width="10" height="10" viewBox="0 0 10 10" fill="none"
-                                            xmlns="http://www.w3.org/2000/svg">
-                                            <path
-                                                d="M9.7 0.3C9.3 -0.1 8.7 -0.1 8.3 0.3L5 3.6L1.7 0.3C1.3 -0.1 0.7 -0.1 0.3 0.3C-0.1 0.7 -0.1 1.3 0.3 1.7L3.6 5L0.3 8.3C-0.1 8.7 -0.1 9.3 0.3 9.7C0.7 10.1 1.3 10.1 1.7 9.7L5 6.4L8.3 9.7C8.7 10.1 9.3 10.1 9.7 9.7C10.1 9.3 10.1 8.7 9.7 8.3L6.4 5L9.7 1.7C10.1 1.3 10.1 0.7 9.7 0.3Z"
-                                                fill="#AAAAAA"></path>
-                                        </svg>
-                                    </span>
+
+                                    <form method="POST"action="{% url 'core:delete_cart_item' item.id %}">
+                                        {% csrf_token %}
+                                        <button type="submit" title="Remove item" style="border: none; background: transparent; cursor: pointer;">
+                                            <i class="fa-solid fa-circle-xmark fs-3 text-danger"></i>
+                                        </button>
+                                    </form>
+
                                 </div>
                             </td>
+
                         </tr>
-                        <tr class="table-row ticket-row">
-                            <td class="table-wrapper wrapper-product">
-                                <div class="wrapper">
-                                    <div class="wrapper-img">
-                                        <img src="{% static 'core/images/homepage-one/product-img/product-img-2.webp' %}"
-                                            alt="img">
-                                    </div>
-                                    <div class="wrapper-content">
-                                        <h5 class="heading"> black Shirt</h5>
-                                    </div>
-                                </div>
-                            </td>
-                            <td class="table-wrapper">
-                                <div class="table-wrapper-center">
-                                    <h5 class="heading">$05.00</h5>
-                                </div>
-                            </td>
-                            <td class="table-wrapper">
-                                <div class="table-wrapper-center">
-                                    <div class="quantity">
-                                        <span class="minus">
-                                            -
-                                        </span>
-                                        <span class="number">1</span>
-                                        <span class="plus">
-                                            +
-                                        </span>
-                                    </div>
-                                </div>
-                            </td>
+                        {% endfor %}
+
+                        <tr class="table-row table-top-row">
                             <td class="table-wrapper wrapper-total">
                                 <div class="table-wrapper-center">
-                                    <h5 class="heading">$10.00</h5>
+                                    <h5 class="heading">
+                                        Total items:
+                                        <strong>{{ total_items }}</strong>
+                                    </h5>
                                 </div>
+
                             </td>
-                            <td class="table-wrapper ">
+                            <td class="table-wrapper wrapper-total" colspan="4">
                                 <div class="table-wrapper-center">
-                                    <span>
-                                        <svg width="10" height="10" viewBox="0 0 10 10" fill="none"
-                                            xmlns="http://www.w3.org/2000/svg">
-                                            <path
-                                                d="M9.7 0.3C9.3 -0.1 8.7 -0.1 8.3 0.3L5 3.6L1.7 0.3C1.3 -0.1 0.7 -0.1 0.3 0.3C-0.1 0.7 -0.1 1.3 0.3 1.7L3.6 5L0.3 8.3C-0.1 8.7 -0.1 9.3 0.3 9.7C0.7 10.1 1.3 10.1 1.7 9.7L5 6.4L8.3 9.7C8.7 10.1 9.3 10.1 9.7 9.7C10.1 9.3 10.1 8.7 9.7 8.3L6.4 5L9.7 1.7C10.1 1.3 10.1 0.7 9.7 0.3Z"
-                                                fill="#AAAAAA"></path>
-                                        </svg>
-                                    </span>
+                                    <h5 class="heading">
+                                        Subtotal:
+                                        <strong>{{ subtotal|floatformat:2 }}</strong>
+                                    </h5>
                                 </div>
+
                             </td>
+                            
                         </tr>
-                        <tr class="table-row ticket-row">
-                            <td class="table-wrapper wrapper-product">
-                                <div class="wrapper">
-                                    <div class="wrapper-img">
-                                        <img src="{% static 'core/images/homepage-one/product-img/product-img-3.webp' %}"
-                                            alt="img">
-                                    </div>
-                                    <div class="wrapper-content">
-                                        <h5 class="heading">Blue Party Shirt</h5>
-                                    </div>
-                                </div>
-                            </td>
-                            <td class="table-wrapper">
-                                <div class="table-wrapper-center">
-                                    <h5 class="heading">$30.00</h5>
-                                </div>
-                            </td>
-                            <td class="table-wrapper">
-                                <div class="table-wrapper-center">
-                                    <div class="quantity">
-                                        <span class="minus">
-                                            -
-                                        </span>
-                                        <span class="number">1</span>
-                                        <span class="plus">
-                                            +
-                                        </span>
-                                    </div>
-                                </div>
-                            </td>
-                            <td class="table-wrapper wrapper-total">
-                                <div class="table-wrapper-center">
-                                    <h5 class="heading">$50.00</h5>
-                                </div>
-                            </td>
-                            <td class="table-wrapper">
-                                <div class="table-wrapper-center">
-                                    <span>
-                                        <svg width="10" height="10" viewBox="0 0 10 10" fill="none"
-                                            xmlns="http://www.w3.org/2000/svg">
-                                            <path
-                                                d="M9.7 0.3C9.3 -0.1 8.7 -0.1 8.3 0.3L5 3.6L1.7 0.3C1.3 -0.1 0.7 -0.1 0.3 0.3C-0.1 0.7 -0.1 1.3 0.3 1.7L3.6 5L0.3 8.3C-0.1 8.7 -0.1 9.3 0.3 9.7C0.7 10.1 1.3 10.1 1.7 9.7L5 6.4L8.3 9.7C8.7 10.1 9.3 10.1 9.7 9.7C10.1 9.3 10.1 8.7 9.7 8.3L6.4 5L9.7 1.7C10.1 1.3 10.1 0.7 9.7 0.3Z"
-                                                fill="#AAAAAA"></path>
-                                        </svg>
-                                    </span>
-                                </div>
-                            </td>
-                        </tr>
-                        <tr class="table-row ticket-row">
-                            <td class="table-wrapper wrapper-product">
-                                <div class="wrapper">
-                                    <div class="wrapper-img">
-                                        <img src="{% static 'core/images/homepage-one/product-img/product-img-4.webp' %}"
-                                            alt="img">
-                                    </div>
-                                    <div class="wrapper-content">
-                                        <h5 class="heading">Red Party Dress</h5>
-                                    </div>
-                                </div>
-                            </td>
-                            <td class="table-wrapper">
-                                <div class="table-wrapper-center">
-                                    <h5 class="heading">$20.00</h5>
-                                </div>
-                            </td>
-                            <td class="table-wrapper">
-                                <div class="table-wrapper-center">
-                                    <div class="quantity">
-                                        <span class="minus">
-                                            -
-                                        </span>
-                                        <span class="number">1</span>
-                                        <span class="plus">
-                                            +
-                                        </span>
-                                    </div>
-                                </div>
-                            </td>
-                            <td class="table-wrapper wrapper-total">
-                                <div class="table-wrapper-center">
-                                    <h5 class="heading">$40.00</h5>
-                                </div>
-                            </td>
-                            <td class="table-wrapper">
-                                <div class="table-wrapper-center">
-                                    <span>
-                                        <svg width="10" height="10" viewBox="0 0 10 10" fill="none"
-                                            xmlns="http://www.w3.org/2000/svg">
-                                            <path
-                                                d="M9.7 0.3C9.3 -0.1 8.7 -0.1 8.3 0.3L5 3.6L1.7 0.3C1.3 -0.1 0.7 -0.1 0.3 0.3C-0.1 0.7 -0.1 1.3 0.3 1.7L3.6 5L0.3 8.3C-0.1 8.7 -0.1 9.3 0.3 9.7C0.7 10.1 1.3 10.1 1.7 9.7L5 6.4L8.3 9.7C8.7 10.1 9.3 10.1 9.7 9.7C10.1 9.3 10.1 8.7 9.7 8.3L6.4 5L9.7 1.7C10.1 1.3 10.1 0.7 9.7 0.3Z"
-                                                fill="#AAAAAA"></path>
-                                        </svg>
-                                    </span>
-                                </div>
-                            </td>
-                        </tr>
+
                     </tbody>
                 </table>
             </div>
+
+
+            <!-- Cart actions -->
             <div class="wishlist-btn cart-btn">
-                <a href="empty-cart.html" class="clean-btn">Clear Cart</a>
-                <a href="#" class="shop-btn update-btn">Update Cart</a>
-                <a href="checkout.html" class="shop-btn">Proceed to Checkout</a>
+
+                <form method="POST" action="{% url 'core:clear_cart' %}">
+                    {% csrf_token %}
+                    <button type="submit" class="clean-btn">
+                        Clear Cart
+                    </button>
+                </form>
+
+                <a href="{% url 'core:product_list' %}"
+                   class="shop-btn update-btn">
+                    Continue Shopping
+                </a>
+
+                <a href="#" class="shop-btn">
+                    Proceed to Checkout
+                </a>
+
             </div>
+
         </div>
     </section>
     <!--------------- cart-section-end---------------->
+
+
     {% else %}
+
+    <!--------------- empty-cart-section---------------->
     <section class="blog about-blog footer-padding">
         <div class="container">
+
             <div class="blog-item" data-aos="fade-up">
+
                 <div class="cart-img">
-                    <img src="{% static 'core/images/homepage-one/empty-cart.webp' %}" alt="">
+                    <img src="{% static 'core/images/homepage-one/empty-cart.webp' %}"
+                         alt="Empty shopping cart">
                 </div>
+
                 <div class="cart-content">
-                    <p class="content-title">Empty! You don’t Cart any Products </p>
-                    <a href="{% url 'core:product_list' %}" class="shop-btn">Back to Shop</a>
+                    <p class="content-title">
+                        Your cart is empty. You don't have any products yet.
+                    </p>
+
+                    <a href="{% url 'core:product_list' %}" class="shop-btn">
+                        Back to Shop
+                    </a>
                 </div>
+
             </div>
+
         </div>
     </section>
+    <!--------------- empty-cart-section-end---------------->
 
     {% endif %}
 
-{% endblock %} 
+{% endblock %}
