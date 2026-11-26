@@ -113,7 +113,7 @@ def product_detail(request, slug):
     )
 
     related_services = Service.objects.none()
-
+    
     if product.category_id:
         related_services = (
             Service.objects

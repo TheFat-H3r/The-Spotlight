@@ -87,7 +87,7 @@
                                             </div>
 
                                             <div class="product-description">
-                                                <a href="#" class="product-details">
+                                                <a href="{% url 'core:product_detail' product.slug %}" class="product-details">
                                                     {{ product.name }}
                                                 </a>
 
@@ -101,7 +101,7 @@
                                         </div>
 
                                         <div class="product-cart-btn">
-                                            <a href="#" class="product-btn">View Product</a>
+                                            <a href="{% url 'core:product_detail' product.slug %}" class="product-btn">View Product</a>
                                         </div>
 
                                     </div>
