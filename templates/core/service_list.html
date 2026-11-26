@@ -18,9 +18,10 @@
                                     <ul class="sidebar-list">
 
                                         {% for category in categories %}
-                                            <li>
-                                                <i class="fa-solid fa-circle"></i>
-                                                <a href="?category={{ category.category_id }}" class="fs-4">
+                                            <li class="list-unstyled p-2 rounded hover-category">
+                                                <i class="fa-solid fa-circle fs-6 text-secondary"></i>
+                                                <a href="?category={{ category.category_id }}"
+                                                class="fs-4 text-dark text-decoration-none">
                                                     {{ category.category__name }}
                                                 </a>
                                             </li>

@@ -76,29 +76,18 @@
                                 <div class="sidebar-item">
                                     <ul class="sidebar-list">
                                         {% for category in categories %}
-                                        <li>
-                                            <input type="checkbox" id="category-{{ category.id }}" name="category" value="{{ category.id }}">
-                                            <label for="category-{{ category.id }}">{{ category.name }}</label>
+                                        <li class="list-unstyled p-2 rounded hover-category">
+                                            <i class="fa-solid fa-circle fs-6 text-secondary"></i>
+                                            <a href="?category={{ category.category_id }}"
+                                                class="fs-4 text-dark text-decoration-none">
+                                                {{ category.name }}
+                                            </a>
                                         </li>
                                         {% empty %}
                                             <li>No categories available.</li>
                                         {% endfor %}
                                         
                                     </ul>
-                                </div>
-                            </div>
-                            <hr>
-                            <div class="sidebar-wrapper sidebar-range">
-                                <h5 class="wrapper-heading">Price Range</h5>
-                                <div class="price-slide range-slider">
-                                    <div class="price">
-                                        <div class="range-slider style-1">
-                                            <div id="slider-tooltips" class="slider-range mb-3"></div>
-                                            <span class="example-val" id="slider-margin-value-min"></span>
-                                            <span>-</span>
-                                            <span class="example-val" id="slider-margin-value-max"></span>
-                                        </div>
-                                    </div>
                                 </div>
                             </div>
                             
