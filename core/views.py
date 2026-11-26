@@ -1,4 +1,4 @@
-from django.shortcuts import render
+from django.shortcuts import get_object_or_404, redirect, render
 
 from marketing.models import Advertisement, Announcement
 from stores.models import Category, Product, Review, Service, Store
@@ -85,9 +85,65 @@ def store_list(request):
     
     return render(request, 'core/store_list.html', context)
 
+from django.shortcuts import get_object_or_404, render
+
 def store_detail(request, slug):
-    
-    return render(request, 'core/store_detail.html', {'slug': slug})
+    store = get_object_or_404(
+        Store.objects.select_related("business_type"),
+        slug=slug
+    )
+
+    store_type = store.business_type.store_type
+
+    products = Product.objects.none()
+    services = Service.objects.none()
+
+    if store_type in ["products", "both"]:
+        products = Product.objects.filter(
+            store=store,
+            is_available=True
+        ).select_related("category").order_by(
+            "-is_featured", "-created_at"
+        )
+
+    if store_type in ["services", "both"]:
+        services = Service.objects.filter(
+            store=store,
+            is_available=True
+        ).select_related("category").order_by(
+            "-is_featured", "-created_at"
+        )
+
+    # Collect unique categories from this store's products and services.
+    categories = {}
+
+    for category in products.values(
+        "category_id", "category__name"
+    ).distinct():
+        if category["category_id"]:
+            categories[category["category_id"]] = {
+                "id": category["category_id"],
+                "name": category["category__name"],
+            }
+
+    for category in services.values(
+        "category_id", "category__name"
+    ).distinct():
+        if category["category_id"]:
+            categories[category["category_id"]] = {
+                "id": category["category_id"],
+                "name": category["category__name"],
+            }
+
+    context = {
+        "store": store,
+        "products": products,
+        "services": services,
+        "categories": list(categories.values()),
+        "total_items": products.count() + services.count(),
+    }
+
+    return render(request, "core/store_detail.html", context)
 
 def flash_sale(request):
     return render(request, 'core/flash-sale.html')
