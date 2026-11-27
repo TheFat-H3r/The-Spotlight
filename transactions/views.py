@@ -1,29 +1,39 @@
 from collections import defaultdict
 from decimal import Decimal
-import logging
 import json
+import logging
+import re
+from urllib.parse import quote
 import uuid
 
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
-from django.core.mail import send_mail
 from django.core.exceptions import ValidationError
-from urllib.parse import quote
-from django.conf import settings
 from django.core.mail import EmailMultiAlternatives
+from django.db import transaction
+from django.db.models import F
+from django.db.models.deletion import ProtectedError
+from django.http import JsonResponse
+from django.shortcuts import get_object_or_404, redirect, render
 from django.template.loader import render_to_string
 from django.urls import reverse
 from django.utils.html import strip_tags
-from django.db import transaction
-from django.db.models.deletion import ProtectedError
-from django.db.models import F
-from django.http import JsonResponse
-from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.http import require_POST
+
 from accounts.models import User
+from core.whatsapp import send_whatsapp_async
 from stores.models import Product, Service, Store
-from .models import AvailabilitySlot, Booking, Cart, CartItem, Order, OrderItem, OrderStatusHistory, VendorNotification
+from .models import (
+    AvailabilitySlot,
+    Booking,
+    Cart,
+    CartItem,
+    Order,
+    OrderItem,
+    OrderStatusHistory,
+    VendorNotification,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -35,7 +45,7 @@ logger = logging.getLogger(__name__)
 def cart_detail(request):
     cart, _ = Cart.objects.get_or_create(customer=request.user)
     items = list(
-        cart.items.select_related("product", "product__store").all() # type: ignore
+        cart.items.select_related("product", "product__store").all()  # type: ignore
     )
 
     # Group items by store so the customer sees how their cart splits per vendor
@@ -57,10 +67,10 @@ def cart_detail(request):
 def checkout(request):
     cart = get_object_or_404(Cart, customer=request.user)
     cart_items = list(
-        cart.items.select_related("product", "product__store", "product__store__owner") # type: ignore
+        cart.items.select_related("product", "product__store", "product__store__owner")  # type: ignore
     )
-    store = CartItem.objects.filter(cart=cart).first().product.store if cart_items else None # type: ignore
-    
+    store = CartItem.objects.filter(cart=cart).first().product.store if cart_items else None  # type: ignore
+
     if not cart_items:
         messages.warning(request, "Your cart is empty.")
         return redirect("transactions:cart_detail")
@@ -68,12 +78,21 @@ def checkout(request):
     # Pre-fill contact & campus residence details from CustomerProfile if available
     profile = getattr(request.user, "customer_profile", None)
     default_phone = getattr(profile, "phone", "") or getattr(request.user, "phone", "")
-    residence = User.objects.filter(id=request.user.id).first().residence if hasattr(request.user, "residence") else "" # type: ignore
-    room_number = User.objects.filter(id=request.user.id).first().room_number if hasattr(request.user, "room_number") else "" # type: ignore
+    residence = (
+        User.objects.filter(id=request.user.id).first().residence # type: ignore
+        if hasattr(request.user, "residence")
+        else ""
+    )  # type: ignore
+    room_number = (
+        User.objects.filter(id=request.user.id).first().room_number # type: ignore
+        if hasattr(request.user, "room_number")
+        else ""
+    )  # type: ignore
 
     delivery_location = f"{residence} {room_number}".strip()
-    pickup_location = Store.objects.filter(name=store.name).first().pickup_location if store else "" # type: ignore
-    
+    pickup_location = (
+        Store.objects.filter(name=store.name).first().pickup_location if store else "" # type: ignore
+    )  # type: ignore
 
     # Group items by store for display and per-store order creation
     items_by_store = defaultdict(list)
@@ -104,11 +123,16 @@ def checkout(request):
             payment_method = Order.PaymentMethod.CASH
 
         if not customer_phone:
-            messages.error(request, "Please provide a phone or WhatsApp number so the store can contact you.")
+            messages.error(
+                request,
+                "Please provide a phone or WhatsApp number so the store can contact you.",
+            )
             return redirect("transactions:checkout")
 
         if fulfilment_method == Order.Fulfilment.DELIVERY and not delivery_address:
-            messages.error(request, "Please enter a delivery address or campus hall/room.")
+            messages.error(
+                request, "Please enter a delivery address or campus hall/room."
+            )
             return redirect("transactions:checkout")
 
         shared_checkout_ref = uuid.uuid4()
@@ -148,18 +172,20 @@ def checkout(request):
                         customer_note=customer_note,
                     )
 
-                    OrderItem.objects.bulk_create([
-                        OrderItem(
-                            order=order,
-                            product=item.product,
-                            product_name=item.product.name,
-                            variant_name=item.variant_name,
-                            sku=getattr(item.product, "sku", ""),
-                            unit_price=item.product.price,
-                            quantity=item.quantity,
-                        )
-                        for item in store_items
-                    ])
+                    OrderItem.objects.bulk_create(
+                        [
+                            OrderItem(
+                                order=order,
+                                product=item.product,
+                                product_name=item.product.name,
+                                variant_name=item.variant_name,
+                                sku=getattr(item.product, "sku", ""),
+                                unit_price=item.product.price,
+                                quantity=item.quantity,
+                            )
+                            for item in store_items
+                        ]
+                    )
 
                     # Deduct stock so RELEASES_STOCK on cancel/reject stays balanced
                     for item in store_items:
@@ -215,14 +241,16 @@ def checkout(request):
                     created_orders.append((store, order, portal_message))
 
                 # Clear the cart once all orders succeed
-                cart.items.all().delete() # type: ignore
+                cart.items.all().delete()  # type: ignore
 
         except ValidationError as exc:
             messages.error(request, exc.message)
             return redirect("transactions:cart_detail")
 
-        # Send emails AFTER transaction commits so SMTP issues never roll back orders
-        _send_order_notifications(request.user, customer_name, created_orders)
+        # Send notifications AFTER transaction commits so network issues never roll back orders
+        _send_order_notifications(
+            request.user, customer_name, created_orders, request=request
+        )
 
         return render(
             request,
@@ -255,40 +283,58 @@ def _abs_url(base_url: str, path: str) -> str:
     return f"{base_url.rstrip('/')}/{path.lstrip('/')}"
 
 
-def _build_order_email_payload(store, order, base_url: str, support_email: str) -> dict:
-    """Prepares absolute image URLs, action links, and item data for HTML email templates."""
-    store_logo_url = ""
-    if getattr(store, "logo", None):
-        store_logo_url = _abs_url(base_url, store.logo.url)
+def _digits_only(phone: str) -> str:
+    digits = re.sub(r"\D", "", str(phone or ""))
+    if len(digits) == 8 and digits.startswith("5"):
+        return f"230{digits}"
+    return digits
 
+
+def _build_order_notification_payload(
+    store, order, base_url: str, support_email: str, support_phone: str
+) -> dict:
+    """Prepares action links, contact details, and itemized data for WhatsApp and email fallback."""
+    store_logo_url = (
+        _abs_url(base_url, store.logo.url) if getattr(store, "logo", None) else ""
+    )
     store_url = _abs_url(
         base_url, reverse("store:store-profile", kwargs={"slug": store.slug})
     )
     review_url = _abs_url(
         base_url, reverse("store:submit-review", kwargs={"slug": store.slug})
     )
-    # Adjust 'accounts:profile' to your dedicated order-tracking URL if you add one later
-    track_url = f"{_abs_url(base_url, reverse('accounts:profile'))}?ref={order.checkout_reference}"
+    track_url = f"{_abs_url(base_url, reverse('transactions:customer-orders'))}?ref={order.checkout_reference}"
 
-    vendor_email = getattr(store, "email", None) or getattr(store.owner, "email", "")
-    vendor_phone = getattr(store, "contact_phone", "")
-    contact_subject = quote(f"Question about Order {order.order_number} on The Spotlight")
+    vendor_email = getattr(store, "contact_email", "") or getattr(store.owner, "email", "")
+    vendor_phone = getattr(store, "contact_phone", "") or getattr(store.owner, "phone", "")
+    vendor_digits = _digits_only(vendor_phone)
+
+    contact_text = quote(
+        f"Hi {store.name}, I have a question about Order {order.order_number} on The Spotlight."
+    )
     contact_store_url = (
-        f"mailto:{vendor_email}?subject={contact_subject}"
-        if vendor_email
-        else store_url
+        f"https://wa.me/{vendor_digits}?text={contact_text}"
+        if vendor_digits
+        else (f"mailto:{vendor_email}?subject={contact_text}" if vendor_email else store_url)
     )
 
-    report_subject = quote(
+    support_digits = _digits_only(support_phone)
+    report_text = quote(
         f"[Issue Report] Order {order.order_number} (Ref: {order.checkout_reference})"
     )
-    report_url = f"mailto:{support_email}?subject={report_subject}"
+    report_url = (
+        f"https://wa.me/{support_digits}?text={report_text}"
+        if support_digits
+        else f"mailto:{support_email}?subject={report_text}"
+    )
 
     items_data = []
     for item in order.items.select_related("product").all():
-        image_url = ""
-        if item.product and getattr(item.product, "image", None):
-            image_url = _abs_url(base_url, item.product.image.url)
+        image_url = (
+            _abs_url(base_url, item.product.image.url)
+            if item.product and getattr(item.product, "image", None)
+            else ""
+        )
         items_data.append(
             {
                 "name": item.display_name,
@@ -305,7 +351,8 @@ def _build_order_email_payload(store, order, base_url: str, support_email: str) 
         "store_logo_url": store_logo_url,
         "vendor_email": vendor_email,
         "vendor_phone": vendor_phone,
-        "store_location": getattr(store, "location", "") or getattr(store, "address", ""),
+        "store_location": getattr(store, "pickup_location", "")
+        or getattr(store, "location", ""),
         "store_url": store_url,
         "review_url": review_url,
         "track_url": track_url,
@@ -320,6 +367,7 @@ def _send_order_notifications(customer, customer_name, created_orders, request=N
         settings, "DEFAULT_FROM_EMAIL", "The Spotlight <e.mugisha7@gmail.com>"
     )
     support_email = getattr(settings, "SUPPORT_EMAIL", "e.mugisha7@gmail.com")
+    support_phone = getattr(settings, "SUPPORT_WHATSAPP_PHONE", "")
     base_url = (
         request.build_absolute_uri("/").rstrip("/")
         if request is not None
@@ -327,32 +375,62 @@ def _send_order_notifications(customer, customer_name, created_orders, request=N
     )
 
     enriched_orders = [
-        _build_order_email_payload(store, order, base_url, support_email)
+        _build_order_notification_payload(
+            store, order, base_url, support_email, support_phone
+        )
         for store, order, _ in created_orders
     ]
 
-    # 1. Notify each seller/store via HTML + Plain Text email (includes full buyer details)
+    # 1. Notify each seller/store via WhatsApp (fallback to email if no phone is set)
     for payload in enriched_orders:
+        vendor_phone = payload["vendor_phone"]
         vendor_email = payload["vendor_email"]
         order = payload["order"]
         store = payload["store"]
+        buyer_phone = order.customer_phone or getattr(customer, "phone", "")
 
-        if vendor_email:
+        if vendor_phone:
+            item_lines = "\n".join(
+                f"• {i['quantity']}x {i['name']} — MUR {i['line_total']}"
+                for i in payload["items"]
+            )
+            fulfilment_line = (
+                f"Delivery to: {order.delivery_address}"
+                if order.fulfilment_method == Order.Fulfilment.DELIVERY
+                else f"Pickup at: {order.pickup_location or 'Store default'}"
+            )
+            buyer_digits = _digits_only(buyer_phone)
+            chat_buyer = (
+                f"\nChat with buyer: https://wa.me/{buyer_digits}" if buyer_digits else ""
+            )
+
+            vendor_msg = (
+                f"*[The Spotlight] New Order {order.order_number}*\n"
+                f"Store: *{store.name}*\n\n"
+                f"*Items:*\n{item_lines}\n\n"
+                f"*Total:* MUR {order.total}\n"
+                f"*Fulfilment:* {order.get_fulfilment_method_display()} ({fulfilment_line})\n"
+                f"*Payment:* {order.get_payment_method_display()}\n"
+                f"*Buyer:* {customer_name} ({buyer_phone})"
+                f"{chat_buyer}"
+            )
+            transaction.on_commit(
+                lambda phone=vendor_phone, msg=vendor_msg: send_whatsapp_async(phone, msg)
+            )
+        elif vendor_email:
             html_body = render_to_string(
                 "emails/vendor_new_order.html",
                 {
                     **payload,
                     "buyer_name": customer_name,
                     "buyer_email": order.customer_email or customer.email,
-                    "buyer_phone": order.customer_phone,
+                    "buyer_phone": buyer_phone,
                     "support_email": support_email,
                 },
             )
-            text_body = strip_tags(html_body)
-
             msg = EmailMultiAlternatives(
                 subject=f"[The Spotlight] New Order {order.order_number} — {store.name}",
-                body=text_body,
+                body=strip_tags(html_body),
                 from_email=sender,
                 to=[vendor_email],
                 reply_to=[order.customer_email] if order.customer_email else None,
@@ -360,42 +438,67 @@ def _send_order_notifications(customer, customer_name, created_orders, request=N
             msg.attach_alternative(html_body, "text/html")
             msg.send(fail_silently=True)
 
-    # 2. Send rich confirmation email to the customer
-    if customer.email and enriched_orders:
+    # 2. Send consolidated confirmation to the customer via WhatsApp (fallback to email)
+    if enriched_orders:
         first_order = enriched_orders[0]["order"]
+        customer_phone = first_order.customer_phone or getattr(customer, "phone", "")
         checkout_ref = first_order.checkout_reference
         grand_total = sum(p["order"].total for p in enriched_orders)
-        global_track_url = (
-            f"{_abs_url(base_url, reverse('accounts:profile'))}?ref={checkout_ref}"
-        )
-        global_report_url = (
-            f"mailto:{support_email}?subject="
-            f"{quote(f'[Support Request] Checkout Ref {checkout_ref}')}"
-        )
+        global_track_url = f"{_abs_url(base_url, reverse('transactions:customer-orders'))}?ref={checkout_ref}"
 
-        html_body = render_to_string(
-            "emails/customer_order_confirmation.html",
-            {
-                "customer_name": customer_name,
-                "customer_email": customer.email,
-                "checkout_reference": checkout_ref,
-                "grand_total": grand_total,
-                "orders_data": enriched_orders,
-                "global_track_url": global_track_url,
-                "global_report_url": global_report_url,
-                "support_email": support_email,
-            },
-        )
-        text_body = strip_tags(html_body)
+        if customer_phone:
+            sections = []
+            for p in enriched_orders:
+                store = p["store"]
+                order = p["order"]
+                item_lines = "\n".join(
+                    f"  • {i['quantity']}x {i['name']} (MUR {i['line_total']})"
+                    for i in p["items"]
+                )
+                sections.append(
+                    f"*{store.name}* (Order {order.order_number})\n"
+                    f"{item_lines}\n"
+                    f"  Subtotal: *MUR {order.total}*\n"
+                    f"  Contact store: {p['contact_store_url']}\n"
+                    f"  Review: {p['review_url']}"
+                )
 
-        msg = EmailMultiAlternatives(
-            subject=f"[The Spotlight] Order Confirmation — Ref #{str(checkout_ref)[:8].upper()}",
-            body=text_body,
-            from_email=sender,
-            to=[customer.email],
-        )
-        msg.attach_alternative(html_body, "text/html")
-        msg.send(fail_silently=True)
+            customer_msg = (
+                f"*[The Spotlight] Order Confirmed!* 🎉\n"
+                f"Hi {customer_name or 'there'}, your order has been placed.\n"
+                f"*Checkout Ref:* #{str(checkout_ref)[:8].upper()}\n\n"
+                + "\n\n".join(sections)
+                + f"\n\n*Grand Total:* MUR {grand_total}\n"
+                f"View orders: {global_track_url}"
+            )
+            transaction.on_commit(
+                lambda phone=customer_phone, msg=customer_msg: send_whatsapp_async(
+                    phone, msg
+                )
+            )
+        elif customer.email:
+            html_body = render_to_string(
+                "emails/customer_order_confirmation.html",
+                {
+                    "customer_name": customer_name,
+                    "customer_email": customer.email,
+                    "checkout_reference": checkout_ref,
+                    "grand_total": grand_total,
+                    "orders_data": enriched_orders,
+                    "global_track_url": global_track_url,
+                    "global_report_url": enriched_orders[0]["report_url"],
+                    "support_email": support_email,
+                },
+            )
+            msg = EmailMultiAlternatives(
+                subject=f"[The Spotlight] Order Confirmation — Ref #{str(checkout_ref)[:8].upper()}",
+                body=strip_tags(html_body),
+                from_email=sender,
+                to=[customer.email],
+            )
+            msg.attach_alternative(html_body, "text/html")
+            msg.send(fail_silently=True)
+
 
 @login_required
 def add_to_cart(request, product_id):
@@ -489,6 +592,7 @@ def add_to_cart(request, product_id):
     messages.success(request, success_msg)
     return redirect(request.META.get("HTTP_REFERER", "marketplace:home"))
 
+
 @login_required
 @require_POST
 def update_cart_item(request, item_id):
@@ -518,6 +622,7 @@ def remove_cart_item(request, item_id):
     cart_item.delete()
     messages.info(request, "Item removed from your cart.")
     return redirect("transactions:cart_detail")
+
 
 @login_required
 def customer_orders_list(request):
@@ -606,13 +711,15 @@ def customer_bookings_list(request):
         bookings = bookings.filter(reference=tracking_reference)
 
     my_bookings = list(
-        bookings
-        .select_related("service", "service__store", "service__store__owner", "slot")
-        .order_by("-created_at")
+        bookings.select_related(
+            "service", "service__store", "service__store__owner", "slot"
+        ).order_by("-created_at")
     )
     support_email = getattr(settings, "SUPPORT_EMAIL", "e.mugisha7@gmail.com")
     for booking in my_bookings:
-        vendor_email = booking.service.store.contact_email or booking.service.store.owner.email
+        vendor_email = (
+            booking.service.store.contact_email or booking.service.store.owner.email
+        )
         edit_subject = quote(f"Edit request for booking {booking.reference}")
         edit_body = quote(
             f"Hello {booking.service.store.name},\n\n"
@@ -620,12 +727,12 @@ def customer_bookings_list(request):
             f"for {booking.service.name}."
         )
         report_subject = quote(f"[Issue Report] Booking {booking.reference}")
-        booking.edit_request_url = ( # type: ignore
+        booking.edit_request_url = (  # type: ignore
             f"mailto:{vendor_email}?subject={edit_subject}&body={edit_body}"
             if vendor_email
             else ""
         )
-        booking.report_url = f"mailto:{support_email}?subject={report_subject}" # type: ignore
+        booking.report_url = f"mailto:{support_email}?subject={report_subject}"  # type: ignore
 
     return render(
         request,
@@ -674,7 +781,6 @@ def delete_customer_booking(request, booking_id):
     return redirect("transactions:customer-bookings")
 
 
-
 @login_required
 def create_booking(request, store_slug, service_slug):
     store = Store.objects.filter(
@@ -692,10 +798,14 @@ def create_booking(request, store_slug, service_slug):
     if not service:
         return redirect("stores-home")
 
-    slots = AvailabilitySlot.objects.all().filter(
-        service=service,
-        is_active=True,
-    ).order_by("start_at")
+    slots = (
+        AvailabilitySlot.objects.all()
+        .filter(
+            service=service,
+            is_active=True,
+        )
+        .order_by("start_at")
+    )
     default_phone = getattr(request.user, "phone", "")
     form_data = {
         "customer_phone": default_phone,
@@ -706,12 +816,14 @@ def create_booking(request, store_slug, service_slug):
     form_error = ""
 
     if request.method == "POST":
-        form_data.update({
-            "customer_phone": request.POST.get("customer_phone", "").strip(),
-            "seats": request.POST.get("seats", "1").strip(),
-            "customer_note": request.POST.get("customer_note", "").strip(),
-            "slot_id": request.POST.get("slot_id", "").strip(),
-        })
+        form_data.update(
+            {
+                "customer_phone": request.POST.get("customer_phone", "").strip(),
+                "seats": request.POST.get("seats", "1").strip(),
+                "customer_note": request.POST.get("customer_note", "").strip(),
+                "slot_id": request.POST.get("slot_id", "").strip(),
+            }
+        )
 
         try:
             seats = int(form_data["seats"])
@@ -776,118 +888,174 @@ def create_booking(request, store_slug, service_slug):
 
 def _send_booking_notifications(request, booking):
     store = booking.service.store
+    vendor_phone = getattr(store, "contact_phone", "") or getattr(store.owner, "phone", "")
     vendor_email = store.contact_email or store.owner.email
-    sender = getattr(settings, "DEFAULT_FROM_EMAIL", "The Spotlight <noreply@example.com>")
+    customer_phone = booking.customer_phone or getattr(booking.customer, "phone", "")
     base_url = request.build_absolute_uri("/").rstrip("/")
-    store_logo_url = _abs_url(base_url, store.logo.url) if store.logo else ""
-    service_image_url = (
-        _abs_url(base_url, booking.service.image.url) if booking.service.image else ""
+    track_url = (
+        f"{_abs_url(base_url, reverse('transactions:customer-bookings'))}?ref={booking.reference}"
     )
-    common_context = {
-        "booking": booking,
-        "customer": booking.customer,
-        "service": booking.service,
-        "store": store,
-        "store_logo_url": store_logo_url,
-        "service_image_url": service_image_url,
-        "store_url": _abs_url(
-            base_url,
-            reverse("store:store-profile", kwargs={"slug": store.slug}),
-        ),
-        "global_track_url": _abs_url(
-            base_url,
-            reverse("transactions:customer-bookings"),
-        ) + f"?ref={booking.reference}",
-    }
 
-    email_jobs = [
-        (
-            booking.customer.email,
-            f"[The Spotlight] Booking request received — {booking.reference}",
+    # 1. Customer WhatsApp notification (fallback to email)
+    if customer_phone:
+        vendor_digits = _digits_only(vendor_phone)
+        contact_line = (
+            f"\nContact provider: https://wa.me/{vendor_digits}" if vendor_digits else ""
+        )
+        customer_msg = (
+            f"*[The Spotlight] Booking Request Received*\n"
+            f"Ref: *{booking.reference}*\n"
+            f"Service: *{booking.service.name}* ({store.name})\n"
+            f"When: {booking.start_at:%a, %d %b %Y at %H:%M}\n"
+            f"Seats: {booking.seats}\n"
+            f"Estimated Total: MUR {booking.total_price}"
+            f"{contact_line}\n"
+            f"Manage booking: {track_url}"
+        )
+        transaction.on_commit(
+            lambda phone=customer_phone, msg=customer_msg: send_whatsapp_async(phone, msg)
+        )
+    elif booking.customer.email:
+        sender = getattr(
+            settings, "DEFAULT_FROM_EMAIL", "The Spotlight <noreply@example.com>"
+        )
+        html_body = render_to_string(
             "emails/customer_booking_confirmation.html",
-            common_context,
-        ),
-        (
-            vendor_email,
-            f"[The Spotlight] New booking request — {booking.reference}",
-            "emails/vendor_new_booking.html",
-            common_context,
-        ),
-    ]
-
-    for recipient, subject, template_name, context in email_jobs:
-        if not recipient:
-            continue
-        html_body = render_to_string(template_name, context)
+            {
+                "booking": booking,
+                "customer": booking.customer,
+                "service": booking.service,
+                "store": store,
+                "store_logo_url": _abs_url(base_url, store.logo.url) if store.logo else "",
+                "service_image_url": (
+                    _abs_url(base_url, booking.service.image.url)
+                    if booking.service.image
+                    else ""
+                ),
+                "store_url": _abs_url(
+                    base_url,
+                    reverse("store:store-profile", kwargs={"slug": store.slug}),
+                ),
+                "global_track_url": track_url,
+            },
+        )
         message = EmailMultiAlternatives(
-            subject=subject,
+            subject=f"[The Spotlight] Booking request received — {booking.reference}",
             body=strip_tags(html_body),
             from_email=sender,
-            to=[recipient],
+            to=[booking.customer.email],
         )
         message.attach_alternative(html_body, "text/html")
-        if not message.send(fail_silently=True):
-            logger.warning(
-                "Could not send booking notification email for booking %s.",
-                booking.reference,
-            )
+        message.send(fail_silently=True)
+
+    # 2. Vendor WhatsApp notification (fallback to email)
+    if vendor_phone:
+        customer_digits = _digits_only(customer_phone)
+        chat_customer = (
+            f"\nChat with customer: https://wa.me/{customer_digits}"
+            if customer_digits
+            else ""
+        )
+        vendor_msg = (
+            f"*[The Spotlight] New Booking Request — {booking.reference}*\n"
+            f"Service: *{booking.service.name}*\n"
+            f"Customer: {booking.customer.get_full_name() or booking.customer.email}\n"
+            f"Phone: {customer_phone}\n"
+            f"When: {booking.start_at:%a, %d %b %Y at %H:%M}\n"
+            f"Seats: {booking.seats}\n"
+            f"Estimated Total: MUR {booking.total_price}\n"
+            f"Note: {booking.customer_note or 'None'}"
+            f"{chat_customer}"
+        )
+        transaction.on_commit(
+            lambda phone=vendor_phone, msg=vendor_msg: send_whatsapp_async(phone, msg)
+        )
+    elif vendor_email:
+        sender = getattr(
+            settings, "DEFAULT_FROM_EMAIL", "The Spotlight <noreply@example.com>"
+        )
+        html_body = render_to_string(
+            "emails/vendor_new_booking.html",
+            {
+                "booking": booking,
+                "customer": booking.customer,
+                "service": booking.service,
+                "store": store,
+                "store_logo_url": _abs_url(base_url, store.logo.url) if store.logo else "",
+                "service_image_url": (
+                    _abs_url(base_url, booking.service.image.url)
+                    if booking.service.image
+                    else ""
+                ),
+                "store_url": _abs_url(
+                    base_url,
+                    reverse("store:store-profile", kwargs={"slug": store.slug}),
+                ),
+                "global_track_url": track_url,
+            },
+        )
+        message = EmailMultiAlternatives(
+            subject=f"[The Spotlight] New booking request — {booking.reference}",
+            body=strip_tags(html_body),
+            from_email=sender,
+            to=[vendor_email],
+        )
+        message.attach_alternative(html_body, "text/html")
+        message.send(fail_silently=True)
 
 
 # ==========================================
 # 2. BUSINESS OWNER VIEWS (Fulfillment & Management)
 # ==========================================
-
 @login_required
 def owner_orders_list(request):
-  
-  store = Store.objects.filter(vendor__user=request.user).first()
-  if not store:
-    return redirect('store-dashboard')
+    store = Store.objects.filter(vendor__user=request.user).first()
+    if not store:
+        return redirect("store-dashboard")
 
-  orders = Order.objects.filter(store=store).order_by('-created_at')
-  context = {'store': store, 'orders': orders}
-  return render(request, 'transactions/owner_orders.html', context)
+    orders = Order.objects.filter(store=store).order_by("-created_at")
+    context = {"store": store, "orders": orders}
+    return render(request, "transactions/owner_orders.html", context)
 
 
 @login_required
 def owner_bookings_list(request):
-  
-  store = Store.objects.filter(vendor__user=request.user).first()
-  if not store:
-    return redirect('store-dashboard')
+    store = Store.objects.filter(vendor__user=request.user).first()
+    if not store:
+        return redirect("store-dashboard")
 
-  bookings = Booking.objects.filter(store=store).order_by('-booking_date')
-  context = {'store': store, 'bookings': bookings}
-  return render(request, 'transactions/owner_bookings.html', context)
+    bookings = Booking.objects.filter(store=store).order_by("-booking_date")
+    context = {"store": store, "bookings": bookings}
+    return render(request, "transactions/owner_bookings.html", context)
 
 
 @login_required
 def update_order_status(request, order_id):
-  
-  order = Order.objects.filter(id=order_id, store__vendor__user=request.user).first()
-  if not order:
-    return redirect('store-dashboard')
+    order = Order.objects.filter(id=order_id, store__vendor__user=request.user).first()
+    if not order:
+        return redirect("store-dashboard")
 
-  if request.method == 'POST':
-    new_status = request.POST.get('status')
-    if new_status:
-      order.status = new_status
-      order.save(update_fields=['status'])
+    if request.method == "POST":
+        new_status = request.POST.get("status")
+        if new_status:
+            order.status = new_status
+            order.save(update_fields=["status"])
 
-  return redirect('owner-orders')
+    return redirect("owner-orders")
 
 
 @login_required
 def update_booking_status(request, booking_id):
-  
-  booking = Booking.objects.filter(id=booking_id, store__vendor__user=request.user).first()
-  if not booking:
-    return redirect('store-dashboard')
+    booking = Booking.objects.filter(
+        id=booking_id, store__vendor__user=request.user
+    ).first()
+    if not booking:
+        return redirect("store-dashboard")
 
-  if request.method == 'POST':
-    new_status = request.POST.get('status')
-    if new_status:
-      booking.status = new_status
-      booking.save(update_fields=['status'])
+    if request.method == "POST":
+        new_status = request.POST.get("status")
+        if new_status:
+            booking.status = new_status
+            booking.save(update_fields=["status"])
 
-  return redirect('owner-bookings')
+    return redirect("owner-bookings")

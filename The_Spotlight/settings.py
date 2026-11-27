@@ -209,7 +209,8 @@ MEDIA_ROOT = BASE_DIR / 'media'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
+# For Whatsapp message sending
 
-WAHA_BASE_URL = "http://localhost:3000"
-WAHA_SESSION = "default"
-WAHA_API_KEY = "secret123"
+WAHA_BASE_URL = os.getenv("WAHA_BASE_URL")
+WAHA_SESSION = os.getenv("WAHA_SESSION")
+WAHA_API_KEY = os.getenv("WAHA_API_KEY")
